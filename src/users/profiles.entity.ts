@@ -16,7 +16,6 @@ export class Profile extends BaseEntity {
   })
   public photoURL: string;
 
-
   @OneToOne((type) => User, (user) => user.profile)
   @JoinColumn({ name: 'userId' })
   user: User;

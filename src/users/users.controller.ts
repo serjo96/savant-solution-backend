@@ -33,7 +33,6 @@ export class UsersController {
 
     return {
       data: {
-        confirmed: user.confirmed,
         id: user.id,
         name: profile ? profile.name : '',
         email: profile ? user.email : '',
@@ -65,11 +64,9 @@ export class UsersController {
 
     return {
       data: {
-        confirmed: user.confirmed,
         id: user.id,
         name: profileResponse.name,
         email: profileResponse.email,
-        promoEmailsSubscribed: profileResponse.promoEmailsSubscribed,
       },
     };
   }

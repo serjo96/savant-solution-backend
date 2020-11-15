@@ -20,8 +20,4 @@ export class Profile {
     },
   )
   email?: string;
-
-  @IsOptional()
-  @IsBoolean()
-  promoEmailsSubscribed?: boolean;
 }

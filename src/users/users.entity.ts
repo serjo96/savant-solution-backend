@@ -47,12 +47,6 @@ export class User extends BaseEntity {
   })
   public roles: RolesEnum;
 
-  @Column({
-    nullable: true,
-    default: false,
-  })
-  public confirmed: boolean;
-
   @OneToOne((type) => Profile, (profile) => profile.user, {
     eager: true,
   })

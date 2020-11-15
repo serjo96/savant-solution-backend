@@ -4,9 +4,6 @@ import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { UsersModule } from '@user/users.module';
-import { EmailModule } from '../email/email.module';
-
-import { EmailService } from '../email/email.service';
 
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
@@ -15,7 +12,6 @@ import { JWTService } from './jwt.service';
 @Module({
   imports: [
     UsersModule,
-    EmailModule,
     PassportModule.register({
       defaultStrategy: 'jwt',
       property: 'user',

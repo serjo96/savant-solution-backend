@@ -5,7 +5,6 @@ import { UserDto } from '@user/dto/user.dto';
 import { UsersService } from '@user/users.service';
 
 import { BadRequestException } from '../common/exceptions/bad-request';
-import { EmailService } from '../email/email.service';
 import { UnauthorizedRequestException } from '../common/exceptions/unauthorized-request';
 
 import { JwtPayload } from './passport/jwt.interface';
@@ -18,7 +17,6 @@ export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JWTService,
-    private readonly emailService: EmailService,
   ) {}
 
   async validateUser(payload: JwtPayload): Promise<UserDto> {
@@ -50,23 +48,4 @@ export class AuthService {
     };
   }
 
-  async createEmailToken(email: string): Promise<boolean> {
-    const emailVerification = await this.emailService.findOne({ email });
-    const verificationExpires =
-      (new Date().getTime() - emailVerification.timestamp.getTime()) / 60000 <
-      15;
-
-    if (emailVerification && verificationExpires) {
-      throw new BadRequestException('Email sent recently');
-    } else {
-      const emailToken = await this.jwtService.createToken();
-
-      await this.emailService.save({
-        email,
-        emailToken, // Generate 7 digits number
-        timestamp: new Date(),
-      });
-    }
-    return true;
-  }
 }
