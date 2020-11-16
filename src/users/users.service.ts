@@ -56,8 +56,6 @@ export class UsersService {
   }
 
   async saveProfile(user: User, data: Partial<Profile>): Promise<any> {
-    const { ...rest } = data;
-
     let profile = await this.getProfile({
       select: [
         'id',
@@ -73,10 +71,7 @@ export class UsersService {
     });
 
     if (!profile) {
-      profile = Profile.create({
-        userId: user.id,
-        ...data,
-      });
+      profile = Profile.create(data);
     } else {
       profile.name = data.name;
     }
