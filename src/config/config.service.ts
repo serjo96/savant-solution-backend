@@ -69,7 +69,7 @@ export class ConfigService {
 
   get jwtConfig(): JWTConfig {
     return {
-      secretCode: this.envConfig.JWT_SECRET_CODE as string,
+      secretCode: this.envConfig.JWT_SECRET_KEY as string,
       expiresIn: this.envConfig.EXPIRESIN as string,
     };
   }
