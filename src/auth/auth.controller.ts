@@ -16,7 +16,6 @@ import { LoginByEmail } from './dto/login.dto';
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
-    private readonly usersService: UsersService,
   ) {}
 
   @Post('/register')
@@ -37,7 +36,7 @@ export class AuthController {
   @UseGuards(AuthGuard('local'))
   @Post('login')
   @HttpCode(200)
-  public async login(@Request() req, @Body() login: LoginByEmail) {
-    return await this.authService.login(req.user);
+  public async login(@Body() login: LoginByEmail) {
+    return await this.authService.login(login);
   }
 }
