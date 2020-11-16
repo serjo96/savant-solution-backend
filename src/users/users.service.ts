@@ -14,24 +14,32 @@ import { User } from './users.entity';
 export class UsersService {
   constructor(
     @InjectRepository(User)
-    private readonly usersRepository: Repository<User>,
+    private readonly userRepository: Repository<User>,
 
     @InjectRepository(Profile)
     private readonly profilesRepository: Repository<Profile>,
   ) {}
 
   findAll(where: any): Promise<User[]> {
-    return this.usersRepository.find(where);
+    return this.userRepository.find(where);
   }
 
   findOne(where: any): Promise<User | undefined> {
-    return this.usersRepository.findOne(where);
+    return this.userRepository.findOne(where);
+  }
+
+  public async findById(id: string): Promise<User | null> {
+    return await this.userRepository.findOneOrFail(id);
+  }
+
+  public async findByEmail(userEmail: string): Promise<User | null> {
+    return await this.userRepository.findOne({ email: userEmail });
   }
 
   async create(userDto: Partial<CreateUserDto>): Promise<UserDto | undefined> {
     const { password, email } = userDto;
 
-    const userInDb = await this.usersRepository.findOne({
+    const userInDb = await this.userRepository.findOne({
       where: { email },
     });
 
@@ -39,11 +47,11 @@ export class UsersService {
       throw new BadRequestException('User already exists');
     }
 
-    const user: User = await this.usersRepository.create({
+    const user: User = await this.userRepository.create({
       password,
       email,
     });
-    await this.usersRepository.save(user);
+    await this.userRepository.save(user);
     return toUserDto(user);
   }
 
