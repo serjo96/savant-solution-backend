@@ -15,10 +15,10 @@ export class JWTService {
     private readonly jwtService: JwtService,
   ) {}
 
-  createUserToken({ email, roles }: UserDto): any {
+  createUserToken({ email, roles, id }: UserDto): any {
     const expiresIn = this.configService.jwtConfig.expiresIn;
 
-    const user: JwtPayload = { email, roles };
+    const user: JwtPayload = { email, roles, id };
     const accessToken = this.jwtService.sign(user);
     return {
       expiresIn,
