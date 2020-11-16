@@ -1,4 +1,4 @@
-import { Column, Entity, Index, JoinColumn, OneToOne } from 'typeorm';
+import { Column, Entity, OneToOne } from 'typeorm';
 
 import { BaseEntity } from '../common/base-entity';
 
@@ -16,14 +16,9 @@ export class Profile extends BaseEntity {
   })
   public photoURL: string;
 
-  @OneToOne((type) => User, (user) => user.profile)
-  @JoinColumn({ name: 'userId' })
+  @OneToOne(
+      type => User,
+      user => user.profile,
+  ) // specify inverse side as a second parameter
   user: User;
-
-  @Column({
-    type: 'uuid',
-    nullable: false,
-  })
-  @Index()
-  userId: string;
 }
