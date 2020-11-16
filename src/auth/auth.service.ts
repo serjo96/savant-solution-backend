@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 
 import { CreateUserDto } from '@user/dto/create-user.dto';
 import { UserDto } from '@user/dto/user.dto';
@@ -15,22 +16,41 @@ import { LoginByEmail } from './dto/login.dto';
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly usersService: UsersService,
+    private readonly userService: UsersService,
     private readonly jwtService: JWTService,
   ) {}
+  private readonly logger = new Logger(AuthService.name);
 
-  async validateUser(payload: JwtPayload): Promise<UserDto> {
-    const user = await this.usersService.findOne(payload);
+  async validateUser(username: string, pass: string) {
+    // find if user exist with this email
+    const user = await this.userService.findByEmail(username);
     if (!user) {
-      throw new UnauthorizedRequestException('Invalid token');
+      return null;
     }
-    return user;
+
+    // find if user password match
+    const match = await this.comparePassword(pass, user.password);
+    if (!match) {
+      return null;
+    }
+
+    // tslint:disable-next-line: no-string-literal
+    const { password, ...result } = user;
+    return result;
+  }
+
+  async comparePassword(attempt: string, dbPassword: string): Promise<boolean> {
+    return await bcrypt.compare(attempt, dbPassword);
+  }
+
+  async validateUserToken(payload: JwtPayload): Promise<UserDto> {
+    return await this.userService.findById(payload.id);
   }
 
   async register(userDto: CreateUserDto): Promise<UserDto> {
     let user;
     try {
-      user = await this.usersService.create(userDto);
+      user = await this.userService.create(userDto);
     } catch (err) {
       throw new Error(err);
     }
@@ -38,8 +58,7 @@ export class AuthService {
   }
 
   async login(loginUserDto: LoginByEmail): Promise<LoginStatus> {
-    const user = await this.usersService.findOne(loginUserDto);
-
+    const user = await this.userService.findByEmail(loginUserDto.email);
     const token = this.jwtService.createUserToken(user);
 
     return {
@@ -47,5 +66,4 @@ export class AuthService {
       ...token,
     };
   }
-
 }
