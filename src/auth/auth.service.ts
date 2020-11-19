@@ -4,9 +4,7 @@ import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from '@user/dto/create-user.dto';
 import { UserDto } from '@user/dto/user.dto';
 import { UsersService } from '@user/users.service';
-
-import { BadRequestException } from '../common/exceptions/bad-request';
-import { UnauthorizedRequestException } from '../common/exceptions/unauthorized-request';
+import { UserResponseDto } from './dto/user.dto';
 
 import { JwtPayload } from './passport/jwt.interface';
 import { JWTService } from './jwt.service';
@@ -62,8 +60,8 @@ export class AuthService {
     const token = this.jwtService.createUserToken(user);
 
     return {
-      email: user.email,
-      ...token,
+      user: new UserResponseDto(user),
+      token,
     };
   }
 }
