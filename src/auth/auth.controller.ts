@@ -7,11 +7,13 @@ import { UsersService } from '@user/users.service';
 
 import { BadRequestException } from '../common/exceptions/bad-request';
 import { Roles } from '../common/decorators/roles';
+import { RolesGuard } from '../common/guards/roles.guard';
 
 import { AuthService } from './auth.service';
 import { LoginStatus } from './interfaces/login-status.interface';
 import { LoginByEmail } from './dto/login.dto';
 
+@UseGuards(RolesGuard)
 @Controller('/auth')
 export class AuthController {
   constructor(
