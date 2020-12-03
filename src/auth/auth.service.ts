@@ -4,12 +4,12 @@ import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from '@user/dto/create-user.dto';
 import { UserDto } from '@user/dto/user.dto';
 import { UsersService } from '@user/users.service';
-import { UserResponseDto } from './dto/user.dto';
 
 import { JwtPayload } from './passport/jwt.interface';
 import { JWTService } from './jwt.service';
 import { LoginStatus } from './interfaces/login-status.interface';
 import { LoginByEmail } from './dto/login.dto';
+import { UserResponseDto } from './dto/user.dto';
 
 @Injectable()
 export class AuthService {

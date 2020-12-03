@@ -8,7 +8,7 @@ export class ProfileQuery {
 export class Profile {
   @IsOptional()
   @IsString({
-    message: 'Необходимо указать имя',
+    message: 'Name is required',
   })
   name?: string;
 
@@ -16,7 +16,7 @@ export class Profile {
   @IsEmail(
     {},
     {
-      message: 'Неправильный формат электронной почты',
+      message: 'Invalid email format',
     },
   )
   email?: string;

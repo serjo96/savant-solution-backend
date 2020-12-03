@@ -13,7 +13,7 @@ export class CreateUserDto {
   @IsEmail(
     {},
     {
-      message: 'Неправильный формат электронной почты',
+      message: 'Invalid email format',
     },
   )
   email: string;
