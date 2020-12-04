@@ -6,11 +6,22 @@ import { map } from 'rxjs/operators';
 type ClassType<T> = new() => T;
 
 @Injectable()
-export class TransformInterceptor<T> implements NestInterceptor<Partial<T>, T> {
+export class TransformInterceptor<T>  implements NestInterceptor {
 
   constructor(private readonly classType: ClassType<T>) {}
 
-  intercept(context: ExecutionContext, next: CallHandler<T> ): Observable<T> {
-    return next.handle().pipe(map(data => plainToClass(this.classType, data)));
+  intercept(context: ExecutionContext, next: CallHandler<T>): Observable<{ data: unknown }> {
+    return next.handle().pipe(map((data) => {
+      let response = null;
+      if (Array.isArray(data)) {
+        response = data.map(item => plainToClass(this.classType, item))
+      } else {
+        response = plainToClass(this.classType, data)
+      }
+
+      return {
+        data: response
+      };
+    }));
   }
 }
