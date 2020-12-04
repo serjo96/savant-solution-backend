@@ -1,6 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { res } from 'pino-std-serializers';
 import { Repository } from 'typeorm';
 
 import { ItemDto } from './dto/item.dto';
@@ -18,7 +17,11 @@ export class ItemsService {
   }
 
   async findOne(where: any): Promise<Items> {
-    return await this.productsRepository.findOne(where)
+    const result = await this.productsRepository.findOne(where);
+    if (!result) {
+      throw new NotFoundException();
+    }
+    return result;
   }
 
   async getAll(where?: any): Promise<Items[]> {
@@ -33,6 +36,10 @@ export class ItemsService {
   }
 
   async delete(where: any): Promise<any> {
+    const result = await this.productsRepository.findOne(where);
+    if (!result) {
+      throw new NotFoundException();
+    }
     return await this.productsRepository.softDelete(where);
   }
 
@@ -43,6 +50,11 @@ export class ItemsService {
     }
     return await this.productsRepository.save(entity);
   }
+  async update(id: string, item: ItemDto): Promise<Items> {
+    const toUpdate = await this.productsRepository.findOne(id);
+    const updated = Object.assign(toUpdate, item);
+    return  await this.productsRepository.save(updated);
+  };
 
   async updateRaw({ where, data }: { where: any; data: any }): Promise<any> {
     return await this.productsRepository.update(where, data);

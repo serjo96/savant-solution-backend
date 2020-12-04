@@ -1,5 +1,6 @@
-import { Body, Controller, Delete, Get, Param, Post, Query, UseGuards, UseInterceptors, UsePipes } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards, UseInterceptors, UsePipes } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { plainToClass } from 'class-transformer';
 
 import { BadRequestException } from '../common/exceptions/bad-request';
 import { Roles } from '../common/decorators/roles';
@@ -20,39 +21,33 @@ export class ItemsController {
   @Post('/create')
   @UsePipes(new ValidationPipe())
   @UseInterceptors(new TransformInterceptor(ResponseItemsDto))
-  async createItem(@Body() item: ItemDto): Promise<{ data: ResponseItemsDto} > {
-    const result = await this.itemsService.save(item);
-    return {
-      data: result
-    };
+  async createItem(@Body() item: ItemDto): Promise< ResponseItemsDto > {
+    return await this.itemsService.save(item);
   }
 
   @Get(':id')
   @UseInterceptors(new TransformInterceptor(ResponseItemsDto))
-  async getItem(@Param() id: string): Promise<{data: Items}>{
-    const result = await this.itemsService.findOne(id);
-    return {
-      data: result
-    }
+  async getItem(@Param() id: string): Promise< ResponseItemsDto >{
+    return await this.itemsService.findOne(id);
   }
 
   @Get()
   @UseInterceptors(new TransformInterceptor(ResponseItemsDto))
-  async finAll(@Query() query: any): Promise<{ data: Items[]}> {
-    const result = await this.itemsService.getAll(query);
+  async finAll(@Query() query: any): Promise< ResponseItemsDto[] > {
+   return  this.itemsService.getAll(query);
+  }
 
-    return {
-      data: result
-    }
+  @Put(':id')
+  @UsePipes(new ValidationPipe())
+  @UseInterceptors(new TransformInterceptor(ResponseItemsDto))
+  async updateItem(@Param() id: string, @Body() item: ItemDto): Promise< ResponseItemsDto >{
+    return this.itemsService.update(id, item);
   }
 
   @Delete(':id')
   @UseInterceptors(new TransformInterceptor(ResponseItemsDto))
-  async removeItem(@Param() id: string): Promise<{data: Items}>{
-    const result = await this.itemsService.delete(id);
-    return {
-      data: result
-    }
+  async removeItem(@Param() id: string): Promise< ResponseItemsDto >{
+    return await this.itemsService.delete(id);
   }
 
 }
