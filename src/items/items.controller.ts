@@ -6,6 +6,7 @@ import { BadRequestException } from '../common/exceptions/bad-request';
 import { Roles } from '../common/decorators/roles';
 import { TransformInterceptor } from '../common/interceptors/TransformInterceptor';
 import { ValidationPipe } from '../common/Pipes/validation.pipe';
+import { EditItemDto } from './dto/editItem.dto';
 
 import { ItemDto } from './dto/item.dto';
 import { Items } from './item.entity';
@@ -40,7 +41,7 @@ export class ItemsController {
   @Put(':id')
   @UsePipes(new ValidationPipe())
   @UseInterceptors(new TransformInterceptor(ResponseItemsDto))
-  async updateItem(@Param() id: string, @Body() item: ItemDto): Promise< ResponseItemsDto >{
+  async updateItem(@Param() id: string, @Body() item: EditItemDto): Promise< ResponseItemsDto >{
     return this.itemsService.update(id, item);
   }
 
