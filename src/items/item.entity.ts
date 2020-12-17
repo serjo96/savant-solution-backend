@@ -54,6 +54,12 @@ export class Items extends BaseEntity {
   altSupplier?: string;
 
   @Column({
+    type: 'varchar',
+    nullable: true,
+  })
+  note?: string;
+
+  @Column({
     type: 'enum',
     enum: StatusEnum,
     default: StatusEnum.ACTIVE,

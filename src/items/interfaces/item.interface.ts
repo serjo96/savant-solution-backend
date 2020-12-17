@@ -7,4 +7,5 @@ export default interface ItemInterface {
   threshold: number;
   supplier: string;
   altSupplier: string;
+  note: string;
 }

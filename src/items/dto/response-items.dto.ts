@@ -29,6 +29,11 @@ export class ResponseItemsDto {
   @IsOptional()
   altSupplier?: string;
 
+
+  @IsString()
+  @IsOptional()
+  note?: string;
+
   @IsNotEmpty()
   @Transform(status => getEnumKeyByEnumValue(StatusEnum, status))
   @IsEnum(StatusEnum)
