@@ -4,6 +4,7 @@ import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from '@user/dto/create-user.dto';
 import { UserDto } from '@user/dto/user.dto';
 import { UsersService } from '@user/users.service';
+import { BadRequestException } from '../common/exceptions/bad-request';
 
 import { JwtPayload } from './passport/jwt.interface';
 import { JWTService } from './jwt.service';
@@ -45,18 +46,26 @@ export class AuthService {
     return await this.userService.findById(payload.id);
   }
 
-  async register(userDto: CreateUserDto): Promise<UserDto> {
-    let user;
+  async register(userDto: CreateUserDto): Promise<LoginStatus> {
+    let user = null;
+    let token = null;
     try {
       user = await this.userService.create(userDto);
+      token = this.jwtService.createUserToken(user);
     } catch (err) {
       throw new Error(err);
     }
-    return user;
+    return {
+      user: new UserResponseDto(user),
+      token,
+    };
   }
 
   async login(loginUserDto: LoginByEmail): Promise<LoginStatus> {
     const user = await this.userService.findByEmail(loginUserDto.email);
+    if(!user) {
+      throw new BadRequestException({message: `User doesn't exist`});
+    }
     const token = this.jwtService.createUserToken(user);
 
     return {
