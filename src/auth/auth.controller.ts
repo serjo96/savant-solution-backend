@@ -1,4 +1,5 @@
-import { Body, Controller, HttpCode, Post, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, HttpCode, Post, Req, UseGuards } from '@nestjs/common';
+import { Request } from 'express';
 import { AuthGuard } from '@nestjs/passport';
 
 import { CreateUserDto } from '@user/dto/create-user.dto';
@@ -7,13 +8,13 @@ import { UsersService } from '@user/users.service';
 
 import { BadRequestException } from '../common/exceptions/bad-request';
 import { Roles } from '../common/decorators/roles';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 
 import { AuthService } from './auth.service';
 import { LoginStatus } from './interfaces/login-status.interface';
 import { LoginByEmail } from './dto/login.dto';
 
-@UseGuards(RolesGuard)
 @Controller('/auth')
 export class AuthController {
   constructor(
@@ -21,15 +22,15 @@ export class AuthController {
   ) {}
 
   @Post('/register')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @HttpCode(200)
   public async register(
     @Body() createUserDto: CreateUserDto,
-  ): Promise<UserDto> {
+    @Req() req: Request
+  ): Promise<LoginStatus> {
     try {
-      const newUser: UserDto = await this.authService.register(createUserDto);
-
-      return newUser;
+      return await this.authService.register(createUserDto);
     } catch (error) {
       throw new BadRequestException(error);
     }
@@ -39,6 +40,11 @@ export class AuthController {
   @Post('login')
   @HttpCode(200)
   public async login(@Body() login: LoginByEmail) {
-    return await this.authService.login(login);
+    try {
+      return await this.authService.login(login);
+    } catch (error) {
+      throw new BadRequestException(error);
+    }
+
   }
 }
