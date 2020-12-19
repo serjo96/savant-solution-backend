@@ -1,29 +1,42 @@
 import {
   Body,
-  Controller,
+  Controller, Delete,
   Get,
-  HttpCode,
+  HttpCode, Param,
   Put,
   Query,
   Req,
-  UseGuards,
+  UseGuards
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
 
+import { User } from '@user/users.entity';
+
 import { BadRequestException } from '../common/exceptions/bad-request';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { Roles } from '../common/decorators/roles';
+import { RolesGuard } from '../common/guards/roles.guard';
 
 import { Profile, ProfileQuery } from './dto/profile.dto';
 import { UsersService } from './users.service';
 
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('/users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @Get()
+  @Roles('admin')
+  async getAllUsers(): Promise<{ data: User[] }> {
+    const data = await this.usersService.findAll({});
+    return {
+      data
+    };
+  }
+
   @Get('/current')
   @Roles('user', 'admin')
-  @UseGuards(AuthGuard('jwt'))
   async profile(
     @Query() query: ProfileQuery,
     @Req() req: Request,
@@ -43,7 +56,6 @@ export class UsersController {
   @Put('/current')
   @HttpCode(200)
   @Roles('user', 'admin')
-  @UseGuards(AuthGuard('jwt'))
   async updateProfile(
     @Body() body: Profile,
     @Req() req: Request,
@@ -69,5 +81,17 @@ export class UsersController {
         email: profileResponse.email,
       },
     };
+  }
+
+  @Delete(':id')
+  @Roles('admin')
+  @UseGuards(AuthGuard('jwt'))
+    async removeUser(@Param() {id}: {id: string}, @Req() req: Request) {
+    const { user } = req;
+    if (user.id === id) {
+      throw new BadRequestException({
+        message: 'You can delete yourself'
+      });
+    }
   }
 }
