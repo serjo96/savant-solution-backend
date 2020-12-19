@@ -28,6 +28,10 @@ export class EditItemDto {
   @IsOptional()
   altSupplier?: string;
 
+  @IsString()
+  @IsOptional()
+  note?: string;
+
   @IsOptional()
   @Transform(status => StatusEnum[status.toUpperCase()])
   @IsEnum(StatusEnum)
