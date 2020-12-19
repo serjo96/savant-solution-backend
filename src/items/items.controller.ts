@@ -28,7 +28,7 @@ export class ItemsController {
 
   @Get(':id')
   @UseInterceptors(new TransformInterceptor(ResponseItemsDto))
-  async getItem(@Param() id: string): Promise< ResponseItemsDto >{
+  async getItem(@Param() id: {id: string}): Promise< ResponseItemsDto >{
     return await this.itemsService.findOne(id);
   }
 
@@ -41,13 +41,13 @@ export class ItemsController {
   @Put(':id')
   @UsePipes(new ValidationPipe())
   @UseInterceptors(new TransformInterceptor(ResponseItemsDto))
-  async updateItem(@Param() id: string, @Body() item: EditItemDto): Promise< ResponseItemsDto >{
+  async updateItem(@Param() id: {id: string}, @Body() item: EditItemDto): Promise< ResponseItemsDto >{
     return this.itemsService.update(id, item);
   }
 
   @Delete(':id')
   @UseInterceptors(new TransformInterceptor(ResponseItemsDto))
-  async removeItem(@Param() id: string): Promise< ResponseItemsDto >{
+  async removeItem(@Param() id: {id: string}): Promise< ResponseItemsDto >{
     return await this.itemsService.delete(id);
   }
 
