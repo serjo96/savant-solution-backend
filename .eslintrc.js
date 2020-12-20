@@ -47,6 +47,8 @@ module.exports = {
     ],
     'max-len': ['error', 150],
     'arrow-parens': 0,
+    "object-curly-spacing": ["error", "always"],
+    'func-call-spacing': ["error", "never"],
     'object-literal-sort-keys': 0,
   },
   overrides: [

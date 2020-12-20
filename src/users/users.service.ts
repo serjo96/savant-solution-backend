@@ -28,7 +28,10 @@ export class UsersService {
     return this.userRepository.findOne(where);
   }
 
-  public async findById(id: string, opts?:FindOneOptions<User> ): Promise<User | null> {
+  public async findById(
+    id: string,
+    opts?: FindOneOptions<User>,
+  ): Promise<User | null> {
     return await this.userRepository.findOneOrFail(id, opts);
   }
 
@@ -36,7 +39,9 @@ export class UsersService {
     return await this.userRepository.findOne({ email: userEmail });
   }
 
-  async create(userDto: Partial<CreateUserDto>): Promise<UserResponseDto | undefined> {
+  async create(
+    userDto: Partial<CreateUserDto>,
+  ): Promise<UserResponseDto | undefined> {
     const { password, email } = userDto;
 
     const userInDb = await this.userRepository.findOne({
@@ -57,14 +62,7 @@ export class UsersService {
 
   async saveProfile(user: User, data: Partial<Profile>): Promise<any> {
     let profile = await this.getProfile({
-      select: [
-        'id',
-        'createdAt',
-        'deletedAt',
-        'name',
-        'email',
-        'userId',
-      ],
+      select: ['id', 'createdAt', 'deletedAt', 'name', 'email', 'userId'],
       where: {
         userId: user.id,
       },
@@ -82,7 +80,7 @@ export class UsersService {
   async editUser(id: string, data: User) {
     const toUpdate = await this.userRepository.findOne(id);
     const updated = Object.assign(toUpdate, data);
-    return  await this.userRepository.save(updated);
+    return await this.userRepository.save(updated);
   }
 
   getProfile(where: any): Promise<Profile | undefined> {
@@ -90,11 +88,10 @@ export class UsersService {
   }
 
   async removeUser(id) {
-    return await this.userRepository.softDelete({id});
+    return await this.userRepository.softDelete({ id });
   }
 
   async removeProfile(id) {
-    return await this.userRepository.softDelete({id});
+    return await this.userRepository.softDelete({ id });
   }
-
 }

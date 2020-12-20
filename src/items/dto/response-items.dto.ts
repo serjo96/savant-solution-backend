@@ -1,5 +1,11 @@
 import { Transform } from 'class-transformer';
-import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 import getEnumKeyByEnumValue from '../../utils/enum-format';
 import { StatusEnum } from '../item.entity';
@@ -29,14 +35,12 @@ export class ResponseItemsDto {
   @IsOptional()
   altSupplier?: string;
 
-
   @IsString()
   @IsOptional()
   note?: string;
 
   @IsNotEmpty()
-  @Transform(status => getEnumKeyByEnumValue(StatusEnum, status))
+  @Transform((status) => getEnumKeyByEnumValue(StatusEnum, status))
   @IsEnum(StatusEnum)
   status: StatusEnum;
-
 }

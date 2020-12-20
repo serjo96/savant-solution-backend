@@ -5,7 +5,7 @@ export class UserClassResponseDto {
     this.id = object.id;
     this.email = object.email;
     this.roles = RolesEnum[object.roles];
-    if ( object.profile ) {
+    if (object.profile) {
       this.name = object.profile.name;
       this.photoURL = object.profile.photoURL;
     }

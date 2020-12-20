@@ -1,9 +1,4 @@
-import {
-  BeforeInsert,
-  Column,
-  Entity,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import { BeforeInsert, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 import { BaseEntity } from '../common/base-entity';
 
@@ -65,5 +60,4 @@ export class Items extends BaseEntity {
     default: StatusEnum.ACTIVE,
   })
   public status: StatusEnum;
-
 }

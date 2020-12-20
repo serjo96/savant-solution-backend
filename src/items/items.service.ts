@@ -55,14 +55,13 @@ export class ItemsService {
       throw new Error(e);
     }
   }
-  async update(id: {id: string}, item: EditItemDto): Promise<Items> {
+  async update(id: { id: string }, item: EditItemDto): Promise<Items> {
     const toUpdate = await this.productsRepository.findOne(id);
     const updated = Object.assign(toUpdate, item);
-    return  await this.productsRepository.save(updated);
-  };
+    return await this.productsRepository.save(updated);
+  }
 
   async updateRaw({ where, data }: { where: any; data: any }): Promise<any> {
     return await this.productsRepository.update(where, data);
   }
-
 }

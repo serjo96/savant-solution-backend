@@ -16,9 +16,6 @@ export class Profile extends BaseEntity {
   })
   public photoURL: string;
 
-  @OneToOne(
-      type => User,
-      user => user.profile,
-  ) // specify inverse side as a second parameter
+  @OneToOne((type) => User, (user) => user.profile) // specify inverse side as a second parameter
   user: User;
 }

@@ -1,5 +1,11 @@
 import { Transform } from 'class-transformer';
-import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 import { StatusEnum } from '../item.entity';
 
@@ -33,8 +39,7 @@ export class EditItemDto {
   note?: string;
 
   @IsOptional()
-  @Transform(status => StatusEnum[status.toUpperCase()])
+  @Transform((status) => StatusEnum[status.toUpperCase()])
   @IsEnum(StatusEnum)
   status: StatusEnum;
-
 }

@@ -63,8 +63,8 @@ export class AuthService {
 
   async login(loginUserDto: LoginByEmail): Promise<UserWithToken> {
     const user = await this.userService.findByEmail(loginUserDto.email);
-    if(!user) {
-      throw new BadRequestException({message: `User doesn't exist`});
+    if (!user) {
+      throw new BadRequestException({ message: `User doesn't exist` });
     }
     const token = this.jwtService.createUserToken(user);
 

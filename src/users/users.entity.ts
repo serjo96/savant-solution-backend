@@ -2,7 +2,8 @@ import * as bcrypt from 'bcrypt';
 import {
   BeforeInsert,
   Column,
-  Entity, JoinColumn,
+  Entity,
+  JoinColumn,
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -47,10 +48,7 @@ export class User extends BaseEntity {
   })
   public roles: RolesEnum;
 
-  @OneToOne(
-      type => Profile,
-      profile => profile.user,
-  ) // specify inverse side as a second parameter
+  @OneToOne((type) => Profile, (profile) => profile.user) // specify inverse side as a second parameter
   @JoinColumn()
   profile: Profile;
 }

@@ -1,12 +1,15 @@
 import {
   Body,
-  Controller, Delete,
+  Controller,
+  Delete,
   Get,
-  HttpCode, Param,
+  HttpCode,
+  Param,
   Put,
   Query,
   Req,
-  UseGuards, UseInterceptors
+  UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { UserResponseDto } from '@user/dto/user-response.dto';
@@ -31,8 +34,8 @@ export class UsersController {
   @Get()
   @Roles('admin')
   @UseInterceptors(new TransformInterceptor(UserResponseDto))
-  async getAllUsers(): Promise< User[] > {
-    return  await this.usersService.findAll({});
+  async getAllUsers(): Promise<User[]> {
+    return await this.usersService.findAll({});
   }
 
   @Get('/current')
@@ -86,38 +89,44 @@ export class UsersController {
   @Delete(':id')
   @Roles('admin')
   @UseGuards(AuthGuard('jwt'))
-    async removeUser(@Param() {id}: {id: string}, @Req() req: Request): Promise<{ data: User[] }> {
+  async removeUser(
+    @Param() { id }: { id: string },
+    @Req() req: Request,
+  ): Promise<{ data: User[] }> {
     const { user } = req;
     let deletedUser;
     if (user.id === id) {
       throw new BadRequestException({
-        message: 'You can delete yourself'
+        message: 'You can delete yourself',
       });
     }
     try {
-      const userProfile = await this.usersService.getProfile({id});
+      const userProfile = await this.usersService.getProfile({ id });
       if (userProfile) {
         await this.usersService.removeProfile(id);
       }
       await this.usersService.removeUser(id);
-      deletedUser = await this.usersService.findById(id, {withDeleted: true});
+      deletedUser = await this.usersService.findById(id, { withDeleted: true });
     } catch (error) {
       throw new BadRequestException(error);
     }
     return {
-      data: deletedUser
-    }
+      data: deletedUser,
+    };
   }
 
   @Put(':id')
   @Roles('admin')
   @UseGuards(AuthGuard('jwt'))
-  async changeUser(@Param() {id}: {id: string}, @Body() body: User): Promise<{ data: User }> {
+  async changeUser(
+    @Param() { id }: { id: string },
+    @Body() body: User,
+  ): Promise<{ data: User }> {
     let editedUser;
     const updatingUser = await this.usersService.findById(id);
-    if ( !updatingUser ) {
+    if (!updatingUser) {
       throw new BadRequestException({
-        message: `User doesn't exist`
+        message: `User doesn't exist`,
       });
     }
     try {
@@ -127,8 +136,7 @@ export class UsersController {
     }
 
     return {
-      data: editedUser
-    }
+      data: editedUser,
+    };
   }
-
 }

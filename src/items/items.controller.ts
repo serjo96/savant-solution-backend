@@ -1,4 +1,16 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards, UseInterceptors, UsePipes } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+  UseGuards,
+  UseInterceptors,
+  UsePipes,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { plainToClass } from 'class-transformer';
 
@@ -22,33 +34,35 @@ export class ItemsController {
   @Post('/create')
   @UsePipes(new ValidationPipe())
   @UseInterceptors(new TransformInterceptor(ResponseItemsDto))
-  async createItem(@Body() item: ItemDto): Promise< ResponseItemsDto > {
+  async createItem(@Body() item: ItemDto): Promise<ResponseItemsDto> {
     return await this.itemsService.save(item);
   }
 
   @Get(':id')
   @UseInterceptors(new TransformInterceptor(ResponseItemsDto))
-  async getItem(@Param() id: {id: string}): Promise< ResponseItemsDto >{
+  async getItem(@Param() id: { id: string }): Promise<ResponseItemsDto> {
     return await this.itemsService.findOne(id);
   }
 
   @Get()
   @UseInterceptors(new TransformInterceptor(ResponseItemsDto))
-  async finAll(@Query() query: any): Promise< ResponseItemsDto[] > {
-   return  this.itemsService.getAll(query);
+  async finAll(@Query() query: any): Promise<ResponseItemsDto[]> {
+    return this.itemsService.getAll(query);
   }
 
   @Put(':id')
   @UsePipes(new ValidationPipe())
   @UseInterceptors(new TransformInterceptor(ResponseItemsDto))
-  async updateItem(@Param() id: {id: string}, @Body() item: EditItemDto): Promise< ResponseItemsDto >{
+  async updateItem(
+    @Param() id: { id: string },
+    @Body() item: EditItemDto,
+  ): Promise<ResponseItemsDto> {
     return this.itemsService.update(id, item);
   }
 
   @Delete(':id')
   @UseInterceptors(new TransformInterceptor(ResponseItemsDto))
-  async removeItem(@Param() id: {id: string}): Promise< ResponseItemsDto >{
+  async removeItem(@Param() id: { id: string }): Promise<ResponseItemsDto> {
     return await this.itemsService.delete(id);
   }
-
 }
