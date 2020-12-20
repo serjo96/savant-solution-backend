@@ -1,4 +1,11 @@
-import { Body, Controller, HttpCode, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
 
@@ -15,9 +22,7 @@ import { UserWithToken } from './interfaces/user-with-token.interface';
 
 @Controller('/auth')
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Post('/register')
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -25,7 +30,6 @@ export class AuthController {
   @HttpCode(200)
   public async register(
     @Body() createUserDto: CreateUserDto,
-    @Req() req: Request
   ): Promise<UserWithToken> {
     try {
       return await this.authService.register(createUserDto);
@@ -43,6 +47,5 @@ export class AuthController {
     } catch (error) {
       throw new BadRequestException(error);
     }
-
   }
 }
