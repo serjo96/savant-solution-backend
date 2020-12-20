@@ -21,30 +21,33 @@ module.exports = {
     '@typescript-eslint/interface-name-prefix': 'off',
     '@typescript-eslint/explicit-function-return-type': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
-    "sort-imports": [
-      true,
+    '@typescript-eslint/member-ordering': 'off',
+    '@typescript/explicit-member-accessibility': 'off',
+    '@typescript-eslint/explicit-module-boundary-types': 'off',
+    "@typescript-eslint/naming-convention": [
+      "error",
       {
-        "import-sources-order": "case-insensitive",
-        "named-imports-order": "case-insensitive",
-        "grouped-imports": true,
-        "module-source-path": "basename",
-        "groups": [
-          { "match": "^@user", "order": 30 },
-          { "name": "parent_dir", "match": "^[.][.]", "order": 40 },
-          { "name": "current dir", "match": "^[.\/].*", "order": 50 },
-          {
-            "name": "node_modules",
-            "match": ".*|^@(nestjs)",
-            "order": 1
-          }
-        ]
+        "selector": "interface",
+        "format": ["PascalCase"],
+        "custom": {
+          "regex": "^I[A-Z]",
+          "match": true
+        }
       }
     ],
-    "max-line-length": [true, 150],
-    "member-ordering": [false],
-    "interface-name": [false],
-    "arrow-parens": false,
-    "object-literal-sort-keys": false
+    'sort-imports': [
+      'error',
+      {
+        ignoreCase: false,
+        ignoreDeclarationSort: true,
+        ignoreMemberSort: false,
+        memberSyntaxSortOrder: ['none', 'all', 'multiple', 'single'],
+        allowSeparatedGroups: true,
+      },
+    ],
+    'max-len': ['error', 150],
+    'arrow-parens': 0,
+    'object-literal-sort-keys': 0,
   },
   overrides: [
     {
