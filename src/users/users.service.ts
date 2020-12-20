@@ -7,7 +7,7 @@ import { BadRequestException } from '../common/exceptions/bad-request';
 
 import { CreateUserDto } from './dto/create-user.dto';
 import { Profile } from './profiles.entity';
-import { UserDto } from './dto/user.dto';
+import { UserResponseDto } from './dto/user-response.dto';
 import { User } from './users.entity';
 
 @Injectable()
@@ -36,7 +36,7 @@ export class UsersService {
     return await this.userRepository.findOne({ email: userEmail });
   }
 
-  async create(userDto: Partial<CreateUserDto>): Promise<UserDto | undefined> {
+  async create(userDto: Partial<CreateUserDto>): Promise<UserResponseDto | undefined> {
     const { password, email } = userDto;
 
     const userInDb = await this.userRepository.findOne({
@@ -77,6 +77,12 @@ export class UsersService {
     }
 
     return this.profilesRepository.save(profile);
+  }
+
+  async editUser(id: string, data: User) {
+    const toUpdate = await this.userRepository.findOne(id);
+    const updated = Object.assign(toUpdate, data);
+    return  await this.userRepository.save(updated);
   }
 
   getProfile(where: any): Promise<Profile | undefined> {

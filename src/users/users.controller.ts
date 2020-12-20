@@ -6,9 +6,10 @@ import {
   Put,
   Query,
   Req,
-  UseGuards
+  UseGuards, UseInterceptors
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { UserResponseDto } from '@user/dto/user-response.dto';
 import { Request } from 'express';
 
 import { User } from '@user/users.entity';
@@ -17,6 +18,7 @@ import { BadRequestException } from '../common/exceptions/bad-request';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { Roles } from '../common/decorators/roles';
 import { RolesGuard } from '../common/guards/roles.guard';
+import { TransformInterceptor } from '../common/interceptors/TransformInterceptor';
 
 import { Profile, ProfileQuery } from './dto/profile.dto';
 import { UsersService } from './users.service';
@@ -28,11 +30,9 @@ export class UsersController {
 
   @Get()
   @Roles('admin')
-  async getAllUsers(): Promise<{ data: User[] }> {
-    const data = await this.usersService.findAll({});
-    return {
-      data
-    };
+  @UseInterceptors(new TransformInterceptor(UserResponseDto))
+  async getAllUsers(): Promise< User[] > {
+    return  await this.usersService.findAll({});
   }
 
   @Get('/current')
@@ -108,4 +108,27 @@ export class UsersController {
       data: deletedUser
     }
   }
+
+  @Put(':id')
+  @Roles('admin')
+  @UseGuards(AuthGuard('jwt'))
+  async changeUser(@Param() {id}: {id: string}, @Body() body: User): Promise<{ data: User }> {
+    let editedUser;
+    const updatingUser = await this.usersService.findById(id);
+    if ( !updatingUser ) {
+      throw new BadRequestException({
+        message: `User doesn't exist`
+      });
+    }
+    try {
+      editedUser = await this.usersService.editUser(id, body);
+    } catch (error) {
+      throw new BadRequestException(error);
+    }
+
+    return {
+      data: editedUser
+    }
+  }
+
 }

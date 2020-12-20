@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 
-import { UserDto } from '@user/dto/user.dto';
+import { UserResponseDto } from '@user/dto/user-response.dto';
 
 import { AuthService } from '../auth.service';
 import { ConfigService } from '../../config/config.service';
@@ -22,7 +22,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: JwtPayload): Promise<UserDto> {
+  async validate(payload: JwtPayload): Promise<UserResponseDto> {
     const user = await this.authService.validateUserToken(payload);
     if (!user) {
       throw new UnauthorizedException('Invalid token');

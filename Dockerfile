@@ -30,5 +30,6 @@ WORKDIR /opt/app
 
 COPY --from=builder /opt/app .
 COPY docker-entrypoint.sh .
-
-CMD ./docker-entrypoint.sh
+CMD ["sh", "/docker-entrypoint.sh"]
+CMD [ "npm", "run", "start:prod" ]
+#ENTRYPOINT ["sh", "/docker-entrypoint.sh"]

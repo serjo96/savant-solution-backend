@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
+import { UserResponseDto } from '@user/dto/user-response.dto';
 
-import { UserDto } from '@user/dto/user.dto';
 
 import { ConfigService } from '../config/config.service';
 
@@ -15,7 +15,7 @@ export class JWTService {
     private readonly jwtService: JwtService,
   ) {}
 
-  createUserToken({ email, roles, id }: UserDto): any {
+  createUserToken({ email, roles, id }: UserResponseDto): any {
     const expiresIn = this.configService.jwtConfig.expiresIn;
 
     const user: JwtPayload = { email, roles, id };
