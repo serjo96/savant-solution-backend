@@ -86,12 +86,26 @@ export class UsersController {
   @Delete(':id')
   @Roles('admin')
   @UseGuards(AuthGuard('jwt'))
-    async removeUser(@Param() {id}: {id: string}, @Req() req: Request) {
+    async removeUser(@Param() {id}: {id: string}, @Req() req: Request): Promise<{ data: User[] }> {
     const { user } = req;
+    let deletedUser;
     if (user.id === id) {
       throw new BadRequestException({
         message: 'You can delete yourself'
       });
+    }
+    try {
+      const userProfile = await this.usersService.getProfile({id});
+      if (userProfile) {
+        await this.usersService.removeProfile(id);
+      }
+      await this.usersService.removeUser(id);
+      deletedUser = await this.usersService.findById(id, {withDeleted: true});
+    } catch (error) {
+      throw new BadRequestException(error);
+    }
+    return {
+      data: deletedUser
     }
   }
 }

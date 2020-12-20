@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { toUserDto } from '@shared/mapper.service';
-import { Repository } from 'typeorm';
+import { FindOneOptions, Repository } from 'typeorm';
 
 import { BadRequestException } from '../common/exceptions/bad-request';
 
@@ -28,8 +28,8 @@ export class UsersService {
     return this.userRepository.findOne(where);
   }
 
-  public async findById(id: string): Promise<User | null> {
-    return await this.userRepository.findOneOrFail(id);
+  public async findById(id: string, opts?:FindOneOptions<User> ): Promise<User | null> {
+    return await this.userRepository.findOneOrFail(id, opts);
   }
 
   public async findByEmail(userEmail: string): Promise<User | null> {
@@ -82,4 +82,13 @@ export class UsersService {
   getProfile(where: any): Promise<Profile | undefined> {
     return this.profilesRepository.findOne(where);
   }
+
+  async removeUser(id) {
+    return await this.userRepository.softDelete({id});
+  }
+
+  async removeProfile(id) {
+    return await this.userRepository.softDelete({id});
+  }
+
 }
