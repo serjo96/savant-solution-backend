@@ -1,6 +1,6 @@
 import { RolesEnum, User } from '@user/users.entity';
 
-export class UserResponseDto {
+export class UserClassResponseDto {
   constructor(object: User) {
     this.id = object.id;
     this.email = object.email;
