@@ -37,19 +37,19 @@ export class UsersController {
 
   @Get('/current')
   @Roles('user', 'admin')
+  @UseInterceptors(new TransformInterceptor(UserResponseDto))
   async profile(
     @Req() req: Request,
   ): Promise<any> {
     const { user } = req;
 
-    return {
-      data: user,
-    };
+    return user;
   }
 
   @Delete(':id')
   @Roles('admin')
   @UseGuards(AuthGuard('jwt'))
+  @UseInterceptors(new TransformInterceptor(UserResponseDto))
   async removeUser(
     @Param() { id }: { id: string },
     @Req() req: Request,
@@ -67,14 +67,13 @@ export class UsersController {
     } catch (error) {
       throw new BadRequestException(error);
     }
-    return {
-      data: deletedUser,
-    };
+    return deletedUser;
   }
 
   @Put(':id')
   @Roles('admin')
   @UseGuards(AuthGuard('jwt'))
+  @UseInterceptors(new TransformInterceptor(UserResponseDto))
   async changeUser(
     @Param() { id }: { id: string },
     @Body() body: User,
@@ -92,8 +91,6 @@ export class UsersController {
       throw new BadRequestException(error);
     }
 
-    return {
-      data: editedUser,
-    };
+    return editedUser;
   }
 }
