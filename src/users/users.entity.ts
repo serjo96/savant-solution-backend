@@ -1,16 +1,14 @@
 import * as bcrypt from 'bcrypt';
 import {
-  BeforeInsert,
+  BeforeInsert, BeforeUpdate,
   Column,
   Entity,
   JoinColumn,
   OneToOne,
-  PrimaryGeneratedColumn,
+  PrimaryGeneratedColumn
 } from 'typeorm';
 
 import { BaseEntity } from '../common/base-entity';
-
-import { Profile } from './profiles.entity';
 
 export enum RolesEnum {
   GUEST = 0,
@@ -36,7 +34,14 @@ export class User extends BaseEntity {
   })
   email: string;
 
-  @BeforeInsert() async hashPassword() {
+  @Column({
+    nullable: true,
+  })
+  public name?: string;
+
+  @BeforeInsert()
+  @BeforeUpdate()
+  async hashPassword() {
     this.password = await bcrypt.hash(this.password, 10);
   }
 
@@ -47,8 +52,4 @@ export class User extends BaseEntity {
     default: [RolesEnum.USER],
   })
   public roles: RolesEnum;
-
-  @OneToOne((type) => Profile, (profile) => profile.user) // specify inverse side as a second parameter
-  @JoinColumn()
-  profile: Profile;
 }
