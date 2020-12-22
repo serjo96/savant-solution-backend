@@ -3,10 +3,8 @@ import {
   Controller,
   Delete,
   Get,
-  HttpCode,
   Param,
   Put,
-  Query,
   Req,
   UseGuards,
   UseInterceptors,
@@ -23,7 +21,6 @@ import { Roles } from '../common/decorators/roles';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { TransformInterceptor } from '../common/interceptors/TransformInterceptor';
 
-import { Profile, ProfileQuery } from './dto/profile.dto';
 import { UsersService } from './users.service';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -41,48 +38,12 @@ export class UsersController {
   @Get('/current')
   @Roles('user', 'admin')
   async profile(
-    @Query() query: ProfileQuery,
-    @Req() req: Request,
-  ): Promise<any> {
-    const { user } = req;
-    const { profile } = user;
-
-    return {
-      data: {
-        id: user.id,
-        name: profile ? profile.name : '',
-        email: profile ? user.email : '',
-      },
-    };
-  }
-
-  @Put('/current')
-  @HttpCode(200)
-  @Roles('user', 'admin')
-  async updateProfile(
-    @Body() body: Profile,
     @Req() req: Request,
   ): Promise<any> {
     const { user } = req;
 
-    const profileResponse = await this.usersService.saveProfile(user, body);
-    if (profileResponse.error) {
-      throw new BadRequestException({
-        target: {},
-        property: '_global',
-        children: '',
-        constraints: {
-          profileError: profileResponse.data,
-        },
-      });
-    }
-
     return {
-      data: {
-        id: user.id,
-        name: profileResponse.name,
-        email: profileResponse.email,
-      },
+      data: user,
     };
   }
 
@@ -101,10 +62,6 @@ export class UsersController {
       });
     }
     try {
-      const userProfile = await this.usersService.getProfile({ id });
-      if (userProfile) {
-        await this.usersService.removeProfile(id);
-      }
       await this.usersService.removeUser(id);
       deletedUser = await this.usersService.findById(id, { withDeleted: true });
     } catch (error) {

@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { toUserDto } from '@shared/mapper.service';
+import * as bcrypt from 'bcrypt';
 import { FindOneOptions, Repository } from 'typeorm';
 
 import { BadRequestException } from '../common/exceptions/bad-request';
 
 import { CreateUserDto } from './dto/create-user.dto';
-import { Profile } from './profiles.entity';
 import { UserResponseDto } from './dto/user-response.dto';
 import { User } from './users.entity';
 
@@ -15,9 +15,6 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-
-    @InjectRepository(Profile)
-    private readonly profilesRepository: Repository<Profile>,
   ) {}
 
   findAll(where: any): Promise<User[]> {
@@ -60,31 +57,15 @@ export class UsersService {
     return toUserDto(user);
   }
 
-  async saveProfile(user: User, data: Partial<Profile>): Promise<any> {
-    let profile = await this.getProfile({
-      select: ['id', 'createdAt', 'deletedAt', 'name', 'email', 'userId'],
-      where: {
-        userId: user.id,
-      },
-    });
-
-    if (!profile) {
-      profile = Profile.create(data);
-    } else {
-      profile.name = data.name;
-    }
-
-    return this.profilesRepository.save(profile);
-  }
-
-  async editUser(id: string, data: User) {
+  async editUser(id: string, data: any) {
     const toUpdate = await this.userRepository.findOne(id);
-    const updated = Object.assign(toUpdate, data);
-    return await this.userRepository.save(updated);
-  }
+    const updated: User = Object.assign(toUpdate, data);
 
-  getProfile(where: any): Promise<Profile | undefined> {
-    return this.profilesRepository.findOne(where);
+    try {
+      return await this.userRepository.save(updated);
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   async removeUser(id) {
