@@ -33,7 +33,6 @@ export class AuthService {
       return null;
     }
 
-    // tslint:disable-next-line: no-string-literal
     const { password, ...result } = user;
     return result;
   }
