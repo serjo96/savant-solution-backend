@@ -13,6 +13,8 @@ export class UserResponseDto {
   @IsNotEmpty() id: string;
   @IsNotEmpty() @IsEmail() email: string;
 
+  @IsString() name?: string;
+
   @Exclude()
   @IsString()
   password: string;
