@@ -1,11 +1,10 @@
 import * as bcrypt from 'bcrypt';
 import {
-  BeforeInsert, BeforeUpdate,
+  BeforeInsert,
+  BeforeUpdate,
   Column,
   Entity,
-  JoinColumn,
-  OneToOne,
-  PrimaryGeneratedColumn
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 
 import { BaseEntity } from '../common/base-entity';
@@ -48,8 +47,7 @@ export class User extends BaseEntity {
   @Column({
     type: 'enum',
     enum: RolesEnum,
-    array: true,
-    default: [RolesEnum.USER],
+    default: RolesEnum.USER,
   })
   public roles: RolesEnum;
 }

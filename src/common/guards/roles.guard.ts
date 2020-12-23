@@ -17,14 +17,13 @@ export class RolesGuard implements CanActivate {
     }
     const request = context.switchToHttp().getRequest();
     const user = request.user;
-    const hasRole = () =>
-      user.roles.some(
-        (role) =>
-          !!roles.find(
-            (item) =>
-              item.toUpperCase() === getEnumKeyByEnumValue(RolesEnum, role),
-          ),
-      );
+    const hasRole = () => {
+      return !!roles.find((item) => {
+        return (
+          item.toUpperCase() === getEnumKeyByEnumValue(RolesEnum, user.roles)
+        );
+      });
+    };
 
     return user && user.roles && hasRole();
   }
