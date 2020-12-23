@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { UserResponseDto } from '@user/dto/user-response.dto';
 import * as bcrypt from 'bcrypt';
 
@@ -48,11 +48,15 @@ export class AuthService {
   async register(userDto: CreateUserDto): Promise<UserWithToken> {
     let user = null;
     let token = null;
+    const existUser = await this.userService.findByEmail(userDto.email);
+    if (existUser) {
+      throw new HttpException(`User already exist`, HttpStatus.BAD_REQUEST);
+    }
     try {
       user = await this.userService.create(userDto);
       token = this.jwtService.createUserToken(user);
     } catch (err) {
-      throw new Error(err);
+      throw new BadRequestException(err);
     }
     return {
       user: new UserClassResponseDto(user),
