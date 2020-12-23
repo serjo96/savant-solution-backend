@@ -7,9 +7,10 @@ import {
   Put,
   Req,
   UseGuards,
-  UseInterceptors,
+  UseInterceptors, UsePipes
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { EditUserDto } from '@user/dto/edit-user.dto';
 import { UserResponseDto } from '@user/dto/user-response.dto';
 import { Request } from 'express';
 
@@ -20,6 +21,7 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { Roles } from '../common/decorators/roles';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { TransformInterceptor } from '../common/interceptors/TransformInterceptor';
+import { ValidationPipe } from '../common/Pipes/validation.pipe';
 
 import { UsersService } from './users.service';
 
@@ -32,7 +34,9 @@ export class UsersController {
   @Roles('admin')
   @UseInterceptors(new TransformInterceptor(UserResponseDto))
   async getAllUsers(): Promise<User[]> {
-    return await this.usersService.findAll({});
+    const data = await this.usersService.findAll({});
+    console.log(data);
+    return data;
   }
 
   @Get('/current')
@@ -72,11 +76,11 @@ export class UsersController {
 
   @Put(':id')
   @Roles('admin')
-  @UseGuards(AuthGuard('jwt'))
+  @UsePipes(new ValidationPipe())
   @UseInterceptors(new TransformInterceptor(UserResponseDto))
   async changeUser(
     @Param() { id }: { id: string },
-    @Body() body: User,
+    @Body() body: EditUserDto,
   ): Promise<{ data: User }> {
     let editedUser;
     const updatingUser = await this.usersService.findById(id);
@@ -86,8 +90,10 @@ export class UsersController {
       });
     }
     try {
+      console.log(body);
       editedUser = await this.usersService.editUser(id, body);
     } catch (error) {
+      console.log(error);
       throw new BadRequestException(error);
     }
 
