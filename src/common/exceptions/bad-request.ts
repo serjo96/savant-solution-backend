@@ -1,8 +1,10 @@
-import { BadRequestException as Exception } from '@nestjs/common';
+import { BadRequestException as Exception, Logger } from '@nestjs/common';
+import { AuthService } from '../../auth/auth.service';
 
 export class BadRequestException extends Exception {
   constructor(message?: any, error?: string) {
     let msg: Record<string, unknown> | string | undefined;
+    const logger = new Logger('Bad request');
 
     if (message && message instanceof Object) {
       msg = {
@@ -15,5 +17,6 @@ export class BadRequestException extends Exception {
     }
 
     super(msg, error);
+    logger.error(new Date().toString() + ' - [Response]: ' + message + (error ? ' - ' + JSON.stringify(error) : ''));
   }
 }
