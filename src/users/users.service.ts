@@ -59,8 +59,7 @@ export class UsersService {
 
   async editUser(id: string, data: any) {
     const toUpdate = await this.userRepository.findOne(id);
-    const updated: User = Object.assign(toUpdate, data);
-
+    const updated: any = Object.assign(toUpdate, data);
     try {
       return await this.userRepository.save(updated);
     } catch (error) {
