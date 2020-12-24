@@ -12,16 +12,14 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { plainToClass } from 'class-transformer';
 
-import { BadRequestException } from '../common/exceptions/bad-request';
 import { Roles } from '../common/decorators/roles';
 import { TransformInterceptor } from '../common/interceptors/TransformInterceptor';
+import { PaginatorQuery } from '../common/paginator';
 import { ValidationPipe } from '../common/Pipes/validation.pipe';
 import { EditItemDto } from './dto/editItem.dto';
 
 import { ItemDto } from './dto/item.dto';
-import { Items } from './item.entity';
 import { ItemsService } from './items.service';
 import { ResponseItemsDto } from './dto/response-items.dto';
 
@@ -45,8 +43,9 @@ export class ItemsController {
   }
 
   @Get()
+  @UsePipes(new ValidationPipe())
   @UseInterceptors(new TransformInterceptor(ResponseItemsDto))
-  async finAll(@Query() query: any): Promise<ResponseItemsDto[]> {
+  async finAll(@Query() query: PaginatorQuery): Promise<ResponseItemsDto[]> {
     return this.itemsService.getAll(query);
   }
 
