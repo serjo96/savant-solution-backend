@@ -1,27 +1,31 @@
+import { Transform } from 'class-transformer';
 import { IsBoolean, IsInt, IsOptional, Min } from 'class-validator';
 
 export class PaginatorQuery {
   @IsOptional()
+  @Transform((value) => value.toLowerCase() === 'false' || 'true' ?  JSON.parse(value): value)
   @IsBoolean({
-    message: '"all" должно иметь значение "true" или "false"',
+    message: '"all" must be "true" or "false"',
   })
   all?: boolean;
 
   @IsOptional()
+  @Transform((value) => (Number.isNaN(value) ? Number(value) : value))
   @IsInt({
-    message: 'Количество запрашиваемых объектов должно быть целым числом',
+    message: 'The number of objects requested must be an integer',
   })
   @Min(0, {
-    message: 'Количество запрашиваемых объектов не может быть меньше ноля',
+    message: 'The number of requested objects cannot be less than zero',
   })
   count?: number;
 
   @IsOptional()
+  @Transform((value) => (Number.isNaN(value) ? Number(value) : value))
   @IsInt({
-    message: 'Порядковый номер объекта должен быть целым',
+    message: 'The offset number of the object must be integer',
   })
   @Min(0, {
-    message: 'Порядковый номер объекта не может быть меньше ноля',
+    message: 'The offset number of an object cannot be less than zero',
   })
   offset?: number;
 }
