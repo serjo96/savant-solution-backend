@@ -10,7 +10,7 @@ export class PaginatorQuery {
   all?: boolean;
 
   @IsOptional()
-  @Transform((value) => (Number.isNaN(value) ? Number(value) : value))
+  @Transform((value) => (Number(value) ? Number(value) : value))
   @IsInt({
     message: 'The number of objects requested must be an integer',
   })
@@ -20,7 +20,7 @@ export class PaginatorQuery {
   count?: number;
 
   @IsOptional()
-  @Transform((value) => (Number.isNaN(value) ? Number(value) : value))
+  @Transform((value) => (Number(value) ? Number(value) : value))
   @IsInt({
     message: 'The offset number of the object must be integer',
   })
