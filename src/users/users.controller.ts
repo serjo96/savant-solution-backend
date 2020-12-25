@@ -7,7 +7,8 @@ import {
   Put,
   Req,
   UseGuards,
-  UseInterceptors, UsePipes
+  UseInterceptors,
+  UsePipes,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { EditUserDto } from '@user/dto/edit-user.dto';
@@ -42,9 +43,7 @@ export class UsersController {
   @Get('/current')
   @Roles('user', 'admin')
   @UseInterceptors(new TransformInterceptor(UserResponseDto))
-  async profile(
-    @Req() req: Request,
-  ): Promise<any> {
+  async profile(@Req() req: Request): Promise<any> {
     const { user } = req;
 
     return user;

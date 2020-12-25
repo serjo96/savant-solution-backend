@@ -3,7 +3,9 @@ import { IsBoolean, IsInt, IsOptional, Min } from 'class-validator';
 
 export class PaginatorQuery {
   @IsOptional()
-  @Transform((value) => value.toLowerCase() === 'false' || 'true' ?  JSON.parse(value): value)
+  @Transform((value) =>
+    value.toLowerCase() === 'false' || 'true' ? JSON.parse(value) : value,
+  )
   @IsBoolean({
     message: '"all" must be "true" or "false"',
   })

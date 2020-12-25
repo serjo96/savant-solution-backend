@@ -17,6 +17,11 @@ export class BadRequestException extends Exception {
     }
 
     super(msg, error);
-    logger.error(new Date().toString() + ' - [Response]: ' + message + (error ? ' - ' + JSON.stringify(error) : ''));
+    logger.error(
+      new Date().toString() +
+        ' - [Response]: ' +
+        message +
+        (error ? ' - ' + JSON.stringify(error) : ''),
+    );
   }
 }

@@ -26,9 +26,7 @@ export class ItemsService {
     return result;
   }
 
-  async getAll(
-    query: PaginatorQuery,
-  ): Promise<Items[]> {
+  async getAll(query: PaginatorQuery): Promise<Items[]> {
     const clause: any = {
       order: {
         createdAt: 'ASC',
