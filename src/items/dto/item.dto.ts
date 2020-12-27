@@ -1,4 +1,4 @@
-import { Transform } from 'class-transformer';
+import { Exclude, Transform } from 'class-transformer';
 import {
   IsEnum,
   IsNotEmpty,
@@ -10,6 +10,9 @@ import {
 import { StatusEnum } from '../item.entity';
 
 export class ItemDto {
+  @Exclude()
+  id?: string;
+
   @IsNotEmpty()
   @IsString()
   itemNumber: string;
