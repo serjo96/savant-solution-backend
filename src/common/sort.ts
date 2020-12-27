@@ -1,5 +1,5 @@
 import { IsOptional } from 'class-validator';
-import { IsOrderBy, IsOrderDirection } from './decorators/sortValidation';
+import { IsOrderDirection } from './decorators/sortValidation';
 import { PaginatorQuery } from './paginator';
 
 export class SortBy {
