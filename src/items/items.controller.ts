@@ -15,8 +15,8 @@ import { AuthGuard } from '@nestjs/passport';
 
 import { Roles } from '../common/decorators/roles';
 import { TransformInterceptor } from '../common/interceptors/TransformInterceptor';
-import { PaginatorQuery } from '../common/paginator';
 import { ValidationPipe } from '../common/Pipes/validation.pipe';
+import { SortWithPaginationQuery } from '../common/sort';
 import { EditItemDto } from './dto/editItem.dto';
 
 import { ItemDto } from './dto/item.dto';
@@ -45,7 +45,7 @@ export class ItemsController {
   @Get()
   @UsePipes(new ValidationPipe())
   @UseInterceptors(new TransformInterceptor(ResponseItemsDto))
-  async finAll(@Query() query: PaginatorQuery): Promise<ResponseItemsDto[]> {
+  async finAll(@Query() query: SortWithPaginationQuery): Promise<ResponseItemsDto[]> {
     return this.itemsService.getAll(query);
   }
 
