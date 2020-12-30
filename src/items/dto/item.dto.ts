@@ -4,7 +4,7 @@ import {
   IsNotEmpty,
   IsNumber,
   IsOptional,
-  IsString, Max, Min
+  IsString, Max, MaxLength, Min
 } from 'class-validator';
 
 import { StatusEnum } from '../item.entity';
@@ -41,6 +41,7 @@ export class ItemDto {
   altSupplier?: string;
 
   @IsString()
+  @MaxLength(256)
   @IsOptional()
   note?: string;
 
