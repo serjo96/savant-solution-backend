@@ -4,7 +4,7 @@ import {
   IsNotEmpty,
   IsNumber,
   IsOptional,
-  IsString,
+  IsString, Max, Min
 } from 'class-validator';
 
 import { StatusEnum } from '../item.entity';
@@ -19,9 +19,12 @@ export class ItemDto {
 
   @IsNotEmpty()
   @IsNumber()
+  @Min(0)
   quantity: number;
 
   @IsNumber()
+  @Min(0)
+  @Max(999)
   @IsOptional()
   threshold?: number;
 
