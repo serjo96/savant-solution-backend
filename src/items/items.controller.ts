@@ -45,7 +45,9 @@ export class ItemsController {
   @Get()
   @UsePipes(new ValidationPipe())
   @UseInterceptors(new TransformInterceptor(ResponseItemsDto))
-  async finAll(@Query() query: SortWithPaginationQuery): Promise<ResponseItemsDto[]> {
+  async finAll(
+    @Query() query: SortWithPaginationQuery,
+  ): Promise<ResponseItemsDto[]> {
     return this.itemsService.getAll(query);
   }
 
