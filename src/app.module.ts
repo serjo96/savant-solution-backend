@@ -8,6 +8,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from './config/config.module';
 import { ItemsModule } from './items/items.module';
+import { OrdersModule } from './orders/orders.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { ItemsModule } from './items/items.module';
     AuthModule,
     ConfigModule,
     ItemsModule,
+    OrdersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
