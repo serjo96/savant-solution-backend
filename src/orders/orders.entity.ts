@@ -2,7 +2,7 @@ import { BeforeInsert, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import { v4 as uuid4 } from 'uuid';
 
 import { BaseEntity } from '../common/base-entity';
-import generateId from '../utils/generateId';
+import generateId from '../utils/idGenerator';
 export enum StatusEnum {
   MANUAL = 3,
   PROCEED = 2,
