@@ -4,6 +4,7 @@ import {
   IsEmail,
   IsEnum,
   IsNotEmpty,
+  IsOptional,
   IsString,
 } from 'class-validator';
 
@@ -11,7 +12,10 @@ import { RolesEnum } from '@user/users.entity';
 
 export class EditUserDto {
   @IsEmail() email?: string;
-  @IsString() name?: string;
+
+  @IsOptional()
+  @IsString()
+  name?: string;
 
   @IsString()
   password?: string;
