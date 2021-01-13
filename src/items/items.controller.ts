@@ -62,10 +62,6 @@ export class ItemsController {
     worksheet.addRows(allItems);
 
     res.setHeader(
-      'Content-Type',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    );
-    res.setHeader(
       'Content-Disposition',
       'attachment; filename=' + 'items.xlsx',
     );
