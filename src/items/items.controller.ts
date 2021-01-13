@@ -24,13 +24,14 @@ import { EditItemDto } from './dto/editItem.dto';
 import { ItemDto } from './dto/item.dto';
 import { ItemsService } from './items.service';
 import { ResponseItemsDto } from './dto/response-items.dto';
-import { Column, Workbook } from 'exceljs';
+import { Column, Workbook, Buffer } from 'exceljs';
 
 @UseGuards(AuthGuard('jwt'))
 @Roles('user', 'admin')
 @Controller('items')
 export class ItemsController {
-  constructor(private readonly itemsService: ItemsService) {}
+  constructor(private readonly itemsService: ItemsService) {
+  }
 
   @Post('/create')
   @UsePipes(new ValidationPipe())
@@ -66,7 +67,8 @@ export class ItemsController {
       'attachment; filename=' + 'items.xlsx',
     );
 
-    return workbook.xlsx.write(res).then(() => res.status(200).end());
+    await workbook.xlsx.write(res);
+    return await workbook.xlsx.writeBuffer();
   }
 
   @Get(':id')
