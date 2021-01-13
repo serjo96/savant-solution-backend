@@ -24,7 +24,7 @@ import { EditItemDto } from './dto/editItem.dto';
 import { ItemDto } from './dto/item.dto';
 import { ItemsService } from './items.service';
 import { ResponseItemsDto } from './dto/response-items.dto';
-import * as excel from 'exceljs';
+import { Column, Workbook } from 'exceljs';
 
 @UseGuards(AuthGuard('jwt'))
 @Roles('user', 'admin')
@@ -45,8 +45,8 @@ export class ItemsController {
     @Res() res,
     @Query() query: SortWithPaginationQuery,
   ): Promise<Buffer> {
-    let allItems: any[] = await this.itemsService.getAll(query);
-    const workbook = new excel.Workbook();
+    const allItems: any[] = await this.itemsService.getAll(query);
+    const workbook = new Workbook();
     const worksheet = workbook.addWorksheet('Items');
     worksheet.columns = [
       { header: 'ID', key: 'id', width: 40 },
@@ -58,7 +58,7 @@ export class ItemsController {
       { header: 'Alt supplier', key: 'altSupplier', width: 20 },
       { header: 'Note', key: 'note', width: 20 },
       { header: 'Order date', key: 'createdAt', width: 25 },
-    ] as Array<{header:string; key: string; width: number}>[];
+    ] as Array<Column>;
     worksheet.addRows(allItems);
 
     res.setHeader(
