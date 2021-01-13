@@ -1,10 +1,11 @@
+import { UserSettings } from '@user/user-settings.entity';
 import * as bcrypt from 'bcrypt';
 import {
   BeforeInsert,
   BeforeUpdate,
   Column,
-  Entity,
-  PrimaryGeneratedColumn,
+  Entity, JoinColumn, OneToOne,
+  PrimaryGeneratedColumn
 } from 'typeorm';
 
 import { BaseEntity } from '../common/base-entity';
@@ -50,4 +51,8 @@ export class User extends BaseEntity {
     default: RolesEnum.USER,
   })
   public roles: RolesEnum;
+
+  @OneToOne(() => UserSettings)
+  @JoinColumn()
+  settings: UserSettings;
 }
