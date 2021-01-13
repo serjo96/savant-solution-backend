@@ -1,11 +1,11 @@
 import {
-  registerDecorator,
-  ValidationOptions,
   ValidationArguments,
+  ValidationOptions,
+  registerDecorator,
 } from 'class-validator';
 
 export function IsOrderDirection(validationOptions?: ValidationOptions) {
-  return function (object: Object, propertyName: string) {
+  return function (object: unknown, propertyName: string) {
     registerDecorator({
       name: 'isSortQuery',
       target: object.constructor,
@@ -27,7 +27,7 @@ export function IsOrderBy<T>(
   property: T,
   validationOptions?: ValidationOptions,
 ) {
-  return function (object: Object, propertyName: string) {
+  return function (object: unknown, propertyName: string) {
     registerDecorator({
       name: 'isSortQuery',
       target: object.constructor,

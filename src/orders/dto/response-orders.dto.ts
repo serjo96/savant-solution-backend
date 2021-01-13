@@ -5,7 +5,7 @@ import {
   IsNotEmpty,
   IsNumber,
   IsOptional,
-  IsString
+  IsString,
 } from 'class-validator';
 
 import getEnumKeyByEnumValue from '../../utils/enum-format';

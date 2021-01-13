@@ -5,7 +5,7 @@ import { UserResponseDto } from '@user/dto/user-response.dto';
 
 import { ConfigService } from '../config/config.service';
 
-import { JwtPayload } from './passport/jwt.interface';
+import { IJwtPayload } from './passport/jwt.interface';
 
 @Injectable()
 export class JWTService {
@@ -17,7 +17,7 @@ export class JWTService {
   createUserToken({ email, roles, id }: UserResponseDto): any {
     const expiresIn = this.configService.jwtConfig.expiresIn;
 
-    const user: JwtPayload = { email, roles, id };
+    const user: IJwtPayload = { email, roles, id };
     const accessToken = this.jwtService.sign(user);
     return {
       expiresIn,

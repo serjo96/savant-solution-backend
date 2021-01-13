@@ -32,13 +32,13 @@ export class PaginatorQuery {
   offset?: number;
 }
 
-export interface PaginatorType {
+export interface IPaginatorType {
   skip?: number | null;
   take?: number | null;
 }
 
-export const paginator = (value: PaginatorQuery): PaginatorType => {
-  const result: PaginatorType = {};
+export const paginator = (value: PaginatorQuery): IPaginatorType => {
+  const result: IPaginatorType = {};
 
   const { all, count, offset } = value;
 

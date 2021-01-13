@@ -4,7 +4,10 @@ import {
   IsNotEmpty,
   IsNumber,
   IsOptional,
-  IsString, Max, MaxLength, Min
+  IsString,
+  Max,
+  MaxLength,
+  Min,
 } from 'class-validator';
 
 import { StatusEnum } from '../item.entity';

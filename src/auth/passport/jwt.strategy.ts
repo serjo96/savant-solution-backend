@@ -7,7 +7,7 @@ import { UserResponseDto } from '@user/dto/user-response.dto';
 import { AuthService } from '../auth.service';
 import { ConfigService } from '../../config/config.service';
 
-import { JwtPayload } from './jwt.interface';
+import { IJwtPayload } from './jwt.interface';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -22,7 +22,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: JwtPayload): Promise<UserResponseDto> {
+  async validate(payload: IJwtPayload): Promise<UserResponseDto> {
     const user = await this.authService.validateUserToken(payload);
     if (!user) {
       throw new UnauthorizedException('Invalid token');

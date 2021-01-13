@@ -1,4 +1,4 @@
-import { createConnection, EntitySchema } from 'typeorm';
+import { EntitySchema, createConnection } from 'typeorm';
 type Entity = () => void | string | EntitySchema<any>;
 
 export async function createMemDB(entities: Entity[]) {

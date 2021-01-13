@@ -1,4 +1,4 @@
-export default interface OrdersInterface {
+export default interface IItemInterface {
   id: string;
   quantity: number;
   itemNumber: string;

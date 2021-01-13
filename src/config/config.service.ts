@@ -3,11 +3,11 @@ import { Injectable } from '@nestjs/common';
 import * as dotenv from 'dotenv';
 import { existsSync, readFileSync } from 'fs';
 
-export interface EnvConfig {
+export interface IEnvConfig {
   [key: string]: string | number;
 }
 
-export interface EmailConfig {
+export interface IEmailConfig {
   host: string;
   secure: string;
   auth: {
@@ -16,14 +16,14 @@ export interface EmailConfig {
   };
 }
 
-export interface JWTConfig {
+export interface IJWTConfig {
   secretCode: string;
   expiresIn: string;
 }
 
 @Injectable()
 export class ConfigService {
-  private readonly envConfig: EnvConfig;
+  private readonly envConfig: IEnvConfig;
 
   constructor(filePath: string) {
     let config = {};
@@ -37,7 +37,7 @@ export class ConfigService {
     this.envConfig = this.validateInput(config);
   }
 
-  private validateInput(envConfig: EnvConfig): EnvConfig {
+  private validateInput(envConfig: IEnvConfig): IEnvConfig {
     const configSchema: Joi.ObjectSchema = Joi.object({
       DATABASE_URL: Joi.string().required(),
       NODE_ENV: Joi.string()
@@ -67,14 +67,14 @@ export class ConfigService {
     return this.envConfig.NODE_ENV as string;
   }
 
-  get jwtConfig(): JWTConfig {
+  get jwtConfig(): IJWTConfig {
     return {
       secretCode: this.envConfig.JWT_SECRET_KEY as string,
       expiresIn: this.envConfig.EXPIRESIN as string,
     };
   }
 
-  get getEmailConfig(): EmailConfig {
+  get getEmailConfig(): IEmailConfig {
     return {
       host: this.envConfig.EMAIL_HOST as string,
       secure: this.envConfig.EMAIL_SECURE as string, // true for 465, false for other ports

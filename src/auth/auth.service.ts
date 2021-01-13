@@ -7,7 +7,7 @@ import { UsersService } from '@user/users.service';
 import { BadRequestException } from '../common/exceptions/bad-request';
 import { UserClassResponseDto } from './dto/user.dto';
 
-import { JwtPayload } from './passport/jwt.interface';
+import { IJwtPayload } from './passport/jwt.interface';
 import { JWTService } from './jwt.service';
 import { UserWithToken } from './interfaces/user-with-token.interface';
 import { LoginByEmail } from './dto/login.dto';
@@ -41,7 +41,7 @@ export class AuthService {
     return await bcrypt.compare(attempt, dbPassword);
   }
 
-  async validateUserToken(payload: JwtPayload): Promise<UserResponseDto> {
+  async validateUserToken(payload: IJwtPayload): Promise<UserResponseDto> {
     return await this.userService.findById(payload.id);
   }
 

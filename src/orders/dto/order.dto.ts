@@ -5,7 +5,8 @@ import {
   IsNotEmpty,
   IsNumber,
   IsOptional,
-  IsString, MaxLength
+  IsString,
+  MaxLength,
 } from 'class-validator';
 
 import { GoogleShipMethodEnum, StatusEnum } from '../orders.entity';
