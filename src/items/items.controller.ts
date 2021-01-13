@@ -48,10 +48,6 @@ export class ItemsController {
     let allItems: any[] = await this.itemsService.getAll(query);
     const workbook = new excel.Workbook();
     const worksheet = workbook.addWorksheet('Items');
-    allItems = allItems.map((item) => ({
-      orderDate: moment(item.createdAt).format('YYYY/MM/DD [at] hh:mm A'),
-      ...item,
-    }));
     worksheet.columns = [
       { header: 'ID', key: 'id', width: 40 },
       { header: 'G-PACKQTY', key: 'quantity', width: 12 },
@@ -61,8 +57,8 @@ export class ItemsController {
       { header: 'Supplier', key: 'supplier', width: 20 },
       { header: 'Alt supplier', key: 'altSupplier', width: 20 },
       { header: 'Note', key: 'note', width: 20 },
-      { header: 'Order date', key: 'orderDate', width: 25 },
-    ] as any[];
+      { header: 'Order date', key: 'createdAt', width: 25 },
+    ] as Array<{header:string; key: string; width: number}>[];
     worksheet.addRows(allItems);
 
     res.setHeader(
