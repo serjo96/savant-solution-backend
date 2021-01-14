@@ -1,7 +1,7 @@
 import { ItemDto } from './dto/item.dto';
 import { Items } from './item.entity';
 
-export class ItemsServiceMock {
+export class ItemsMock {
   findAll(where: any): any[] {
     return [
       {

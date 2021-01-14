@@ -1,12 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ItemsService } from './items.service';
-import { ItemsServiceMock } from './items.service.mock';
+import { ItemsMock } from './items.mock';
 
 describe('ItemsService', () => {
   let service: ItemsService;
   const ItemsServiceProvider = {
     provide: ItemsService,
-    useClass: ItemsServiceMock,
+    useClass: ItemsMock,
   };
 
   beforeEach(async () => {
