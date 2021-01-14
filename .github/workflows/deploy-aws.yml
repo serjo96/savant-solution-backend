@@ -72,11 +72,14 @@ jobs:
       - name: Install dependencies
         run: yarn install
 
+      - name: Run tests
+        run: yarn run test
+
       - name: Run build
         run: yarn run build
 
       - name: Run migration
-          run: yarn run migration:run
+        run: yarn run migration:run
 
       - name: Copy appspec and pm2 config
           run:  |
