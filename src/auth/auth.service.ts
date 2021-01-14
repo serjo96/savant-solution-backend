@@ -23,6 +23,7 @@ export class AuthService {
   async validateUser(username: string, pass: string) {
     // find if user exist with this email
     const user = await this.userService.findByEmail(username);
+    console.log(user);
     if (!user) {
       return null;
     }
@@ -38,6 +39,7 @@ export class AuthService {
   }
 
   async comparePassword(attempt: string, dbPassword: string): Promise<boolean> {
+    console.log(attempt, dbPassword);
     return await bcrypt.compare(attempt, dbPassword);
   }
 
@@ -66,6 +68,7 @@ export class AuthService {
 
   async login(loginUserDto: LoginByEmail): Promise<UserWithToken> {
     const user = await this.userService.findByEmail(loginUserDto.email);
+    console.log(user);
     if (!user) {
       throw new BadRequestException({ message: `User doesn't exist` });
     }

@@ -9,7 +9,7 @@ import {
   MaxLength,
 } from 'class-validator';
 
-import { GoogleShipMethodEnum, StatusEnum } from '../orders.entity';
+import { GraingerShipMethodEnum, StatusEnum } from '../orders.entity';
 
 export class OrderDto {
   @Exclude()
@@ -66,24 +66,24 @@ export class OrderDto {
 
   @IsDateString()
   @IsOptional()
-  googleShipDate?: Date;
+  graingerShipDate?: Date;
 
   @IsString()
   @IsOptional()
-  googleTrackingNumber?: string;
+  graingerTrackingNumber?: string;
 
   @IsString()
   @IsOptional()
-  googleAccountId?: string;
+  graingerAccountId?: string;
 
   @IsString()
   @IsOptional()
-  googleWebNumber?: string;
+  graingerWebNumber?: string;
 
   @IsOptional()
-  @Transform((status) => GoogleShipMethodEnum[status.toUpperCase()])
-  @IsEnum(GoogleShipMethodEnum)
-  googleShipMethod?: GoogleShipMethodEnum;
+  @Transform((status) => GraingerShipMethodEnum[status.toUpperCase()])
+  @IsEnum(GraingerShipMethodEnum)
+  graingerShipMethod?: GraingerShipMethodEnum;
 
   @IsNotEmpty()
   @Transform((status) => StatusEnum[status.toUpperCase()])

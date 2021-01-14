@@ -105,35 +105,35 @@ export class OrdersColumnsVisibilityEntity extends BaseEntity {
     type: 'boolean',
     default: true,
   })
-  googleShipDate: boolean;
+  graingerShipDate: boolean;
 
   @Column({
     type: 'boolean',
     default: true,
   })
-  googleTrackingNumber: boolean;
+  graingerTrackingNumber: boolean;
 
   @Column({
     type: 'boolean',
     default: true,
   })
-  googleShipMethod: boolean;
+  graingerShipMethod: boolean;
 
   @Column({
     type: 'boolean',
     default: true,
   })
-  googleAccountId: boolean;
+  graingerAccountId: boolean;
 
   @Column({
     type: 'boolean',
     default: true,
   })
-  googleWebNumber: boolean;
+  graingerWebNumber: boolean;
 
   @Column({
     type: 'boolean',
     default: true,
   })
-  googleOrderId: boolean;
+  graingerOrderId: boolean;
 }

@@ -9,7 +9,7 @@ import {
 } from 'class-validator';
 
 import getEnumKeyByEnumValue from '../../utils/enum-format';
-import { GoogleShipMethodEnum, StatusEnum } from '../orders.entity';
+import { GraingerShipMethodEnum, StatusEnum } from '../orders.entity';
 
 export class ResponseOrdersDto {
   id: string;
@@ -64,24 +64,24 @@ export class ResponseOrdersDto {
 
   @IsDateString()
   @IsOptional()
-  googleShipDate?: Date;
+  graingerShipDate?: Date;
 
   @IsString()
   @IsOptional()
-  googleTrackingNumber?: string;
+  graingerTrackingNumber?: string;
 
   @IsString()
   @IsOptional()
-  googleAccountId?: string;
+  graingerAccountId?: string;
 
   @IsString()
   @IsOptional()
-  googleWebNumber?: string;
+  graingerWebNumber?: string;
 
   @IsOptional()
   @Transform((status) => getEnumKeyByEnumValue(StatusEnum, status))
-  @IsEnum(GoogleShipMethodEnum)
-  googleShipMethod?: GoogleShipMethodEnum;
+  @IsEnum(GraingerShipMethodEnum)
+  graingerShipMethod?: GraingerShipMethodEnum;
 
   @IsNotEmpty()
   @Transform((status) => getEnumKeyByEnumValue(StatusEnum, status))
