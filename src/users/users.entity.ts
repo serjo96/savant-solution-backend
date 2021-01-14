@@ -4,8 +4,10 @@ import {
   BeforeInsert,
   BeforeUpdate,
   Column,
-  Entity, JoinColumn, OneToOne,
-  PrimaryGeneratedColumn
+  Entity,
+  JoinColumn,
+  OneToOne,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 
 import { BaseEntity } from '../common/base-entity';
@@ -31,6 +33,7 @@ export class User extends BaseEntity {
   @Column({
     type: 'varchar',
     nullable: false,
+    unique: true,
   })
   email: string;
 
@@ -52,7 +55,7 @@ export class User extends BaseEntity {
   })
   public roles: RolesEnum;
 
-  @OneToOne(() => UserSettings)
+  @OneToOne(() => UserSettings, { eager: true, cascade: true })
   @JoinColumn()
   settings: UserSettings;
 }
