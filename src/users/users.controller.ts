@@ -88,8 +88,17 @@ export class UsersController {
         message: `User doesn't exist`,
       });
     }
+
+    const userEmail = body.email;
+    if (userEmail) {
+      const existEmail = await this.usersService.findByEmail(userEmail);
+      if (existEmail) {
+        throw new BadRequestException({
+          message: `User with current email already exist`,
+        });
+      }
+    }
     try {
-      console.log(body);
       editedUser = await this.usersService.editUser(id, body);
     } catch (error) {
       console.log(error);
