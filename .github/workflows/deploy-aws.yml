@@ -82,9 +82,9 @@ jobs:
         run: yarn run migration:run
 
       - name: Copy appspec and pm2 config
-          run:  |
-            mv -i ./appspec.yml ./dist \
-            mv -i ./ecosystem.config.js; ./dist
+        run:  |
+          mv -i ./appspec.yml ./dist \
+          mv -i ./ecosystem.config.js; ./dist
 
       # Install AWS CLI 2
       - name: Install AWS CLI 2
