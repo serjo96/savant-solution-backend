@@ -85,17 +85,6 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
-      - name: Move appspec
-        run:  |
-          mv -i ./appspec.yml ./dist
-
-      - name: Move pm2 config
-        run:  |
-          mv -i ./ecosystem.config.js ./dist
-
-      - name: Move run scripts
-        run:  |
-          mv -i ./scripts ./dist
 
       # Install AWS CLI 2
       - name: Install AWS CLI 2
@@ -120,7 +109,7 @@ jobs:
           --description "This is a revision for the ${{ matrix.appname }}-${{ github.sha }}" \
           --ignore-hidden-files \
           --s3-location s3://${{ matrix.s3-bucket }}/${{ matrix.s3-filename }}.zip \
-          --source ./dist
+          --source .
       # Create deployment to CodeDeploy
       - name: AWS Create Deployment
         run: |
