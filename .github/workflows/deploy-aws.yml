@@ -91,7 +91,7 @@ jobs:
 
       - name: Copy pm2 config
         run:  |
-          mv -i ./ecosystem.config.js; ./dist
+          mv -i ./ecosystem.config.js ./dist
 
       # Install AWS CLI 2
       - name: Install AWS CLI 2
