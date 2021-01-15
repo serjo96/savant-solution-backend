@@ -18,6 +18,7 @@ COPY package.json tsconfig.json ormconfig.cli.js tsconfig.build.json ecosystem.c
 COPY ormconfig.prod.js ./ormconfig.js
 
 RUN yarn build
+RUN yarn add global pm2
 RUN rm -rf src/
 
 ####################
