@@ -85,10 +85,13 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
-      - name: Copy appspec and pm2 config
+      - name: Copy appspec
         run:  |
-          mv -i ./appspec.yml ./dist \
-          mv -i ./ecosystem.config.js; ./dist
+          mv -i ./appspec.yml ./dist
+
+      - name: Copy pm2 config
+          run:  |
+            mv -i ./ecosystem.config.js; ./dist
 
       # Install AWS CLI 2
       - name: Install AWS CLI 2
