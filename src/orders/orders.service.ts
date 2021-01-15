@@ -43,6 +43,16 @@ export class OrdersService {
     return await this.ordersRepository.softDelete(where);
   }
 
+  async saveAll(data: OrderDto[]): Promise<Orders[]> {
+    const orders = data.map((order) => Orders.create(order));
+
+    try {
+      return await this.ordersRepository.save(orders);
+    } catch (e) {
+      throw new Error(e);
+    }
+  }
+
   async save(data: OrderDto): Promise<Orders> {
     let entity = data;
 
@@ -56,6 +66,7 @@ export class OrdersService {
       throw new Error(e);
     }
   }
+
   async update(id: { id: string }, item: EditOrderDto): Promise<Orders> {
     const toUpdate = await this.ordersRepository.findOne(id);
     const updated = Object.assign(toUpdate, item);

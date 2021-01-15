@@ -4,9 +4,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Orders } from './orders.entity';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
+import { CsvModule } from 'nest-csv-parser'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Orders])],
+  imports: [CsvModule, TypeOrmModule.forFeature([Orders])],
   controllers: [OrdersController],
   providers: [OrdersService],
   exports: [OrdersService],
