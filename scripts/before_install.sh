@@ -1,3 +1,4 @@
 #!/bin/bash
 cd /home/ubuntu/etc
-mv -i . ../krayber
+cp -i ./development.env ./dist
+mv -i ./dist ../krayber
