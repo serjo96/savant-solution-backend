@@ -75,11 +75,16 @@ jobs:
         run: yarn install
 
       - name: Run build
+        env:
+          DATABASE_URL=$DATABASE_URL
+          JWT_SECRET_KEY=JWT_SECRET_KEY
         run: yarn run build
 
       - name: Run migration
         run: yarn run migration:run
-
+        env:
+          DATABASE_URL=$DATABASE_URL
+          JWT_SECRET_KEY=$JWT_SECRET_KEY
       - name: Copy appspec and pm2 config
         run:  |
           mv -i ./appspec.yml ./dist \
