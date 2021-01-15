@@ -1,4 +1,4 @@
 #!/bin/bash
 cd /home/ubuntu/etc
 cp -i ./development.env ./project/src
-mv -i ./project/{.,}* ../kryber
+mv -i ./project/{.,}* ../krayber
