@@ -45,11 +45,9 @@ export class ItemsService {
 
   async save(data: ItemDto): Promise<Items> {
     let entity = data;
-    console.log(data);
     if (!(data instanceof Items)) {
       entity = Items.create(data);
     }
-    console.log(entity);
     try {
       return await this.productsRepository.save(entity);
     } catch (e) {

@@ -71,8 +71,20 @@ jobs:
       # Install project dependencies and build
       - name: Install dependencies
         run: yarn install
+
+      - name: Run tests
+        run: yarn run test
+
       - name: Run build
         run: yarn run build
+
+      - name: Run migration
+        run: yarn run migration:run
+
+      - name: Copy appspec and pm2 config
+        run:  |
+          mv -i ./appspec.yml ./dist \
+          mv -i ./ecosystem.config.js; ./dist
 
       # Install AWS CLI 2
       - name: Install AWS CLI 2
@@ -80,7 +92,7 @@ jobs:
           curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
           unzip awscliv2.zip
           sudo ./aws/install
-          
+
       # Configure AWS credentials
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1

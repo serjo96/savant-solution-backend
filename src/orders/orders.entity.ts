@@ -10,7 +10,7 @@ export enum StatusEnum {
   CANCEL = 0,
 }
 
-export enum GoogleShipMethodEnum {
+export enum GraingerShipMethodEnum {
   EXPRESS = 1,
   NEXT_DAY = 2,
 }
@@ -98,38 +98,74 @@ export class Orders extends BaseEntity {
     type: 'date',
     nullable: true,
   })
-  googleShipDate?: Date;
+  graingerShipDate?: Date;
 
   @Column({
     type: 'varchar',
     nullable: true,
   })
-  googleTrackingNumber?: string;
+  graingerTrackingNumber?: string;
 
   @Column({
     type: 'enum',
-    enum: GoogleShipMethodEnum,
+    enum: GraingerShipMethodEnum,
     nullable: true,
   })
-  googleShipMethod?: GoogleShipMethodEnum;
+  graingerShipMethod?: GraingerShipMethodEnum;
 
   @Column({
     type: 'varchar',
     nullable: true,
   })
-  googleAccountId?: string;
+  graingerAccountId?: string;
 
   @Column({
     type: 'varchar',
     nullable: true,
   })
-  googleWebNumber?: string;
+  graingerWebNumber?: string;
 
   @Column({
     type: 'varchar',
     nullable: true,
   })
-  googleOrderId?: string;
+  graingerOrderId?: string;
+
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
+  firstShipAddress?: string;
+
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
+  secondShipAddress?: string;
+
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
+  thirdShipAddress?: string;
+
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
+  shipСity?: string;
+
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
+  shipState?: string;
+
+  @Column({
+    type: 'integer',
+    nullable: true,
+  })
+  shipPostalCode?: number;
 
   @Column({
     type: 'enum',

@@ -1,9 +1,12 @@
+import { UserSettings } from '@user/user-settings.entity';
 import * as bcrypt from 'bcrypt';
 import {
   BeforeInsert,
   BeforeUpdate,
   Column,
   Entity,
+  JoinColumn,
+  OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
@@ -30,6 +33,7 @@ export class User extends BaseEntity {
   @Column({
     type: 'varchar',
     nullable: false,
+    unique: true,
   })
   email: string;
 
@@ -50,4 +54,8 @@ export class User extends BaseEntity {
     default: RolesEnum.USER,
   })
   public roles: RolesEnum;
+
+  @OneToOne(() => UserSettings, { eager: true, cascade: true })
+  @JoinColumn()
+  settings: UserSettings;
 }
