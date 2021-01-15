@@ -1,4 +1,3 @@
 #!/bin/bash
-cd /var/www/krayber
-rm -rf html
-mkdir html
+cd /home/ubuntu/etc
+mv -i . ../krayber
