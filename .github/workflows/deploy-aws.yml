@@ -90,8 +90,8 @@ jobs:
           mv -i ./appspec.yml ./dist
 
       - name: Copy pm2 config
-          run:  |
-            mv -i ./ecosystem.config.js; ./dist
+        run:  |
+          mv -i ./ecosystem.config.js; ./dist
 
       # Install AWS CLI 2
       - name: Install AWS CLI 2
