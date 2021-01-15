@@ -2,7 +2,7 @@ version: 0.0
 os: linux
 files:
   - source: /
-    destination: /home/ubuntu/etc
+    destination: /home/ubuntu/krayber
 
 permissions:
   - object: /home/ubuntu
