@@ -55,7 +55,31 @@ export class OrdersController {
     const stream = Readable.from(files.buffer.toString());
     try {
       const orders: Orders[] = await CSVToJSON({
-        headers: ['recipientName'],
+        headers: [
+          'amazonOrderId',
+          'amazonItemId',
+          'createdAt',
+          null,
+          null,
+          'recipientName',
+          null,
+          'amazonSku',
+          null,
+          'quantity',
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          'recipientName',
+          'firstShipAddress',
+          'secondShipAddress',
+          'thirdShipAddress',
+          'shipCity',
+          'shipState',
+          'shipPostalCode',
+        ],
       }).fromStream(stream);
       return this.ordersService.saveAll(orders);
     } catch (error) {
