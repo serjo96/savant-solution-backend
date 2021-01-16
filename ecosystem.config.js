@@ -1,9 +1,9 @@
 module.exports = {
   apps : [{
     name: "kryber-backend",
-    script: "./src/main.js",
+    script: "./dist/src/main.js",
     restart_delay: 3000,
-    watch: ["./src"],
+    watch: ["./dist"],
     // Delay between restart
     watch_delay: 1000,
     env: {

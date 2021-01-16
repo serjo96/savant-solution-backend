@@ -15,6 +15,10 @@ export class OrderDto {
   @Exclude()
   id?: string;
 
+  @IsString()
+  @IsOptional()
+  userId?: string;
+
   @IsOptional()
   @IsString()
   itemId?: string;

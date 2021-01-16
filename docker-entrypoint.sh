@@ -1,4 +1,4 @@
 #!/bin/sh
 
 yarn migration:run
-yarn start:prod
+pm2 start ecosystem.config.js
