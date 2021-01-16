@@ -165,7 +165,7 @@ export class Orders extends BaseEntity {
     type: 'varchar',
     nullable: true,
   })
-  shipСity?: string;
+  shipCity?: string;
 
   @Column({
     type: 'varchar',

@@ -35,7 +35,8 @@ import * as CSVToJSON from 'csvtojson';
 @Roles('user', 'admin')
 @Controller('orders')
 export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) {}
+  constructor(private readonly ordersService: OrdersService) {
+  }
 
   @Post('/create')
   @UsePipes(new ValidationPipe())
@@ -59,6 +60,7 @@ export class OrdersController {
   ): Promise<ResponseOrdersDto[]> {
     const stream = Readable.from(files.buffer.toString());
     const { user } = req;
+
     try {
       const orders: Orders[] = await CSVToJSON({
         headers: [
