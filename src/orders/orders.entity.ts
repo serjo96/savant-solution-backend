@@ -2,9 +2,10 @@ import { User } from '@user/users.entity';
 import {
   BeforeInsert,
   Column,
-  Entity, Index,
+  Entity,
+  Index,
   ManyToOne,
-  PrimaryGeneratedColumn
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 import { v4 as uuid4 } from 'uuid';
 
