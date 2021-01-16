@@ -1,3 +1,3 @@
 #!/bin/bash
-cd /home/ubuntu/etc
-cp -i ./development.env ../krayber
+cd /home/ubuntu/krayber
+yarn install
