@@ -2,9 +2,10 @@ import { User } from '@user/users.entity';
 import {
   BeforeInsert,
   Column,
-  Entity, Index,
+  Entity,
+  Index,
   ManyToOne,
-  PrimaryGeneratedColumn
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 import { v4 as uuid4 } from 'uuid';
 
@@ -185,11 +186,7 @@ export class Orders extends BaseEntity {
   })
   public status: StatusEnum;
 
-  @ManyToOne(
-    type => User,
-    user => user.orders,
-    { eager: true },
-  )
+  @ManyToOne((type) => User, (user) => user.orders, { eager: true })
   public user: User;
 
   @BeforeInsert()

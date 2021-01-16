@@ -35,9 +35,7 @@ import * as CSVToJSON from 'csvtojson';
 @Roles('user', 'admin')
 @Controller('orders')
 export class OrdersController {
-  constructor(
-    private readonly ordersService: OrdersService,
-  ) {}
+  constructor(private readonly ordersService: OrdersService) {}
 
   @Post('/create')
   @UsePipes(new ValidationPipe())
@@ -55,8 +53,12 @@ export class OrdersController {
   // @UsePipes(new ValidationPipe())
   @UseInterceptors(FileInterceptor('file'))
   @UseInterceptors(new TransformInterceptor(ResponseOrdersDto))
-  async uploadOrders(@UploadedFile() files): Promise<ResponseOrdersDto[]> {
+  async uploadOrders(
+    @Req() req: Request,
+    @UploadedFile() files,
+  ): Promise<ResponseOrdersDto[]> {
     const stream = Readable.from(files.buffer.toString());
+    const { user } = req;
     try {
       const orders: Orders[] = await CSVToJSON({
         headers: [
@@ -85,6 +87,7 @@ export class OrdersController {
           'shipPostalCode',
         ],
       }).fromStream(stream);
+      orders.forEach((order) => (order.userId = user.id));
       return this.ordersService.saveAll(orders);
     } catch (error) {
       throw new BadRequestException(error);
