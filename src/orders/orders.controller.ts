@@ -25,7 +25,6 @@ import { EditOrderDto } from './dto/editOrder.dto';
 import { OrderDto } from './dto/order.dto';
 import { OrdersService } from './orders.service';
 import { ResponseOrdersDto } from './dto/response-orders.dto';
-import { CsvParser } from 'nest-csv-parser';
 import { Readable } from 'stream';
 import { Orders } from './orders.entity';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -37,10 +36,8 @@ import * as CSVToJSON from 'csvtojson';
 @Controller('orders')
 export class OrdersController {
   constructor(
-    private readonly csvParser: CsvParser,
     private readonly ordersService: OrdersService,
-  ) {
-  }
+  ) {}
 
   @Post('/create')
   @UsePipes(new ValidationPipe())
