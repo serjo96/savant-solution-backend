@@ -1,4 +1,11 @@
-import { BeforeInsert, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { User } from '@user/users.entity';
+import {
+  BeforeInsert,
+  Column,
+  Entity, Index,
+  ManyToOne,
+  PrimaryGeneratedColumn
+} from 'typeorm';
 import { v4 as uuid4 } from 'uuid';
 
 import { BaseEntity } from '../common/base-entity';
@@ -17,8 +24,12 @@ export enum GraingerShipMethodEnum {
 
 @Entity('orders')
 export class Orders extends BaseEntity {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @Column({
+    type: 'uuid',
+    nullable: true,
+  })
+  @Index()
+  public userId: string;
 
   @Column({
     type: 'varchar',
@@ -173,6 +184,13 @@ export class Orders extends BaseEntity {
     default: StatusEnum.PROCEED,
   })
   public status: StatusEnum;
+
+  @ManyToOne(
+    type => User,
+    user => user.orders,
+    { eager: true },
+  )
+  public user: User;
 
   @BeforeInsert()
   public baseEntityOnCreate(): void {

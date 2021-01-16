@@ -6,11 +6,13 @@ import {
   Column,
   Entity,
   JoinColumn,
+  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
 import { BaseEntity } from '../common/base-entity';
+import { Orders } from '../orders/orders.entity';
 
 export enum RolesEnum {
   GUEST = 0,
@@ -47,6 +49,9 @@ export class User extends BaseEntity {
   async hashPassword() {
     this.password = await bcrypt.hash(this.password, 10);
   }
+
+  @OneToMany(() => Orders, (order) => order.user)
+  public orders: Orders[];
 
   @Column({
     type: 'enum',
