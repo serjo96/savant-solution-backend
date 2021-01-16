@@ -188,7 +188,6 @@ export class Orders extends BaseEntity {
   @ManyToOne(
     type => User,
     user => user.orders,
-    { eager: true },
   )
   public user: User;
 
