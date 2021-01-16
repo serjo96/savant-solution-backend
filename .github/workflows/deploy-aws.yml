@@ -93,6 +93,10 @@ jobs:
         run:  |
           mv -i ./ecosystem.config.js ./dist
 
+      - name: Move run scripts
+        run:  |
+          mv -i ./scripts ./dist
+
       # Install AWS CLI 2
       - name: Install AWS CLI 2
         run: |
