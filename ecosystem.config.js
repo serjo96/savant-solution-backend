@@ -6,5 +6,11 @@ module.exports = {
     watch: ["./dist"],
     // Delay between restart
     watch_delay: 1000,
+    env: {
+      NODE_ENV: "production",
+    },
+    env_production: {
+      NODE_ENV: "production",
+    }
   }]
 };
