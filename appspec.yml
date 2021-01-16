@@ -2,7 +2,7 @@ version: 0.0
 os: linux
 files:
   - source: /
-    destination: /home/ubuntu/krayber
+    destination: /home/ubuntu/krayber/dist
 
 permissions:
   - object: /home/ubuntu
@@ -14,11 +14,11 @@ permissions:
 
 hooks:
 
-#  BeforeInstall:
-#    - location: scripts/before_install.sh
-#      timeout: 300
-#      runas: root
-#
+  BeforeInstall:
+    - location: scripts/before_install.sh
+      timeout: 300
+      runas: root
+
 #  AfterInstall:
 #    - location: scripts/after_install.sh
 #      timeout: 300

@@ -14,10 +14,11 @@ WORKDIR /opt/app
 COPY migrations migrations/
 COPY src src/
 COPY types types/
-COPY package.json tsconfig.json ormconfig.cli.js tsconfig.build.json ./
+COPY package.json tsconfig.json ormconfig.cli.js tsconfig.build.json ecosystem.config.js ./
 COPY ormconfig.prod.js ./ormconfig.js
 
 RUN yarn build
+RUN yarn add global pm2
 RUN rm -rf src/
 
 ####################
@@ -30,6 +31,4 @@ WORKDIR /opt/app
 
 COPY --from=builder /opt/app .
 COPY docker-entrypoint.sh .
-CMD ["sh", "/docker-entrypoint.sh"]
-CMD [ "npm", "run", "start:prod" ]
 #ENTRYPOINT ["sh", "/docker-entrypoint.sh"]

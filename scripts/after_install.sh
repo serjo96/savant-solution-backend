@@ -1,4 +1,3 @@
 #!/bin/bash
-cd /var/www/krayber/html
-npm install
-npm build
+cd /home/ubuntu/etc
+cp -i ./production.env ../krayber

@@ -27,10 +27,11 @@ export class OrdersService {
     return result;
   }
 
-  async getAll(query: any): Promise<Orders[]> {
+  async getAll(where, query?: any): Promise<Orders[]> {
     const clause: any = {
       ...sort(query),
       ...paginator(query),
+      where,
     };
     return await this.ordersRepository.find(clause);
   }
@@ -59,16 +60,18 @@ export class OrdersService {
     if (!(data instanceof Orders)) {
       entity = Orders.create(data);
     }
-    console.log(entity);
+
     try {
       return await this.ordersRepository.save(entity);
     } catch (e) {
       throw new Error(e);
     }
   }
-
-  async update(id: { id: string }, item: EditOrderDto): Promise<Orders> {
-    const toUpdate = await this.ordersRepository.findOne(id);
+  async update(
+    where: { id: string; userId: string },
+    item: EditOrderDto,
+  ): Promise<Orders> {
+    const toUpdate = await this.ordersRepository.findOne(where);
     const updated = Object.assign(toUpdate, item);
     return await this.ordersRepository.save(updated);
   }

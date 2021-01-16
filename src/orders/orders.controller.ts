@@ -7,12 +7,14 @@ import {
   Post,
   Put,
   Query,
+  Req,
   UploadedFile,
   UseGuards,
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { Request } from 'express';
 
 import { Roles } from '../common/decorators/roles';
 import { TransformInterceptor } from '../common/interceptors/TransformInterceptor';
@@ -43,8 +45,13 @@ export class OrdersController {
   @Post('/create')
   @UsePipes(new ValidationPipe())
   @UseInterceptors(new TransformInterceptor(ResponseOrdersDto))
-  async createOrder(@Body() item: OrderDto): Promise<ResponseOrdersDto> {
-    return await this.ordersService.save(item);
+  async createOrder(
+    @Body() item: OrderDto,
+    @Req() req: Request,
+  ): Promise<ResponseOrdersDto> {
+    const { user } = req;
+    const orderData = { ...item, userId: user.id };
+    return await this.ordersService.save(orderData);
   }
 
   @Post('/upload')
@@ -89,8 +96,19 @@ export class OrdersController {
 
   @Get(':id')
   @UseInterceptors(new TransformInterceptor(ResponseOrdersDto))
-  async getOrder(@Param() id: { id: string }): Promise<ResponseOrdersDto> {
-    return await this.ordersService.findOne(id);
+  async getOrder(
+    @Param() { id }: { id: string },
+    @Req() req: Request,
+  ): Promise<ResponseOrdersDto> {
+    const { user } = req;
+    const where: {
+      id: string;
+      userId: string;
+    } = {
+      id,
+      userId: user.id,
+    };
+    return await this.ordersService.findOne(where);
   }
 
   @Get()
@@ -98,23 +116,40 @@ export class OrdersController {
   @UseInterceptors(new TransformInterceptor(ResponseOrdersDto))
   async finAll(
     @Query() query: SortWithPaginationQuery,
+    @Req() req: Request,
   ): Promise<ResponseOrdersDto[]> {
-    return this.ordersService.getAll(query);
+    const { user } = req;
+
+    const where: {
+      userId: string;
+    } = {
+      userId: user.id,
+    };
+    return this.ordersService.getAll(where, query);
   }
 
   @Put(':id')
   @UsePipes(new ValidationPipe())
   @UseInterceptors(new TransformInterceptor(ResponseOrdersDto))
   async updateOrder(
-    @Param() id: { id: string },
+    @Param() { id }: { id: string },
     @Body() item: EditOrderDto,
+    @Req() req: Request,
   ): Promise<ResponseOrdersDto> {
-    return this.ordersService.update(id, item);
+    const { user } = req;
+    const where = { id, userId: user.id };
+
+    return this.ordersService.update(where, item);
   }
 
   @Delete(':id')
   @UseInterceptors(new TransformInterceptor(ResponseOrdersDto))
-  async removeOrder(@Param() id: { id: string }): Promise<ResponseOrdersDto> {
-    return await this.ordersService.delete(id);
+  async removeOrder(
+    @Param() id: { id: string },
+    @Req() req: Request,
+  ): Promise<ResponseOrdersDto> {
+    const { user } = req;
+    const where = { id, userId: user.id };
+    return await this.ordersService.delete(where);
   }
 }
