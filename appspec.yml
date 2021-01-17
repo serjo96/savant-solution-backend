@@ -14,8 +14,6 @@ permissions:
 
 hooks:
 
-  BeforeInstall:
-
   ApplicationStart:
     - location: scripts/app_start.sh
       timeout: 300
