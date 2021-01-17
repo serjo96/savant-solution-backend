@@ -186,7 +186,10 @@ export class Orders extends BaseEntity {
   })
   public status: StatusEnum;
 
-  @ManyToOne((type) => User, (user) => user.orders, { eager: true })
+  @ManyToOne(
+    type => User,
+    user => user.orders,
+  )
   public user: User;
 
   @BeforeInsert()
