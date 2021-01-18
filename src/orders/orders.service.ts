@@ -27,13 +27,20 @@ export class OrdersService {
     return result;
   }
 
-  async getAll(where, query?: any): Promise<Orders[]> {
+  async getAll(where, query?: any): Promise<{ result: Orders[]; count: number }> {
     const clause: any = {
       ...sort(query),
       ...paginator(query),
       where,
     };
-    return await this.ordersRepository.find(clause);
+    const [result, total] = await this.ordersRepository.findAndCount(clause);
+    if (!result) {
+      throw new NotFoundException();
+    }
+    return {
+      result,
+      count: total,
+    };
   }
 
   async delete(where: any): Promise<any> {

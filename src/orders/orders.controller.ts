@@ -8,7 +8,6 @@ import {
   Put,
   Query,
   Req,
-  UploadedFile,
   UseGuards,
   UseInterceptors,
   UsePipes,
@@ -23,13 +22,9 @@ import { SortWithPaginationQuery } from '../common/sort';
 import { EditOrderDto } from './dto/editOrder.dto';
 
 import { OrderDto } from './dto/order.dto';
+import { Orders } from './orders.entity';
 import { OrdersService } from './orders.service';
 import { ResponseOrdersDto } from './dto/response-orders.dto';
-import { Readable } from 'stream';
-import { Orders } from './orders.entity';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { BadRequestException } from '../common/exceptions/bad-request';
-import * as CSVToJSON from 'csvtojson';
 
 @UseGuards(AuthGuard('jwt'))
 @Roles('user', 'admin')
@@ -47,51 +42,6 @@ export class OrdersController {
     const { user } = req;
     const orderData = { ...item, userId: user.id };
     return await this.ordersService.save(orderData);
-  }
-
-  @Post('/upload')
-  // @UsePipes(new ValidationPipe())
-  @UseInterceptors(FileInterceptor('file'))
-  @UseInterceptors(new TransformInterceptor(ResponseOrdersDto))
-  async uploadOrders(
-    @Req() req: Request,
-    @UploadedFile() files,
-  ): Promise<ResponseOrdersDto[]> {
-    const stream = Readable.from(files.buffer.toString());
-    const { user } = req;
-    try {
-      const orders: Orders[] = await CSVToJSON({
-        headers: [
-          'amazonOrderId',
-          'amazonItemId',
-          'createdAt',
-          null,
-          null,
-          'recipientName',
-          null,
-          'amazonSku',
-          null,
-          'quantity',
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          'recipientName',
-          'firstShipAddress',
-          'secondShipAddress',
-          'thirdShipAddress',
-          'shipCity',
-          'shipState',
-          'shipPostalCode',
-        ],
-      }).fromStream(stream);
-      orders.forEach((order) => (order.userId = user.id));
-      return this.ordersService.saveAll(orders);
-    } catch (error) {
-      throw new BadRequestException(error);
-    }
   }
 
   @Get(':id')
@@ -117,7 +67,7 @@ export class OrdersController {
   async finAll(
     @Query() query: SortWithPaginationQuery,
     @Req() req: Request,
-  ): Promise<ResponseOrdersDto[]> {
+  ): Promise<{ result: ResponseOrdersDto[]; count: number }> {
     const { user } = req;
 
     const where: {
