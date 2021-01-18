@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { PaginatorQuery, paginator } from '../common/paginator';
+import { paginator } from '../common/paginator';
 import { sort } from '../common/sort';
 import { EditItemDto } from './dto/editItem.dto';
 
@@ -27,12 +27,20 @@ export class ItemsService {
     return result;
   }
 
-  async getAll(query: any): Promise<Items[]> {
+  async getAll(query: any): Promise<{ result: Items[]; count: number }> {
     const clause: any = {
       ...sort(query),
       ...paginator(query),
     };
-    return await this.productsRepository.find(clause);
+    const [result, total] = await this.productsRepository.findAndCount(clause);
+
+    if (!result) {
+      throw new NotFoundException();
+    }
+    return {
+      result,
+      count: total,
+    };
   }
 
   async delete(where: any): Promise<any> {

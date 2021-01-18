@@ -13,7 +13,6 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import * as moment from 'moment';
 
 import { Roles } from '../common/decorators/roles';
 import { TransformInterceptor } from '../common/interceptors/TransformInterceptor';
@@ -22,16 +21,16 @@ import { SortWithPaginationQuery } from '../common/sort';
 import { EditItemDto } from './dto/editItem.dto';
 
 import { ItemDto } from './dto/item.dto';
+import { Items } from './item.entity';
 import { ItemsService } from './items.service';
 import { ResponseItemsDto } from './dto/response-items.dto';
-import { Column, Workbook, Buffer } from 'exceljs';
+import { Buffer, Column, Workbook } from 'exceljs';
 
 @UseGuards(AuthGuard('jwt'))
 @Roles('user', 'admin')
 @Controller('items')
 export class ItemsController {
-  constructor(private readonly itemsService: ItemsService) {
-  }
+  constructor(private readonly itemsService: ItemsService) {}
 
   @Post('/create')
   @UsePipes(new ValidationPipe())
@@ -46,7 +45,10 @@ export class ItemsController {
     @Res() res,
     @Query() query: SortWithPaginationQuery,
   ): Promise<Buffer> {
-    const allItems: any[] = await this.itemsService.getAll(query);
+    const allItems: {
+      result: Items[];
+      count: number;
+    } = await this.itemsService.getAll(query);
     const workbook = new Workbook();
     const worksheet = workbook.addWorksheet('Items');
     worksheet.columns = [
@@ -60,7 +62,7 @@ export class ItemsController {
       { header: 'Note', key: 'note', width: 20 },
       { header: 'Order date', key: 'createdAt', width: 25 },
     ] as Array<Column>;
-    worksheet.addRows(allItems);
+    worksheet.addRows(allItems.result);
 
     res.setHeader(
       'Content-Disposition',
@@ -82,7 +84,7 @@ export class ItemsController {
   @UseInterceptors(new TransformInterceptor(ResponseItemsDto))
   async finAll(
     @Query() query: SortWithPaginationQuery,
-  ): Promise<ResponseItemsDto[]> {
+  ): Promise<{ result: ResponseItemsDto[]; count: number }> {
     return this.itemsService.getAll(query);
   }
 
