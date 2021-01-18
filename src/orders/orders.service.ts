@@ -27,7 +27,10 @@ export class OrdersService {
     return result;
   }
 
-  async getAll(where, query?: any): Promise<{ result: Orders[]; count: number }> {
+  async getAll(
+    where,
+    query?: any,
+  ): Promise<{ result: Orders[]; count: number }> {
     const clause: any = {
       ...sort(query),
       ...paginator(query),
