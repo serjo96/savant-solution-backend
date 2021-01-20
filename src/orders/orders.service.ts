@@ -1,31 +1,22 @@
-import { HttpService, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { PaginatorQuery, paginator } from '../common/paginator';
+import { paginator } from '../common/paginator';
 import { sort } from '../common/sort';
 import { EditOrderDto } from './dto/editOrder.dto';
 
 import { OrderDto } from './dto/order.dto';
 import { Orders } from './orders.entity';
-import { Observable } from 'rxjs';
 
 @Injectable()
 export class OrdersService {
-  private readonly _aiUrl = 'http://52.54.2.177';
-
   constructor(
-    private readonly httpService: HttpService,
     @InjectRepository(Orders)
     private readonly ordersRepository: Repository<Orders>,
   ) {}
 
   async find(where: any): Promise<Orders[]> {
     return await this.ordersRepository.find(where);
-  }
-
-  sendOrdersToAI(): Observable<any> {
-    let orders = [];
-    return this.httpService.post(`${this._aiUrl}/orders`, { orders });
   }
 
   async findOne(where: any): Promise<Orders> {
