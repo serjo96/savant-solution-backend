@@ -35,8 +35,7 @@ import { ResponseOrdersDto } from './dto/response-orders.dto';
 @Roles('user', 'admin')
 @Controller('orders')
 export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) {
-  }
+  constructor(private readonly ordersService: OrdersService) {}
 
   @Post('/create')
   @UsePipes(new ValidationPipe())
