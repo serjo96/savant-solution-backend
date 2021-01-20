@@ -13,11 +13,14 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { plainToClass } from 'class-transformer';
 
 import { Roles } from '../common/decorators/roles';
 import { TransformInterceptor } from '../common/interceptors/TransformInterceptor';
 import { ValidationPipe } from '../common/Pipes/validation.pipe';
 import { SortWithPaginationQuery } from '../common/sort';
+import { ResponseOrdersDto } from '../orders/dto/response-orders.dto';
+import { Orders } from '../orders/orders.entity';
 import { EditItemDto } from './dto/editItem.dto';
 
 import { ItemDto } from './dto/item.dto';
@@ -81,11 +84,18 @@ export class ItemsController {
 
   @Get()
   @UsePipes(new ValidationPipe())
-  @UseInterceptors(new TransformInterceptor(ResponseItemsDto))
   async finAll(
     @Query() query: SortWithPaginationQuery,
-  ): Promise<{ result: ResponseItemsDto[]; count: number }> {
-    return this.itemsService.getAll(query);
+  ): Promise<{ data: { result: ResponseItemsDto[]; count: number } }> {
+    const { result, count } = await this.itemsService.getAll(query);
+    return {
+      data: {
+        result: result.map((order: Items) =>
+          plainToClass(ResponseItemsDto, order),
+        ),
+        count,
+      },
+    };
   }
 
   @Put(':id')
