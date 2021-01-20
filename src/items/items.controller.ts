@@ -25,7 +25,7 @@ import { EditItemDto } from './dto/editItem.dto';
 
 import { ItemDto } from './dto/item.dto';
 import { Items } from './item.entity';
-import { ItemsService } from './items.service';
+import { IReponseItemsList, ItemsService } from './items.service';
 import { ResponseItemsDto } from './dto/response-items.dto';
 import { Buffer, Column, Workbook } from 'exceljs';
 
@@ -48,10 +48,7 @@ export class ItemsController {
     @Res() res,
     @Query() query: SortWithPaginationQuery,
   ): Promise<Buffer> {
-    const allItems: {
-      result: Items[];
-      count: number;
-    } = await this.itemsService.getAll(query);
+    const allItems: IReponseItemsList = await this.itemsService.getAll(query);
     const workbook = new Workbook();
     const worksheet = workbook.addWorksheet('Items');
     worksheet.columns = [
@@ -65,7 +62,7 @@ export class ItemsController {
       { header: 'Note', key: 'note', width: 20 },
       { header: 'Order date', key: 'createdAt', width: 25 },
     ] as Array<Column>;
-    worksheet.addRows(allItems.result);
+    worksheet.addRows(allItems.data.result);
 
     res.setHeader(
       'Content-Disposition',
@@ -87,15 +84,7 @@ export class ItemsController {
   async finAll(
     @Query() query: SortWithPaginationQuery,
   ): Promise<{ data: { result: ResponseItemsDto[]; count: number } }> {
-    const { result, count } = await this.itemsService.getAll(query);
-    return {
-      data: {
-        result: result.map((order: Items) =>
-          plainToClass(ResponseItemsDto, order),
-        ),
-        count,
-      },
-    };
+    return await this.itemsService.getAll(query);
   }
 
   @Put(':id')

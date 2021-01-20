@@ -1,11 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { plainToClass } from 'class-transformer';
 import { Repository } from 'typeorm';
 import { PaginatorQuery, paginator } from '../common/paginator';
 import { sort } from '../common/sort';
 import { EditOrderDto } from './dto/editOrder.dto';
 
 import { OrderDto } from './dto/order.dto';
+import { ResponseOrdersDto } from './dto/response-orders.dto';
 import { Orders } from './orders.entity';
 
 @Injectable()
@@ -30,19 +32,24 @@ export class OrdersService {
   async getAll(
     where,
     query?: any,
-  ): Promise<{ result: Orders[]; count: number }> {
+  ): Promise<{ data: { result: ResponseOrdersDto[]; count: number } }> {
     const clause: any = {
       ...sort(query),
       ...paginator(query),
       where,
     };
-    const [result, total] = await this.ordersRepository.findAndCount(clause);
+    const [result, count] = await this.ordersRepository.findAndCount(clause);
     if (!result) {
       throw new NotFoundException();
     }
+
     return {
-      result,
-      count: total,
+      data: {
+        result: result.map((order: Orders) =>
+          plainToClass(ResponseOrdersDto, order),
+        ),
+        count,
+      },
     };
   }
 

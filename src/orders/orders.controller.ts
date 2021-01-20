@@ -125,16 +125,7 @@ export class OrdersController {
     } = {
       userId: user.id,
     };
-    const { result, count } = await this.ordersService.getAll(where, query);
-
-    return {
-      data: {
-        result: result.map((order: Orders) =>
-          plainToClass(ResponseOrdersDto, order),
-        ),
-        count,
-      },
-    };
+    return await this.ordersService.getAll(where, query);
   }
 
   @Put(':id')
