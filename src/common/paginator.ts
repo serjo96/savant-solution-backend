@@ -22,7 +22,7 @@ export class PaginatorQuery {
   count?: number;
 
   @IsOptional()
-  @Transform((value) => (Number(value) ? Number(value) : value))
+  @Transform((value) => Number(value) ?? value)
   @IsInt({
     message: 'The offset number of the object must be integer',
   })

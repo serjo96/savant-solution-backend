@@ -1,12 +1,21 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { plainToClass } from 'class-transformer';
 import { Repository } from 'typeorm';
 import { paginator } from '../common/paginator';
 import { sort } from '../common/sort';
 import { EditItemDto } from './dto/editItem.dto';
 
 import { ItemDto } from './dto/item.dto';
+import { ResponseItemsDto } from './dto/response-items.dto';
 import { Items } from './item.entity';
+
+export interface IReponseItemsList {
+   data: {
+     result: ResponseItemsDto[];
+     count: number
+   }
+}
 
 @Injectable()
 export class ItemsService {
@@ -27,19 +36,25 @@ export class ItemsService {
     return result;
   }
 
-  async getAll(query: any): Promise<{ result: Items[]; count: number }> {
+  async getAll(
+    query: any,
+  ): Promise<IReponseItemsList> {
     const clause: any = {
       ...sort(query),
       ...paginator(query),
     };
-    const [result, total] = await this.productsRepository.findAndCount(clause);
+    const [result, count] = await this.productsRepository.findAndCount(clause);
 
     if (!result) {
       throw new NotFoundException();
     }
     return {
-      result,
-      count: total,
+      data: {
+        result: result.map((order: Items) =>
+          plainToClass(ResponseItemsDto, order),
+        ),
+        count,
+      },
     };
   }
 
