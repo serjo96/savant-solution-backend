@@ -24,6 +24,7 @@ import { Roles } from '../common/decorators/roles';
 import { TransformInterceptor } from '../common/interceptors/TransformInterceptor';
 import { ValidationPipe } from '../common/Pipes/validation.pipe';
 import { SortWithPaginationQuery } from '../common/sort';
+import { SearchService } from '../search/search.service';
 import { EditOrderDto } from './dto/editOrder.dto';
 import { OrderDto } from './dto/order.dto';
 
@@ -35,7 +36,10 @@ import { ResponseOrdersDto } from './dto/response-orders.dto';
 @Roles('user', 'admin')
 @Controller('orders')
 export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) {}
+  constructor(
+    private readonly ordersService: OrdersService,
+    private readonly searchService: SearchService,
+  ) {}
 
   @Post('/create')
   @UsePipes(new ValidationPipe())
@@ -151,5 +155,12 @@ export class OrdersController {
     const { user } = req;
     const where = { id, userId: user.id };
     return await this.ordersService.delete(where);
+  }
+
+  @Get('/search')
+  async searchOrders(
+    @Query() query: any,
+  ): Promise<{ result: ResponseOrdersDto[]; count: number }> {
+    this.searchService.search()
   }
 }
