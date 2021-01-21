@@ -2,10 +2,10 @@ name: deploy-app-on-s3
 on:
   push:
     branches:
-      - staging
+      - main
   pull_request:
     branches:
-      - staging
+      - main
 
 jobs:
   buildAndTest:

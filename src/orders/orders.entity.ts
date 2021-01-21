@@ -11,6 +11,7 @@ import { v4 as uuid4 } from 'uuid';
 
 import { BaseEntity } from '../common/base-entity';
 import generateId from '../utils/idGenerator';
+
 export enum StatusEnum {
   MANUAL = 3,
   PROCEED = 2,
@@ -165,7 +166,7 @@ export class Orders extends BaseEntity {
     type: 'varchar',
     nullable: true,
   })
-  shipСity?: string;
+  shipCity?: string;
 
   @Column({
     type: 'varchar',
@@ -186,10 +187,7 @@ export class Orders extends BaseEntity {
   })
   public status: StatusEnum;
 
-  @ManyToOne(
-    type => User,
-    user => user.orders,
-  )
+  @ManyToOne((type) => User, (user) => user.orders)
   public user: User;
 
   @BeforeInsert()
