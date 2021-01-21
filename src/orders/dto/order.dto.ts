@@ -85,7 +85,6 @@ export class OrderDto {
   graingerWebNumber?: string;
 
   @IsOptional()
-  @Transform((status) => GraingerShipMethodEnum[status.toUpperCase()])
   @IsEnum(GraingerShipMethodEnum)
   graingerShipMethod?: GraingerShipMethodEnum;
 
