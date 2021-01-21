@@ -14,6 +14,7 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { plainToClass } from 'class-transformer';
 import { Request } from 'express';
 import { Readable } from 'stream';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -113,11 +114,10 @@ export class OrdersController {
 
   @Get()
   @UsePipes(new ValidationPipe())
-  @UseInterceptors(new TransformInterceptor(ResponseOrdersDto))
   async finAll(
     @Query() query: SortWithPaginationQuery,
     @Req() req: Request,
-  ): Promise<{ result: ResponseOrdersDto[]; count: number }> {
+  ): Promise<{ data: { result: ResponseOrdersDto[]; count: number } }> {
     const { user } = req;
 
     const where: {
@@ -125,7 +125,7 @@ export class OrdersController {
     } = {
       userId: user.id,
     };
-    return this.ordersService.getAll(where, query);
+    return await this.ordersService.getAll(where, query);
   }
 
   @Put(':id')
@@ -139,7 +139,7 @@ export class OrdersController {
     const { user } = req;
     const where = { id, userId: user.id };
 
-    return this.ordersService.update(where, item);
+    return await this.ordersService.update(where, item);
   }
 
   @Delete(':id')

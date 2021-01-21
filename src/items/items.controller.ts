@@ -13,16 +13,19 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { plainToClass } from 'class-transformer';
 
 import { Roles } from '../common/decorators/roles';
 import { TransformInterceptor } from '../common/interceptors/TransformInterceptor';
 import { ValidationPipe } from '../common/Pipes/validation.pipe';
 import { SortWithPaginationQuery } from '../common/sort';
+import { ResponseOrdersDto } from '../orders/dto/response-orders.dto';
+import { Orders } from '../orders/orders.entity';
 import { EditItemDto } from './dto/editItem.dto';
 
 import { ItemDto } from './dto/item.dto';
 import { Items } from './item.entity';
-import { ItemsService } from './items.service';
+import { IReponseItemsList, ItemsService } from './items.service';
 import { ResponseItemsDto } from './dto/response-items.dto';
 import { Buffer, Column, Workbook } from 'exceljs';
 
@@ -45,10 +48,7 @@ export class ItemsController {
     @Res() res,
     @Query() query: SortWithPaginationQuery,
   ): Promise<Buffer> {
-    const allItems: {
-      result: Items[];
-      count: number;
-    } = await this.itemsService.getAll(query);
+    const allItems: IReponseItemsList = await this.itemsService.getAll(query);
     const workbook = new Workbook();
     const worksheet = workbook.addWorksheet('Items');
     worksheet.columns = [
@@ -62,7 +62,7 @@ export class ItemsController {
       { header: 'Note', key: 'note', width: 20 },
       { header: 'Order date', key: 'createdAt', width: 25 },
     ] as Array<Column>;
-    worksheet.addRows(allItems.result);
+    worksheet.addRows(allItems.data.result);
 
     res.setHeader(
       'Content-Disposition',
@@ -81,11 +81,10 @@ export class ItemsController {
 
   @Get()
   @UsePipes(new ValidationPipe())
-  @UseInterceptors(new TransformInterceptor(ResponseItemsDto))
   async finAll(
     @Query() query: SortWithPaginationQuery,
-  ): Promise<{ result: ResponseItemsDto[]; count: number }> {
-    return this.itemsService.getAll(query);
+  ): Promise<{ data: { result: ResponseItemsDto[]; count: number } }> {
+    return await this.itemsService.getAll(query);
   }
 
   @Put(':id')
