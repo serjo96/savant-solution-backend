@@ -40,7 +40,6 @@ export class ResponseItemsDto {
   note?: string;
 
   @IsNotEmpty()
-  @Transform((status) => getEnumKeyByEnumValue(StatusEnum, status))
   @IsEnum(StatusEnum)
   status: StatusEnum;
 }
