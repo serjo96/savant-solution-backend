@@ -79,12 +79,10 @@ export class ResponseOrdersDto {
   graingerWebNumber?: string;
 
   @IsOptional()
-  @Transform((status) => getEnumKeyByEnumValue(StatusEnum, status))
   @IsEnum(GraingerShipMethodEnum)
   graingerShipMethod?: GraingerShipMethodEnum;
 
   @IsNotEmpty()
-  @Transform((status) => getEnumKeyByEnumValue(StatusEnum, status))
   @IsEnum(StatusEnum)
   status: StatusEnum;
 }

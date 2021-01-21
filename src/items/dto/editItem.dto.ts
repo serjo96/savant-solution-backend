@@ -39,7 +39,6 @@ export class EditItemDto {
   note?: string;
 
   @IsOptional()
-  @Transform((status) => StatusEnum[status.toUpperCase()])
   @IsEnum(StatusEnum)
   status: StatusEnum;
 }
