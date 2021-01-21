@@ -80,7 +80,6 @@ export class UsersController {
   async changeUser(
     @Param() { id }: { id: string },
     @Body() body: EditUserDto,
-    @Req() req: Request,
   ): Promise<{ data: User }> {
     const updatingUser = await this.usersService.findById(id);
     if (!updatingUser) {
@@ -92,8 +91,7 @@ export class UsersController {
     const userEmail = body.email;
     if (userEmail) {
       const existEmail = await this.usersService.findByEmail(userEmail);
-      const { user } = req;
-      if (existEmail.id !== user.id) {
+      if (existEmail.id !== updatingUser.id) {
         throw new BadRequestException({
           message: `User with current email already exist`,
         });
