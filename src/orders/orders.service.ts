@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToClass } from 'class-transformer';
 import { Repository } from 'typeorm';
-import { PaginatorQuery, paginator } from '../common/paginator';
+import { paginator } from '../common/paginator';
 import { sort } from '../common/sort';
 import { EditOrderDto } from './dto/editOrder.dto';
 
@@ -84,6 +84,7 @@ export class OrdersService {
       throw new Error(e);
     }
   }
+
   async update(
     where: { id: string; userId: string },
     item: EditOrderDto,

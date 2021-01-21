@@ -90,7 +90,6 @@ export class OrderDto {
   graingerShipMethod?: GraingerShipMethodEnum;
 
   @IsNotEmpty()
-  @Transform((status) => StatusEnum[status.toUpperCase()])
   @IsEnum(StatusEnum)
   status: StatusEnum;
 }
