@@ -11,8 +11,8 @@ import { ElasticsearchModule } from '@nestjs/elasticsearch';
       useFactory: async (configService: ConfigService) => ({
         ...configService.elasticConfig,
         maxRetries: 10,
-        requestTimeout: 60000,
-        pingTimeout: 60000,
+        requestTimeout: 6000,
+        pingTimeout: 6000,
         sniffOnStart: true,
       }),
       inject: [ConfigService],
@@ -22,9 +22,6 @@ import { ElasticsearchModule } from '@nestjs/elasticsearch';
   providers: [SearchService],
   exports: [SearchService],
 })
-export class SearchModule implements OnModuleInit {
-  constructor(private searchService: SearchService) {}
-  onModuleInit() {
-    this.searchService.createIndex().then();
-  }
+export class SearchModule {
+
 }

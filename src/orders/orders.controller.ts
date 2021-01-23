@@ -51,6 +51,7 @@ export class OrdersController {
   ): Promise<ResponseOrdersDto> {
     const { user } = req;
     const orderData = { ...item, userId: user.id };
+    await this.searchService.indexPost(orderData);
     return await this.ordersService.save(orderData);
   }
 
@@ -157,10 +158,10 @@ export class OrdersController {
     return await this.ordersService.delete(where);
   }
 
-  @Get('/search')
+  @Post('/search')
   async searchOrders(
-    @Query() query: any,
-  ): Promise<{ result: ResponseOrdersDto[]; count: number }> {
-    this.searchService.search()
+    @Query('search') search: string,
+  ): Promise<any> {
+    return await this.ordersService.search(search);
   }
 }

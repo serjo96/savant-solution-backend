@@ -10,13 +10,26 @@ services:
     ports:
       - 3000:3000
     depends_on:
-      - postgres
+      - elasticsearch
     links:
-      - postgres:postgres
+      - elasticsearch:elasticsearch
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
+    networks:
+      - docker_elk
 
+  elasticsearch:
+    image: elasticsearch:6.5.0
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks:
+      - docker_elk
+
+networks:
+  docker_elk:
+    driver: bridge
 #  postgres:
 #    image: postgres:alpine
 #    env_file:

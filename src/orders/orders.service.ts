@@ -97,4 +97,18 @@ export class OrdersService {
   async updateRaw({ where, data }: { where: any; data: any }): Promise<any> {
     return await this.ordersRepository.update(where, data);
   }
+
+  async search(query: any): Promise<any> {
+    const res = await this.ordersRepository
+      .createQueryBuilder()
+      .select('orders')
+      .from(Orders, 'orders')
+      .where(
+        'to_tsvector(orders.supplier) @@ to_tsquery(:query)',
+        { query }
+      )
+      .getMany();
+    console.log(res);
+    return res;
+  }
 }
