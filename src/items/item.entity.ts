@@ -14,7 +14,7 @@ export class Items extends BaseEntity {
 
   @Column({
     type: 'varchar',
-    nullable: false,
+    nullable: true,
   })
   itemNumber: string;
 

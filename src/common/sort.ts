@@ -13,6 +13,9 @@ export class SortWithPaginationQuery extends PaginatorQuery {
   @IsOptional()
   @IsOrderDirection()
   sort_by: string;
+
+  @IsOptional()
+  notMapped: boolean;
 }
 
 export default interface ISort {

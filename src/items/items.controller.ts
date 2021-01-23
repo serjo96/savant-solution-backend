@@ -38,8 +38,8 @@ export class ItemsController {
   @Post('/create')
   @UsePipes(new ValidationPipe())
   @UseInterceptors(new TransformInterceptor(ResponseItemsDto))
-  async createItem(@Body() item: ItemDto): Promise<ResponseItemsDto> {
-    return await this.itemsService.save(item);
+  createItem(@Body() item: ItemDto): Promise<ResponseItemsDto> {
+    return this.itemsService.save(item);
   }
 
   @Get('/download')
@@ -70,7 +70,7 @@ export class ItemsController {
     );
 
     await workbook.xlsx.write(res);
-    return await workbook.xlsx.writeBuffer();
+    return workbook.xlsx.writeBuffer();
   }
 
   @Get(':id')
@@ -99,7 +99,7 @@ export class ItemsController {
 
   @Delete(':id')
   @UseInterceptors(new TransformInterceptor(ResponseItemsDto))
-  async removeItem(@Param() id: { id: string }): Promise<ResponseItemsDto> {
-    return await this.itemsService.delete(id);
+  removeItem(@Param() id: { id: string }): Promise<ResponseItemsDto> {
+    return this.itemsService.delete(id);
   }
 }

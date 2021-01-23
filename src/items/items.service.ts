@@ -9,6 +9,7 @@ import { EditItemDto } from './dto/editItem.dto';
 import { ItemDto } from './dto/item.dto';
 import { ResponseItemsDto } from './dto/response-items.dto';
 import { Items } from './item.entity';
+import { filter } from '../common/filter';
 
 export interface IReponseItemsList {
    data: {
@@ -42,6 +43,7 @@ export class ItemsService {
     const clause: any = {
       ...sort(query),
       ...paginator(query),
+      ...filter(query)
     };
     const [result, count] = await this.productsRepository.findAndCount(clause);
 

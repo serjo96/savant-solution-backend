@@ -11,7 +11,7 @@ import getEnumKeyByEnumValue from '../../utils/enum-format';
 import { StatusEnum } from '../item.entity';
 
 export class ResponseItemsDto {
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   itemNumber: string;
 

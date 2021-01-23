@@ -16,7 +16,7 @@ export class ItemDto {
   @Exclude()
   id?: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   itemNumber: string;
 
