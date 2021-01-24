@@ -8,17 +8,17 @@ import { EditItemDto } from './dto/editItem.dto';
 
 import { ItemDto } from './dto/item.dto';
 import { ResponseItemsDto } from './dto/response-items.dto';
-import { Items } from './item.entity';
+import { Items, StatusEnum } from './item.entity';
 import { filter } from '../common/filter';
 import { CollectionResponse } from '../common/collection-response';
-import { EditOrderDto } from '../orders/dto/editOrder.dto';
 
 @Injectable()
 export class ItemsService {
   constructor(
     @InjectRepository(Items)
     private readonly productsRepository: Repository<Items>,
-  ) {}
+  ) {
+  }
 
   async find(where: any): Promise<Items[]> {
     return await this.productsRepository.find(where);
@@ -68,15 +68,18 @@ export class ItemsService {
     if (!(data instanceof Items)) {
       entity = Items.create(data);
     }
+    if (!entity.itemNumber) {
+      entity.status = StatusEnum.INACTIVE;
+    }
     try {
       return await this.productsRepository.save(entity);
     } catch (e) {
       throw new Error(e);
     }
   }
+
   async update(
     where: { id: string; userId: string },
-
     item: EditItemDto,
   ): Promise<Items> {
     const toUpdate = await this.productsRepository.findOne(where);
