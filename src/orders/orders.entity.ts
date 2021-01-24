@@ -5,7 +5,6 @@ import {
   Entity,
   Index,
   ManyToOne,
-  PrimaryGeneratedColumn,
 } from 'typeorm';
 import { v4 as uuid4 } from 'uuid';
 
@@ -64,6 +63,12 @@ export class Orders extends BaseEntity {
     nullable: true,
   })
   note?: string;
+
+  @Column({
+    type: 'date',
+    nullable: true,
+  })
+  orderDate?: Date;
 
   @Column({
     type: 'date',

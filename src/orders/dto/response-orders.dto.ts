@@ -1,4 +1,3 @@
-import { Exclude, Transform } from 'class-transformer';
 import {
   IsDateString,
   IsEnum,
@@ -8,8 +7,8 @@ import {
   IsString,
 } from 'class-validator';
 
-import getEnumKeyByEnumValue from '../../utils/enum-format';
 import { GraingerShipMethodEnum, StatusEnum } from '../orders.entity';
+import { Exclude } from 'class-transformer';
 
 export class ResponseOrdersDto {
   id: string;
@@ -85,4 +84,11 @@ export class ResponseOrdersDto {
   @IsNotEmpty()
   @IsEnum(StatusEnum)
   status: StatusEnum;
+
+  @Exclude()
+  createdAt: Date;
+  @Exclude()
+  updatedAt: Date;
+  @Exclude()
+  deletedAt: Date;
 }

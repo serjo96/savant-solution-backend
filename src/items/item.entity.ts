@@ -1,6 +1,13 @@
-import { BeforeInsert, Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  BeforeInsert,
+  Column,
+  Entity,
+  Index,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 import { BaseEntity } from '../common/base-entity';
+import generateId from '../utils/idGenerator';
 
 export enum StatusEnum {
   ACTIVE = 1,
