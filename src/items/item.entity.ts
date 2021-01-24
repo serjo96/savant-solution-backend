@@ -1,4 +1,4 @@
-import { BeforeInsert, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { BeforeInsert, Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
 import { BaseEntity } from '../common/base-entity';
 
@@ -11,6 +11,13 @@ export enum StatusEnum {
 export class Items extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  @Column({
+    type: 'uuid',
+    nullable: true,
+  })
+  @Index()
+  public userId: string;
 
   @Column({
     type: 'varchar',

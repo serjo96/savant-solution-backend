@@ -9,6 +9,7 @@ import { EditOrderDto } from './dto/editOrder.dto';
 import { OrderDto } from './dto/order.dto';
 import { ResponseOrdersDto } from './dto/response-orders.dto';
 import { Orders } from './orders.entity';
+import { CollectionResponse } from '../common/collection-response';
 
 @Injectable()
 export class OrdersService {
@@ -32,7 +33,7 @@ export class OrdersService {
   async getAll(
     where,
     query?: any,
-  ): Promise<{ data: { result: ResponseOrdersDto[]; count: number } }> {
+  ): Promise<CollectionResponse<ResponseOrdersDto>> {
     const clause: any = {
       ...sort(query),
       ...paginator(query),
@@ -44,12 +45,10 @@ export class OrdersService {
     }
 
     return {
-      data: {
-        result: result.map((order: Orders) =>
-          plainToClass(ResponseOrdersDto, order),
-        ),
-        count,
-      },
+      result: result.map((order: Orders) =>
+        plainToClass(ResponseOrdersDto, order),
+      ),
+      count,
     };
   }
 
@@ -92,9 +91,5 @@ export class OrdersService {
     const toUpdate = await this.ordersRepository.findOne(where);
     const updated = Object.assign(toUpdate, item);
     return await this.ordersRepository.save(updated);
-  }
-
-  async updateRaw({ where, data }: { where: any; data: any }): Promise<any> {
-    return await this.ordersRepository.update(where, data);
   }
 }

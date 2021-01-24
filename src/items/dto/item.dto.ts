@@ -16,6 +16,10 @@ export class ItemDto {
   @Exclude()
   id?: string;
 
+  @IsString()
+  @IsOptional()
+  userId?: string;
+
   @IsOptional()
   @IsString()
   itemNumber: string;

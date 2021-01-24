@@ -7,6 +7,7 @@ import {
   Post,
   Put,
   Query,
+  Req,
   Res,
   UseGuards,
   UseInterceptors,
@@ -19,15 +20,15 @@ import { Roles } from '../common/decorators/roles';
 import { TransformInterceptor } from '../common/interceptors/TransformInterceptor';
 import { ValidationPipe } from '../common/Pipes/validation.pipe';
 import { SortWithPaginationQuery } from '../common/sort';
-import { ResponseOrdersDto } from '../orders/dto/response-orders.dto';
-import { Orders } from '../orders/orders.entity';
 import { EditItemDto } from './dto/editItem.dto';
 
 import { ItemDto } from './dto/item.dto';
 import { Items } from './item.entity';
-import { IReponseItemsList, ItemsService } from './items.service';
+import { ItemsService } from './items.service';
 import { ResponseItemsDto } from './dto/response-items.dto';
 import { Buffer, Column, Workbook } from 'exceljs';
+import { CollectionResponse } from '../common/collection-response';
+import { Request } from 'express';
 
 @UseGuards(AuthGuard('jwt'))
 @Roles('user', 'admin')
@@ -38,8 +39,13 @@ export class ItemsController {
   @Post('/create')
   @UsePipes(new ValidationPipe())
   @UseInterceptors(new TransformInterceptor(ResponseItemsDto))
-  createItem(@Body() item: ItemDto): Promise<ResponseItemsDto> {
-    return this.itemsService.save(item);
+  createItem(
+    @Req() req: Request,
+    @Body() item: ItemDto,
+  ): Promise<ResponseItemsDto> {
+    const { user } = req;
+    const itemData = { ...item, userId: user.id };
+    return this.itemsService.save(itemData);
   }
 
   @Get('/download')
@@ -48,7 +54,9 @@ export class ItemsController {
     @Res() res,
     @Query() query: SortWithPaginationQuery,
   ): Promise<Buffer> {
-    const allItems: IReponseItemsList = await this.itemsService.getAll(query);
+    const allItems: CollectionResponse<ResponseItemsDto> = await this.itemsService.getAll(
+      query,
+    );
     const workbook = new Workbook();
     const worksheet = workbook.addWorksheet('Items');
     worksheet.columns = [
@@ -62,7 +70,7 @@ export class ItemsController {
       { header: 'Note', key: 'note', width: 20 },
       { header: 'Order date', key: 'createdAt', width: 25 },
     ] as Array<Column>;
-    worksheet.addRows(allItems.data.result);
+    worksheet.addRows(allItems.result);
 
     res.setHeader(
       'Content-Disposition',
@@ -83,23 +91,40 @@ export class ItemsController {
   @UsePipes(new ValidationPipe())
   async finAll(
     @Query() query: SortWithPaginationQuery,
-  ): Promise<{ data: { result: ResponseItemsDto[]; count: number } }> {
-    return await this.itemsService.getAll(query);
+    @Req() req: Request,
+  ): Promise<CollectionResponse<ResponseItemsDto>> {
+    const { user } = req;
+
+    const where: {
+      userId: string;
+    } = {
+      userId: user.id,
+    };
+    return this.itemsService.getAll(where, query);
   }
 
   @Put(':id')
   @UsePipes(new ValidationPipe())
   @UseInterceptors(new TransformInterceptor(ResponseItemsDto))
   async updateItem(
-    @Param() id: { id: string },
+    @Param() { id }: { id: string },
     @Body() item: EditItemDto,
+    @Req() req: Request,
   ): Promise<ResponseItemsDto> {
-    return this.itemsService.update(id, item);
+    const { user } = req;
+    const where = { id, userId: user.id };
+
+    return this.itemsService.update(where, item);
   }
 
   @Delete(':id')
   @UseInterceptors(new TransformInterceptor(ResponseItemsDto))
-  removeItem(@Param() id: { id: string }): Promise<ResponseItemsDto> {
-    return this.itemsService.delete(id);
+  removeItem(
+    @Req() req: Request,
+    @Param() id: { id: string },
+  ): Promise<ResponseItemsDto> {
+    const { user } = req;
+    const where = { id, userId: user.id };
+    return this.itemsService.delete(where);
   }
 }

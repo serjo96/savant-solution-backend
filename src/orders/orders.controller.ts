@@ -31,6 +31,7 @@ import { OrderDto } from './dto/order.dto';
 import { Orders } from './orders.entity';
 import { OrdersService } from './orders.service';
 import { ResponseOrdersDto } from './dto/response-orders.dto';
+import { CollectionResponse } from '../common/collection-response';
 
 @UseGuards(AuthGuard('jwt'))
 @Roles('user', 'admin')
@@ -117,7 +118,7 @@ export class OrdersController {
   async finAll(
     @Query() query: SortWithPaginationQuery,
     @Req() req: Request,
-  ): Promise<{ data: { result: ResponseOrdersDto[]; count: number } }> {
+  ): Promise<CollectionResponse<ResponseOrdersDto>> {
     const { user } = req;
 
     const where: {
@@ -125,7 +126,7 @@ export class OrdersController {
     } = {
       userId: user.id,
     };
-    return await this.ordersService.getAll(where, query);
+    return this.ordersService.getAll(where, query);
   }
 
   @Put(':id')

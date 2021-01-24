@@ -10,13 +10,8 @@ import { ItemDto } from './dto/item.dto';
 import { ResponseItemsDto } from './dto/response-items.dto';
 import { Items } from './item.entity';
 import { filter } from '../common/filter';
-
-export interface IReponseItemsList {
-   data: {
-     result: ResponseItemsDto[];
-     count: number
-   }
-}
+import { CollectionResponse } from '../common/collection-response';
+import { EditOrderDto } from '../orders/dto/editOrder.dto';
 
 @Injectable()
 export class ItemsService {
@@ -38,12 +33,14 @@ export class ItemsService {
   }
 
   async getAll(
-    query: any,
-  ): Promise<IReponseItemsList> {
+    where,
+    query?: any,
+  ): Promise<CollectionResponse<ResponseItemsDto>> {
     const clause: any = {
       ...sort(query),
       ...paginator(query),
-      ...filter(query)
+      ...filter(query),
+      where,
     };
     const [result, count] = await this.productsRepository.findAndCount(clause);
 
@@ -51,12 +48,10 @@ export class ItemsService {
       throw new NotFoundException();
     }
     return {
-      data: {
-        result: result.map((order: Items) =>
-          plainToClass(ResponseItemsDto, order),
-        ),
-        count,
-      },
+      result: result.map((order: Items) =>
+        plainToClass(ResponseItemsDto, order),
+      ),
+      count,
     };
   }
 
@@ -79,13 +74,13 @@ export class ItemsService {
       throw new Error(e);
     }
   }
-  async update(id: { id: string }, item: EditItemDto): Promise<Items> {
-    const toUpdate = await this.productsRepository.findOne(id);
+  async update(
+    where: { id: string; userId: string },
+
+    item: EditItemDto,
+  ): Promise<Items> {
+    const toUpdate = await this.productsRepository.findOne(where);
     const updated = Object.assign(toUpdate, item);
     return await this.productsRepository.save(updated);
-  }
-
-  async updateRaw({ where, data }: { where: any; data: any }): Promise<any> {
-    return await this.productsRepository.update(where, data);
   }
 }
