@@ -2,7 +2,9 @@ import {
   Body,
   Controller,
   Delete,
-  Get, HttpException, HttpStatus,
+  Get,
+  HttpException,
+  HttpStatus,
   Param,
   Put,
   Req,
@@ -89,8 +91,11 @@ export class UsersController {
     const userEmail = body.email;
     if (userEmail) {
       const existEmail = await this.usersService.findByEmail(userEmail);
-      if (existEmail.id !== updatingUser.id) {
-        throw new HttpException(`User with current email already exist`, HttpStatus.OK);
+      if (existEmail && existEmail.id !== updatingUser.id) {
+        throw new HttpException(
+          `User with current email already exist`,
+          HttpStatus.OK,
+        );
       }
     }
 
