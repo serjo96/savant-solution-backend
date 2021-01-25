@@ -8,6 +8,7 @@ import {
   Put,
   Query,
   Req,
+  Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -28,10 +29,12 @@ import { SortWithPaginationQuery } from '../common/sort';
 import { EditOrderDto } from './dto/editOrder.dto';
 import { OrderDto } from './dto/order.dto';
 
-import { Orders } from './orders.entity';
+import { Orders, StatusEnum } from './orders.entity';
 import { OrdersService } from './orders.service';
 import { ResponseOrdersDto } from './dto/response-orders.dto';
 import { CollectionResponse } from '../common/collection-response';
+import { Buffer, Column, Workbook } from 'exceljs';
+import { ResponseItemsDto } from '../items/dto/response-items.dto';
 
 @UseGuards(AuthGuard('jwt'))
 @Roles('user', 'admin')
@@ -62,38 +65,36 @@ export class OrdersController {
     const stream = Readable.from(files.buffer.toString());
     const { user } = req;
     try {
-      const orders: Orders[] = await CSVToJSON({
-        headers: [
-          'amazonOrderId',
-          'amazonItemId',
-          'createdAt',
-          null,
-          null,
-          'recipientName',
-          null,
-          'amazonSku',
-          null,
-          'quantity',
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          'recipientName',
-          'firstShipAddress',
-          'secondShipAddress',
-          'thirdShipAddress',
-          'shipCity',
-          'shipState',
-          'shipPostalCode',
-        ],
-      }).fromStream(stream);
-      orders.forEach((order) => (order.userId = user.id));
-      return this.ordersService.saveAll(orders);
+      return this.ordersService.uploadFromCsv(stream, user);
     } catch (error) {
       throw new BadRequestException(error);
     }
+  }
+
+  @Get()
+  @UsePipes(new ValidationPipe())
+  async finAll(
+    @Query() query: SortWithPaginationQuery,
+    @Req() req: Request,
+  ): Promise<CollectionResponse<ResponseOrdersDto>> {
+    const { user } = req;
+
+    const where: {
+      userId: string;
+    } = {
+      userId: user.id,
+    };
+    return this.ordersService.getAll(where, query);
+  }
+
+  @Post('/download')
+  @UsePipes(new ValidationPipe())
+  async exportXlSX(
+    @Res() res,
+    @Body() statuses: { label: string; value: StatusEnum }[],
+    @Query() query: SortWithPaginationQuery,
+  ): Promise<Buffer> {
+    return this.ordersService.exportToXlxs(res, statuses, query);
   }
 
   @Get(':id')
@@ -111,22 +112,6 @@ export class OrdersController {
       userId: user.id,
     };
     return await this.ordersService.findOne(where);
-  }
-
-  @Get()
-  @UsePipes(new ValidationPipe())
-  async finAll(
-    @Query() query: SortWithPaginationQuery,
-    @Req() req: Request,
-  ): Promise<CollectionResponse<ResponseOrdersDto>> {
-    const { user } = req;
-
-    const where: {
-      userId: string;
-    } = {
-      userId: user.id,
-    };
-    return this.ordersService.getAll(where, query);
   }
 
   @Put(':id')

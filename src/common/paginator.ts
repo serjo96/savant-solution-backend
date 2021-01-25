@@ -40,6 +40,10 @@ export interface IPaginatorType {
 export const paginator = (value: PaginatorQuery): IPaginatorType => {
   const result: IPaginatorType = {};
 
+  if (!value) {
+    return result;
+  }
+
   const { all, count, offset } = value;
 
   if (offset) {

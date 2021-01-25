@@ -50,7 +50,7 @@ export class AuthService {
     let token = null;
     const existUser = await this.userService.findByEmail(userDto.email);
     if (existUser) {
-      throw new HttpException(`User already exist`, HttpStatus.BAD_REQUEST);
+      throw new HttpException(`User already exist`, HttpStatus.OK);
     }
     try {
       user = await this.userService.create(userDto);

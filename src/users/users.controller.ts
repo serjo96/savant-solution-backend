@@ -2,7 +2,7 @@ import {
   Body,
   Controller,
   Delete,
-  Get,
+  Get, HttpException, HttpStatus,
   Param,
   Put,
   Req,
@@ -83,18 +83,14 @@ export class UsersController {
   ): Promise<{ data: User }> {
     const updatingUser = await this.usersService.findById(id);
     if (!updatingUser) {
-      throw new BadRequestException({
-        message: `User doesn't exist`,
-      });
+      throw new HttpException(`User doesn't exist`, HttpStatus.OK);
     }
 
     const userEmail = body.email;
     if (userEmail) {
       const existEmail = await this.usersService.findByEmail(userEmail);
       if (existEmail.id !== updatingUser.id) {
-        throw new BadRequestException({
-          message: `User with current email already exist`,
-        });
+        throw new HttpException(`User with current email already exist`, HttpStatus.OK);
       }
     }
 

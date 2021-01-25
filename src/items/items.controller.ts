@@ -23,10 +23,8 @@ import { SortWithPaginationQuery } from '../common/sort';
 import { EditItemDto } from './dto/editItem.dto';
 
 import { ItemDto } from './dto/item.dto';
-import { Items } from './item.entity';
 import { ItemsService } from './items.service';
 import { ResponseItemsDto } from './dto/response-items.dto';
-import { Buffer, Column, Workbook } from 'exceljs';
 import { CollectionResponse } from '../common/collection-response';
 import { Request } from 'express';
 
@@ -46,39 +44,6 @@ export class ItemsController {
     const { user } = req;
     const itemData = { ...item, userId: user.id };
     return this.itemsService.save(itemData);
-  }
-
-  @Get('/download')
-  @UsePipes(new ValidationPipe())
-  async exportXlSX(
-    @Res() res,
-    @Query() query: SortWithPaginationQuery,
-  ): Promise<Buffer> {
-    const allItems: CollectionResponse<ResponseItemsDto> = await this.itemsService.getAll(
-      query,
-    );
-    const workbook = new Workbook();
-    const worksheet = workbook.addWorksheet('Items');
-    worksheet.columns = [
-      { header: 'ID', key: 'id', width: 40 },
-      { header: 'G-PACKQTY', key: 'quantity', width: 12 },
-      { header: 'A-SKU', key: 'amazonSku', width: 25 },
-      { header: 'G-ItemNumber', key: 'itemNumber', width: 18 },
-      { header: 'Treshold', key: 'threshold', width: 10 },
-      { header: 'Supplier', key: 'supplier', width: 20 },
-      { header: 'Alt supplier', key: 'altSupplier', width: 20 },
-      { header: 'Note', key: 'note', width: 20 },
-      { header: 'Order date', key: 'createdAt', width: 25 },
-    ] as Array<Column>;
-    worksheet.addRows(allItems.result);
-
-    res.setHeader(
-      'Content-Disposition',
-      'attachment; filename=' + 'items.xlsx',
-    );
-
-    await workbook.xlsx.write(res);
-    return workbook.xlsx.writeBuffer();
   }
 
   @Get(':id')

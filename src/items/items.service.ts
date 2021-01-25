@@ -39,8 +39,7 @@ export class ItemsService {
     const clause: any = {
       ...sort(query),
       ...paginator(query),
-      ...filter(query),
-      where,
+      ...filter(query, where),
     };
     const [result, count] = await this.productsRepository.findAndCount(clause);
 

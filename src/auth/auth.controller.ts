@@ -31,11 +31,7 @@ export class AuthController {
   public async register(
     @Body() createUserDto: CreateUserDto,
   ): Promise<UserWithToken> {
-    try {
-      return await this.authService.register(createUserDto);
-    } catch (error) {
-      throw new BadRequestException(error);
-    }
+    return this.authService.register(createUserDto);
   }
 
   @UseGuards(AuthGuard('local'))

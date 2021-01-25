@@ -1,7 +1,7 @@
 import ISort, { SortWithPaginationQuery } from './sort';
-import { Not } from 'typeorm';
+import { IsNull, Not } from 'typeorm';
 
-export const filter = (query: SortWithPaginationQuery): ISort => {
+export const filter = (query: SortWithPaginationQuery, where?: any): ISort => {
   let result: any = {
     where: {},
   };
@@ -11,9 +11,12 @@ export const filter = (query: SortWithPaginationQuery): ISort => {
   if (notMapped) {
     result = {
       where: {
-        itemNumber: notMapped ? null : Not(null),
+        itemNumber: notMapped ? IsNull() : Not(null),
       },
     };
+  }
+  if (where) {
+    result.where = { ...result.where, ...where };
   }
 
   return result;
