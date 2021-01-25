@@ -16,7 +16,8 @@ export class OrdersService {
   constructor(
     @InjectRepository(Orders)
     private readonly ordersRepository: Repository<Orders>,
-  ) {}
+  ) {
+  }
 
   async find(where: any): Promise<Orders[]> {
     return await this.ordersRepository.find(where);
@@ -61,7 +62,9 @@ export class OrdersService {
   }
 
   async saveAll(data: OrderDto[]): Promise<Orders[]> {
-    const orders = data.map((order) => Orders.create(order));
+    let orders = data.map((order) => Orders.create(order));
+    //TODO КОСТЫЛЬ
+    orders = orders.filter(o => o.shipState?.length <= 2);
 
     try {
       return await this.ordersRepository.save(orders);

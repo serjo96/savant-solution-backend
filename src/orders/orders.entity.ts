@@ -1,11 +1,5 @@
 import { User } from '@user/users.entity';
-import {
-  BeforeInsert,
-  Column,
-  Entity,
-  Index,
-  ManyToOne,
-} from 'typeorm';
+import { BeforeInsert, Column, Entity, Index, ManyToOne } from 'typeorm';
 import { v4 as uuid4 } from 'uuid';
 
 import { BaseEntity } from '../common/base-entity';
