@@ -3,11 +3,14 @@ import {
   Column,
   Entity,
   Index,
+  ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
 import { BaseEntity } from '../common/base-entity';
 import generateId from '../utils/idGenerator';
+import { GraingerAccount } from '../grainger-accounts/grainger-account.entity';
 
 export enum StatusEnum {
   ACTIVE = 1,
@@ -52,12 +55,6 @@ export class Items extends BaseEntity {
 
   @Column({
     type: 'varchar',
-    nullable: false,
-  })
-  supplier: string;
-
-  @Column({
-    type: 'varchar',
     nullable: true,
   })
   altSupplier?: string;
@@ -74,4 +71,7 @@ export class Items extends BaseEntity {
     default: StatusEnum.ACTIVE,
   })
   public status: StatusEnum;
+
+  @ManyToOne(() => GraingerAccount, (v) => v.items, { nullable: true })
+  graingerAccount: GraingerAccount;
 }

@@ -9,6 +9,7 @@ import {
 
 import getEnumKeyByEnumValue from '../../utils/enum-format';
 import { StatusEnum } from '../item.entity';
+import { GraingerAccount } from '../../grainger-accounts/grainger-account.entity';
 
 export class ResponseItemsDto {
   @IsOptional()
@@ -23,9 +24,8 @@ export class ResponseItemsDto {
   @IsOptional()
   threshold?: number;
 
-  @IsString()
-  @IsNotEmpty()
-  supplier: string;
+  @IsOptional()
+  graingerAccount?: GraingerAccount;
 
   @IsString()
   @IsNotEmpty()

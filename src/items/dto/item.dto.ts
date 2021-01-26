@@ -11,6 +11,7 @@ import {
 } from 'class-validator';
 
 import { StatusEnum } from '../item.entity';
+import { GraingerAccount } from '../../grainger-accounts/grainger-account.entity';
 
 export class ItemDto {
   @Exclude()
@@ -35,9 +36,8 @@ export class ItemDto {
   @IsOptional()
   threshold?: number;
 
-  @IsString()
-  @IsNotEmpty()
-  supplier: string;
+  @IsOptional()
+  graingerAccount?: GraingerAccount;
 
   @IsString()
   @IsNotEmpty()

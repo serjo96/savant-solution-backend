@@ -44,7 +44,7 @@ export class ItemsMock {
       quantity: 2,
       threshold: null,
       amazonSku: 'AMAz',
-      supplier: 'aeasee',
+      // supplier: 'aeasee',
       altSupplier: '',
       status: 2,
       id: '9a6777c8-db44-4f54-8cd9-6c051bb90ad9',

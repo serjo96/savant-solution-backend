@@ -41,6 +41,7 @@ export class ItemsService {
       ...paginator(query),
       ...filter(query, where),
     };
+    clause.relations = ['graingerAccount'];
     const [result, count] = await this.productsRepository.findAndCount(clause);
 
     if (!result) {
