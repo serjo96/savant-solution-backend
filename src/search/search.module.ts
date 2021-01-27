@@ -13,7 +13,6 @@ import { ElasticsearchModule } from '@nestjs/elasticsearch';
         maxRetries: 10,
         requestTimeout: 6000,
         pingTimeout: 6000,
-        sniffOnStart: true,
       }),
       inject: [ConfigService],
     }),
