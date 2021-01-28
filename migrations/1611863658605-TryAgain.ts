@@ -5,7 +5,7 @@ export class TryAgain1611863658605 implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`ALTER TABLE "items" DROP CONSTRAINT "FK_9e039229fb4b5a379ab79e887ad"`);
-        await queryRunner.query(`DROP TABLE IF EXIST TABLE "order-items"`);
+        await queryRunner.query(`DROP TABLE IF EXIST "order-items"`);
         await queryRunner.query(`CREATE TABLE "order-items" ("id" uuid NOT NULL, "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT now(), "deletedAt" TIMESTAMP WITH TIME ZONE, "amazonItemId" character varying NOT NULL, "amazonSku" character varying NOT NULL, "amazonQuantity" integer NOT NULL DEFAULT '0', "graingerTrackingNumber" character varying, "graingerShipMethod" "order-items_graingershipmethod_enum", "graingerOrderId" character varying, "graingerShipDate" date, "graingerWebNumber" character varying, "note" character varying, "itemId" uuid, "orderId" uuid, CONSTRAINT "UQ_a71e258360def237e6a2e1907d1" UNIQUE ("amazonItemId"), CONSTRAINT "PK_605fbaee38242facaa1a34b67ad" PRIMARY KEY ("id"))`);
         await queryRunner.query(`ALTER TABLE "items" DROP COLUMN "note"`);
         await queryRunner.query(`ALTER TABLE "items" DROP CONSTRAINT "UQ_5a7e9916adb45b3032a21c85877"`);
