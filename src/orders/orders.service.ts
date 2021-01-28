@@ -4,6 +4,7 @@ import { plainToClass } from 'class-transformer';
 import { Repository } from 'typeorm';
 import { paginator } from '../common/paginator';
 import { sort } from '../common/sort';
+import { SearchService } from '../search/search.service';
 import { EditOrderDto } from './dto/editOrder.dto';
 
 import { OrderDto } from './dto/order.dto';
@@ -15,6 +16,7 @@ export class OrdersService {
   constructor(
     @InjectRepository(Orders)
     private readonly ordersRepository: Repository<Orders>,
+    private readonly searchService: SearchService,
   ) {}
 
   async find(where: any): Promise<Orders[]> {
@@ -79,6 +81,7 @@ export class OrdersService {
     }
 
     try {
+      this.searchService.indexPost(entity);
       return await this.ordersRepository.save(entity);
     } catch (e) {
       throw new Error(e);
@@ -99,16 +102,6 @@ export class OrdersService {
   }
 
   async search(query: any): Promise<any> {
-    const res = await this.ordersRepository
-      .createQueryBuilder()
-      .select('orders')
-      .from(Orders, 'orders')
-      .where(
-        'to_tsvector(orders.supplier) @@ to_tsquery(:query)',
-        { query }
-      )
-      .getMany();
-    console.log(res);
-    return res;
+    return this.searchService.search(query);
   }
 }
