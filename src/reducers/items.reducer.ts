@@ -1,11 +1,9 @@
-import { OrderStatusEnum, Orders } from '../orders/orders.entity';
-import { ItemStatusEnum, OrderItem } from '../orders/order-item.entity';
+import { Item, ItemStatusEnum } from '../items/items.entity';
 
 // Если нет необходимых полей для Димы, пишем ошибку
 export const checkRequiredItemFieldsReducer = (
-  item: OrderItem,
-  order?: Orders,
-): { order?: Orders; item: OrderItem; errorMessage?: string } => {
+  item: Item
+): { item: Item; errorMessage?: string } => {
   let errorMessage;
   if (
     !item.graingerItemNumber ||
@@ -13,9 +11,6 @@ export const checkRequiredItemFieldsReducer = (
     !item.graingerThreshold ||
     !item.graingerAccount
   ) {
-    if (order) {
-      order.status = OrderStatusEnum.MANUAL;
-    }
     item.status = ItemStatusEnum.INACTIVE;
 
     errorMessage =
@@ -27,9 +22,7 @@ export const checkRequiredItemFieldsReducer = (
       ]
         .filter((mes) => mes)
         .join(', ') + ` required; \n`;
-
-    item.note = (item.note ?? '') + errorMessage;
   }
 
-  return { order, item, errorMessage };
+  return { item, errorMessage };
 };

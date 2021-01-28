@@ -166,31 +166,32 @@ export class OrdersService {
       relations: ['items'],
     });
 
-    orderItemsDto.forEach((dtoOrder) => {
-      let existAmazonOrder: Orders = orders.find(
-        (amazonOrder) => amazonOrder.amazonOrderId === dtoOrder.amazonOrderId,
-      );
-      if (!existAmazonOrder) {
-        existAmazonOrder = Orders.create(dtoOrder) as any;
-        existAmazonOrder.user = user;
-        existAmazonOrder.items = [];
-        orders.push(existAmazonOrder);
-      }
-
-      let existItem: OrderItem = existAmazonOrder.items.find(
-        (i) => i.amazonItemId === dtoOrder.amazonItemId,
-      );
-      if (!existItem) {
-        existItem = OrderItem.create(dtoOrder) as any;
-        existItem.user = user;
-        const { order, item } = checkRequiredItemFieldsReducer(
-          existItem,
-          existAmazonOrder,
-        );
-        existAmazonOrder = { ...order } as any;
-        existAmazonOrder.items.push(item);
-      }
-    });
+    //TODO ПОДУМАТЬ
+    // orderItemsDto.forEach((dtoOrder) => {
+    //   let existAmazonOrder: Orders = orders.find(
+    //     (amazonOrder) => amazonOrder.amazonOrderId === dtoOrder.amazonOrderId,
+    //   );
+    //   if (!existAmazonOrder) {
+    //     existAmazonOrder = Orders.create(dtoOrder) as any;
+    //     existAmazonOrder.user = user;
+    //     existAmazonOrder.items = [];
+    //     orders.push(existAmazonOrder);
+    //   }
+    //
+    //   let existItem: OrderItem = existAmazonOrder.items.find(
+    //     (i) => i.amazonItemId === dtoOrder.amazonItemId,
+    //   );
+    //   if (!existItem) {
+    //     existItem = OrderItem.create(dtoOrder) as any;
+    //     existItem.user = user;
+    //     const { order, item } = checkRequiredItemFieldsReducer(
+    //       existItem,
+    //       existAmazonOrder,
+    //     );
+    //     existAmazonOrder = { ...order } as any;
+    //     existAmazonOrder.items.push(item);
+    //   }
+    // });
 
     // Если из CSV приходят названия штатов апперкейсом, нужно привести к общему виду
     orders
@@ -236,7 +237,7 @@ export class OrdersService {
 
     if (status === OrderStatusEnum.PROCEED) {
       const haveInactiveItem = existOrder.items.some(
-        (item) => !!checkRequiredItemFieldsReducer(item).errorMessage,
+        ({ item }) => !!checkRequiredItemFieldsReducer(item).errorMessage,
       );
       if (haveInactiveItem) {
         throw new HttpException(
@@ -278,7 +279,8 @@ export class OrdersService {
 
       graingerOrder.graingerOrders.forEach((graingerItem) => {
         let existItem = existOrder.items.find(
-          (item) => item.graingerItemNumber === graingerItem.graingerItemNumber,
+          (item) =>
+            item.item?.graingerItemNumber === graingerItem.graingerItemNumber,
         );
         if (!existItem) {
           return;

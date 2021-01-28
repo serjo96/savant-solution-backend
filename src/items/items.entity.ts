@@ -52,8 +52,10 @@ export class Item extends BaseEntity {
   })
   graingerAccount: GraingerAccount;
 
-  @ManyToOne(() => OrderItem, (v) => v.item)
-  orderItems: OrderItem[];
+  @ManyToOne(() => OrderItem, (v) => v.item, {
+    nullable: true,
+  })
+  orderItems?: OrderItem[];
 
   @ManyToOne(() => User, (user) => user.items, { eager: true })
   user: User;

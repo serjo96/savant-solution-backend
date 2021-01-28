@@ -6,7 +6,7 @@ import {
   IsString,
   MaxLength,
 } from 'class-validator';
-import { GetItemDto } from '../../items/dto/get-item.dto';
+import { GetOrderItemDto } from './get-order-item.dto';
 import { OrderStatusEnum } from '../orders.entity';
 
 export class EditOrderDto {
@@ -63,5 +63,5 @@ export class EditOrderDto {
   status: OrderStatusEnum;
 
   @IsOptional()
-  items?: GetItemDto[];
+  orderItems?: GetOrderItemDto[];
 }

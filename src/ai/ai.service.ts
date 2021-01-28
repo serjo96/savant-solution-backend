@@ -46,10 +46,10 @@ export class AiService {
           city: order.shipCity,
           state: order.shipState,
         },
-        items: order.items.map((item) => ({
-          item_id: item.graingerItemNumber,
-          quantity: item.amazonQuantity?.toString(),
-          account_id: item.graingerAccount.id,
+        items: order.items.map((orderItem) => ({
+          item_id: orderItem.item.graingerItemNumber,
+          quantity: orderItem.amazonQuantity?.toString(),
+          account_id: orderItem.item.graingerAccount.id,
         })),
       }))
       .slice(0, 1);

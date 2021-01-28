@@ -9,29 +9,29 @@ import { plainToClass } from 'class-transformer';
 import { Repository } from 'typeorm';
 import { paginator } from '../common/paginator';
 import { SortWithPaginationQuery, sort } from '../common/sort';
-import { EditItemDto } from './dto/edit-item.dto';
-
-import { CreateItemDto } from './dto/create-item-dto';
-import { GetItemDto } from './dto/get-item.dto';
-import { ItemStatusEnum, OrderItem } from '../orders/order-item.entity';
 import { filter } from '../common/filter';
 import { CollectionResponse } from '../common/collection-response';
-import { OrderStatusEnum, Orders } from '../orders/orders.entity';
 import { checkRequiredItemFieldsReducer } from '../reducers/items.reducer';
 import { User } from '@user/users.entity';
+import { Readable } from 'stream';
+import * as CSVToJSON from 'csvtojson';
+import { Item, ItemStatusEnum } from './items.entity';
+import { GetItemDto } from './dto/get-item.dto';
+import { CreateItemDto } from './dto/create-item-dto';
+import { EditItemDto } from './dto/edit-item.dto';
 
 @Injectable()
 export class ItemsService {
   constructor(
-    @InjectRepository(OrderItem)
-    private readonly repository: Repository<OrderItem>,
+    @InjectRepository(Item)
+    private readonly repository: Repository<Item>,
   ) {}
 
-  async find(where: any): Promise<OrderItem[]> {
+  async find(where: any): Promise<Item[]> {
     return this.repository.find(where);
   }
 
-  async findOne(where: any): Promise<OrderItem> {
+  async findOne(where: any): Promise<Item> {
     const existItem = await this.repository.findOne(where);
     if (!existItem) {
       throw new HttpException(`Item doesn't exist`, HttpStatus.OK);
@@ -39,7 +39,35 @@ export class ItemsService {
     return existItem;
   }
 
-  findAllSku(user: User, query?: SortWithPaginationQuery): Promise<OrderItem[]> {
+  async uploadFromCsv(stream: Readable, user: User): Promise<Item[]> {
+    let items: any[] = await CSVToJSON({
+      headers: [
+        null,
+        'amazonSku',
+        'graingerItemNumber',
+        'graingerPackQuantity',
+        null,
+        null,
+        'graingerThreshold',
+        'status',
+      ],
+      delimiter: ';',
+    }).fromStream(stream);
+
+    items = items.map((item) =>
+      Item.create({
+        ...item,
+        status: ItemStatusEnum[item.status.toUpperCase()],
+        graingerPackQuantity: +item.graingerPackQuantity,
+        graingerThreshold: +item.graingerThreshold,
+        user,
+      }),
+    );
+
+    return this.repository.save(items);
+  }
+
+  findAllSku(user: User, query?: SortWithPaginationQuery): Promise<Item[]> {
     return this.repository
       .createQueryBuilder('items')
       .where('items.user.id=:id', { id: user.id })
@@ -75,7 +103,7 @@ export class ItemsService {
       throw new NotFoundException();
     }
     return {
-      result: result.map((order: OrderItem) => plainToClass(GetItemDto, order)),
+      result: result.map((order: Item) => plainToClass(GetItemDto, order)),
       count,
     };
   }
@@ -88,13 +116,15 @@ export class ItemsService {
     return await this.repository.softDelete(where);
   }
 
-  async save(data: CreateItemDto): Promise<OrderItem> {
-    let existItem = await this.repository.findOne({ amazonItemId: data.amazonItemId });
+  async save(data: CreateItemDto): Promise<Item> {
+    let existItem = await this.repository.findOne({
+      amazonSku: data.amazonSku,
+    });
     if (existItem) {
       throw new HttpException(`Item already exist`, HttpStatus.OK);
     }
 
-    existItem = OrderItem.create(data);
+    existItem = Item.create(data);
     const { errorMessage } = checkRequiredItemFieldsReducer(existItem);
     if (errorMessage) {
       throw new HttpException(errorMessage, HttpStatus.OK);
@@ -106,7 +136,7 @@ export class ItemsService {
     return this.repository.save(existItem);
   }
 
-  async update(where: any, editItem: EditItemDto): Promise<OrderItem> {
+  async update(where: any, editItem: EditItemDto): Promise<Item> {
     const existItem = await this.repository.findOne(where);
     if (!existItem) {
       throw new HttpException(`Item doesn't exist`, HttpStatus.OK);
@@ -127,7 +157,7 @@ export class ItemsService {
       };
     },
     status: ItemStatusEnum,
-  ): Promise<OrderItem> {
+  ): Promise<Item> {
     const existItem = await this.repository.findOne(where);
     if (!existItem) {
       throw new HttpException(`Item doesn't exist`, HttpStatus.OK);

@@ -43,8 +43,7 @@ export class OrdersController {
   constructor(
     private readonly ordersService: OrdersService,
     private aiService: AiService,
-  ) {
-  }
+  ) {}
 
   @Post('/create')
   @UsePipes(new ValidationPipe())

@@ -9,7 +9,7 @@ import {
 import { OrderStatusEnum } from '../orders.entity';
 import { Exclude } from 'class-transformer';
 import { GraingerShipMethodEnum } from '../order-item.entity';
-import { GetItemDto } from '../../items/dto/get-item.dto';
+import { GetOrderItemDto } from './get-order-item.dto';
 import { EditOrderDto } from './editOrder.dto';
 
 export class GetOrderDto extends EditOrderDto {
