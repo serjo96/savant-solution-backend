@@ -42,8 +42,7 @@ export class OrdersService {
     private readonly itemsService: ItemsService,
     @InjectRepository(Orders)
     private readonly ordersRepository: Repository<Orders>,
-  ) {
-  }
+  ) {}
 
   async find(where: any): Promise<Orders[]> {
     return this.ordersRepository.find(where);
@@ -293,6 +292,19 @@ export class OrdersService {
       }
       if (graingerOrder.status === GraingerStatusEnum.Success) {
         existOrder.status = OrderStatusEnum.SUCCESS;
+        existOrder.orderDate = new Date();
+      }
+      if (graingerOrder.status === GraingerStatusEnum.Error) {
+        existOrder.status = OrderStatusEnum.ERROR;
+      }
+
+      if (
+        [
+          GraingerStatusEnum.Proceed,
+          GraingerStatusEnum.WaitForProceed,
+        ].includes(graingerOrder.status)
+      ) {
+        return;
       }
 
       graingerOrder.graingerOrders.forEach((graingerItem) => {
