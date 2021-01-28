@@ -28,6 +28,7 @@ import {
 import { Interval } from '@nestjs/schedule';
 import { AiService } from '../ai/ai.service';
 import { GraingerStatusEnum } from '../ai/dto/get-grainger-order';
+import { User } from '@user/users.entity';
 
 @Injectable()
 export class OrdersService {
@@ -51,7 +52,10 @@ export class OrdersService {
     return existOrder;
   }
 
-  async getAll(where, query?: any): Promise<CollectionResponse<GetOrderDto>> {
+  async getAll(
+    where,
+    query?: any,
+  ): Promise<CollectionResponse<GetOrderDto>> {
     const clause: any = {
       ...sort(query),
       ...paginator(query),
@@ -80,9 +84,9 @@ export class OrdersService {
   async exportToXlxs(
     res,
     statuses: { label: string; value: OrderStatusEnum }[],
-    query: SortWithPaginationQuery,
+    user: User,
   ) {
-    let allItems: any = await this.getAll(query);
+    let allItems: any = await this.getAll(user);
 
     const statusesDict = statuses.reduce(
       (acc, curr) => ({ ...acc, [curr.value]: curr.label }),

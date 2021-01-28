@@ -7,7 +7,7 @@ import {
   Post,
   Put,
   Query,
-  Req,
+  Req, Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -29,6 +29,9 @@ import { BadRequestException } from '../common/exceptions/bad-request';
 import { GetItemDto } from './dto/get-item.dto';
 import { CreateItemDto } from './dto/create-item-dto';
 import { EditItemDto } from './dto/edit-item.dto';
+import { OrderStatusEnum } from '../orders/orders.entity';
+import { Buffer } from 'exceljs';
+import { ItemStatusEnum } from './items.entity';
 
 @UseGuards(AuthGuard('jwt'))
 @Roles('user', 'admin')
@@ -54,7 +57,6 @@ export class ItemsController {
   }
 
   @Post('/upload')
-  // @UsePipes(new ValidationPipe())
   @UseInterceptors(FileInterceptor('file'))
   @UseInterceptors(new TransformInterceptor(GetItemDto))
   async uploadOrders(
@@ -68,6 +70,15 @@ export class ItemsController {
     } catch (error) {
       throw new BadRequestException(error);
     }
+  }
+
+  @Post('/download')
+  async exportXlSX(
+    @Res() res,
+    @Body() statuses: { label: string; value: ItemStatusEnum }[],
+    @Req() { user }: Request,
+  ): Promise<Buffer> {
+    return this.itemsService.exportToXlxs(res, statuses, user);
   }
 
   @Get('/search')

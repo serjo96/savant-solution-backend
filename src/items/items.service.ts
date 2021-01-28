@@ -19,6 +19,8 @@ import { Item, ItemStatusEnum } from './items.entity';
 import { GetItemDto } from './dto/get-item.dto';
 import { CreateItemDto } from './dto/create-item-dto';
 import { EditItemDto } from './dto/edit-item.dto';
+import { OrderStatusEnum } from '../orders/orders.entity';
+import { Column, Workbook } from 'exceljs';
 
 @Injectable()
 export class ItemsService {
@@ -65,6 +67,45 @@ export class ItemsService {
     );
 
     return this.repository.save(items);
+  }
+
+  async exportToXlxs(
+    res,
+    statuses: { label: string; value: ItemStatusEnum }[],
+    user: User,
+  ) {
+    let allItems: any = await this.getAll(user);
+
+    const statusesDict = statuses.reduce(
+      (acc, curr) => ({ ...acc, [curr.value]: curr.label }),
+      {},
+    );
+
+    allItems = allItems.result.map((order) => ({
+      ...order,
+      status: statusesDict[order.status],
+    }));
+
+    const workbook = new Workbook();
+    const worksheet = workbook.addWorksheet('Items');
+    worksheet.columns = [
+      { header: 'Item Id', key: 'id', width: 40 },
+      { header: 'A-SKU', key: 'amazonSku', width: 20 },
+      { header: 'G-ItemNumber', key: 'graingerItemNumber', width: 20 },
+      { header: 'G-PACKQTY', key: 'graingerPackQuantity', width: 20 },
+      // { header: 'Grainger Account', key: 'graingerAccountId', width: 20 },
+      { header: 'Threshold', key: 'graingerThreshold', width: 20 },
+      { header: 'Status', key: 'status', width: 20 },
+    ] as Array<Column>;
+    worksheet.addRows(allItems);
+
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename=' + 'items.xlsx',
+    );
+
+    await workbook.xlsx.write(res);
+    return workbook.xlsx.writeBuffer();
   }
 
   findAllSku(user: User, query?: SortWithPaginationQuery): Promise<Item[]> {

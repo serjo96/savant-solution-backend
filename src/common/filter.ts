@@ -6,6 +6,10 @@ export const filter = (query: SortWithPaginationQuery): ISort => {
     where: {},
   };
 
+  if (!query) {
+    return result;
+  }
+
   const { notMapped } = query;
 
   if (notMapped) {

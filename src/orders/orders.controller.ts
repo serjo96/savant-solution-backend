@@ -35,6 +35,7 @@ import { CollectionResponse } from '../common/collection-response';
 import { Buffer } from 'exceljs';
 import { ChangeOrderStatusDto } from './dto/change-order-status.dto';
 import { AiService } from '../ai/ai.service';
+import { ItemStatusEnum } from '../items/items.entity';
 
 @UseGuards(AuthGuard('jwt'))
 @Roles('user', 'admin')
@@ -100,9 +101,9 @@ export class OrdersController {
   async exportXlSX(
     @Res() res,
     @Body() statuses: { label: string; value: OrderStatusEnum }[],
-    @Query() query: SortWithPaginationQuery,
+    @Req() { user }: Request,
   ): Promise<Buffer> {
-    return this.ordersService.exportToXlxs(res, statuses, query);
+    return this.ordersService.exportToXlxs(res, statuses, user);
   }
 
   @Get('/states')
