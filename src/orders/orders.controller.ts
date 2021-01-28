@@ -96,7 +96,7 @@ export class OrdersController {
   }
 
   @Post('/download')
-  @UsePipes(new ValidationPipe())
+  // @UsePipes(new ValidationPipe())
   async exportXlSX(
     @Res() res,
     @Body() statuses: { label: string; value: OrderStatusEnum }[],

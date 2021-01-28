@@ -41,8 +41,7 @@ export class OrdersService {
     private readonly itemsService: ItemsService,
     @InjectRepository(Orders)
     private readonly ordersRepository: Repository<Orders>,
-  ) {
-  }
+  ) {}
 
   async find(where: any): Promise<Orders[]> {
     return this.ordersRepository.find(where);
@@ -56,10 +55,7 @@ export class OrdersService {
     return existOrder;
   }
 
-  async getAll(
-    where,
-    query?: any,
-  ): Promise<CollectionResponse<GetOrderDto>> {
+  async getAll(where, query?: any): Promise<CollectionResponse<GetOrderDto>> {
     const clause: any = {
       ...sort(query),
       ...paginator(query),
@@ -90,7 +86,11 @@ export class OrdersService {
     statuses: { label: string; value: OrderStatusEnum }[],
     user: User,
   ) {
-    let allItems: any = await this.getAll(user);
+    let allItems: any = await this.getAll({
+      user: {
+        id: user.id,
+      },
+    });
 
     const statusesDict = statuses.reduce(
       (acc, curr) => ({ ...acc, [curr.value]: curr.label }),
@@ -107,22 +107,22 @@ export class OrdersService {
     worksheet.columns = [
       { header: 'ID', key: 'id', width: 40 },
       { header: 'Amazon Oder ID', key: 'amazonOrderId', width: 40 },
-      { header: 'Amazon Item ID', key: 'amazonItemId', width: 40 },
-      { header: 'Amazon Quantity', key: 'amazonQuantity', width: 20 },
-      { header: 'Grainger Ship Date', key: 'graingerShipDate', width: 20 },
-      {
-        header: 'Grainger Tracking Number',
-        key: 'graingerTrackingNumber',
-        width: 20,
-      },
-      { header: 'Grainger Ship Method', key: 'graingerShipMethod', width: 20 },
-      { header: 'Amazon SKU', key: 'amazonSku', width: 20 },
-      { header: 'Recipient Name', key: 'recipientName', width: 20 },
+      // { header: 'Amazon Item ID', key: 'amazonItemId', width: 40 },
+      // { header: 'Amazon Quantity', key: 'amazonQuantity', width: 20 },
+      // { header: 'Grainger Ship Date', key: 'graingerShipDate', width: 20 },
+      // {
+      //   header: 'Grainger Tracking Number',
+      //   key: 'graingerTrackingNumber',
+      //   width: 20,
+      // },
+      // { header: 'Grainger Ship Method', key: 'graingerShipMethod', width: 20 },
+      // { header: 'Amazon SKU', key: 'amazonSku', width: 20 },
+      // { header: 'Recipient Name', key: 'recipientName', width: 20 },
       { header: 'Order Status', key: 'status', width: 20 },
-      { header: 'Grainger Account', key: 'graingerAccountId', width: 20 },
-      { header: 'Grainger Web Number', key: 'graingerWebNumber', width: 20 },
-      { header: 'Grainger Order ID', key: 'graingerOrderId', width: 40 },
-      { header: 'Order date', key: 'orderDate', width: 20 },
+      // { header: 'Grainger Account', key: 'graingerAccountId', width: 20 },
+      // { header: 'Grainger Web Number', key: 'graingerWebNumber', width: 20 },
+      // { header: 'Grainger Order ID', key: 'graingerOrderId', width: 40 },
+      // { header: 'Order date', key: 'orderDate', width: 20 },
       { header: 'Note', key: 'note', width: 20 },
     ] as Array<Column>;
     worksheet.addRows(allItems);
@@ -201,8 +201,7 @@ export class OrdersService {
           //   existAmazonOrder,
           // );
           // existAmazonOrder = { ...order } as any;
-        }catch (e) {
-
+        } catch (e) {
         } finally {
           existAmazonOrder.items.push(existOrderItem);
         }
