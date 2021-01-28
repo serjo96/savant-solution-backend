@@ -21,6 +21,12 @@ export class OrderItem extends BaseEntity {
   amazonItemId: string;
 
   @Column({
+    type: 'varchar',
+    nullable: false,
+  })
+  amazonSku: string;
+
+  @Column({
     type: 'integer',
     nullable: false,
     default: 0,
