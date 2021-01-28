@@ -29,6 +29,8 @@ import { Interval } from '@nestjs/schedule';
 import { AiService } from '../ai/ai.service';
 import { GraingerStatusEnum } from '../ai/dto/get-grainger-order';
 import { User } from '@user/users.entity';
+import { ItemStatusEnum } from '../items/items.entity';
+import { ItemsService } from '../items/items.service';
 
 @Injectable()
 export class OrdersService {
@@ -36,6 +38,7 @@ export class OrdersService {
 
   constructor(
     private readonly aiService: AiService,
+    private readonly itemsService: ItemsService,
     @InjectRepository(Orders)
     private readonly ordersRepository: Repository<Orders>,
   ) {
@@ -171,7 +174,7 @@ export class OrdersService {
       relations: ['items'],
     });
 
-    orderItemsDto.forEach((dtoOrder) => {
+    for (const dtoOrder of orderItemsDto) {
       let existAmazonOrder: Orders = orders.find(
         (amazonOrder) => amazonOrder.amazonOrderId === dtoOrder.amazonOrderId,
       );
@@ -182,20 +185,29 @@ export class OrdersService {
         orders.push(existAmazonOrder);
       }
 
-      let existItem: OrderItem = existAmazonOrder.items.find(
+      let existOrderItem: OrderItem = existAmazonOrder.items.find(
         (i) => i.amazonItemId === dtoOrder.amazonItemId,
       );
-      if (!existItem) {
-        existItem = OrderItem.create(dtoOrder) as any;
-        //TODO ПОДУМАТЬ
-        // const { order, item } = checkRequiredItemFieldsReducer(
-        //   existItem,
-        //   existAmazonOrder,
-        // );
-        // existAmazonOrder = { ...order } as any;
-        existAmazonOrder.items.push(existItem);
+      if (!existOrderItem) {
+        existOrderItem = OrderItem.create(dtoOrder) as any;
+        try {
+          existOrderItem.item = await this.itemsService.findOne({
+            amazonSku: existOrderItem.amazonSku,
+            status: ItemStatusEnum.ACTIVE,
+          });
+          //TODO ПОДУМАТЬ
+          // const { order, item } = checkRequiredItemFieldsReducer(
+          //   existOrderItem,
+          //   existAmazonOrder,
+          // );
+          // existAmazonOrder = { ...order } as any;
+        }catch (e) {
+
+        } finally {
+          existAmazonOrder.items.push(existOrderItem);
+        }
       }
-    });
+    }
 
     // Если из CSV приходят названия штатов апперкейсом, нужно привести к общему виду
     orders

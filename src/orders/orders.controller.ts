@@ -35,7 +35,6 @@ import { CollectionResponse } from '../common/collection-response';
 import { Buffer } from 'exceljs';
 import { ChangeOrderStatusDto } from './dto/change-order-status.dto';
 import { AiService } from '../ai/ai.service';
-import { ItemStatusEnum } from '../items/items.entity';
 
 @UseGuards(AuthGuard('jwt'))
 @Roles('user', 'admin')
