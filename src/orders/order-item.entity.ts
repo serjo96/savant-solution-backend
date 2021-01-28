@@ -9,7 +9,7 @@ export enum GraingerShipMethodEnum {
   NEXT_DAY = 2,
 }
 
-@Entity('order-items')
+@Entity('items')
 export class OrderItem extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;

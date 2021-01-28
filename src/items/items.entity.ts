@@ -10,7 +10,7 @@ export enum ItemStatusEnum {
   INACTIVE = 0,
 }
 
-@Entity('items')
+@Entity('grainger-item')
 export class Item extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
