@@ -16,11 +16,11 @@ export class GraingerAccountsService {
     return this.repository.find();
   }
 
-  getById(id: string): Promise<GraingerAccount> {
-    return this.repository.findOne(id);
+  getById(id: string, where?: any): Promise<GraingerAccount> {
+    return this.repository.findOne(id, { ...where });
   }
 
-  async add(accountDto: CreateGraingerAccountDto) {
+  async add(accountDto: CreateGraingerAccountDto): Promise<GraingerAccount> {
     const accountWithLogin = await this.repository.findOne({
       where: { email: accountDto.email },
     });
@@ -31,14 +31,10 @@ export class GraingerAccountsService {
       );
     }
 
-    let account = accountDto;
-    if (!(accountDto instanceof GraingerAccount)) {
-      account = GraingerAccount.create(accountDto);
-    }
-    return await this.repository.save(account);
+    return this.repository.save(GraingerAccount.create(accountDto));
   }
 
-  async editById(id: string, dto: any) {
+  async editById(id: string, dto: any): Promise<GraingerAccount> {
     const accountWithLogin = await this.repository.findOne({
       where: { email: dto.login },
     });
@@ -55,13 +51,16 @@ export class GraingerAccountsService {
     }
 
     const updated = Object.assign(account, dto);
-    return await this.repository.save(updated);
+    return this.repository.save(updated);
   }
 
   async deleteById(id: string) {
-    const account = await this.getById(id);
+    const account = await this.getById(id, { relations: ['items'] });
     if (!account) {
       throw new HttpException(`Grainger Account doesn't exist`, HttpStatus.OK);
+    }
+    if (account.items?.length) {
+      throw new HttpException(`Grainger Account already have items`, HttpStatus.OK);
     }
     return this.repository.delete(id);
   }

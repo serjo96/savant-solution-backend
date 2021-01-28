@@ -1,18 +1,16 @@
-import { UserSettings } from '@user/user-settings.entity';
 import * as bcrypt from 'bcrypt';
 import {
   BeforeInsert,
   BeforeUpdate,
   Column,
   Entity,
-  JoinColumn,
   OneToMany,
-  OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
 import { BaseEntity } from '../common/base-entity';
 import { Orders } from '../orders/orders.entity';
+import { Items } from '../items/item.entity';
 
 export enum RolesEnum {
   GUEST = 0,
@@ -51,7 +49,10 @@ export class User extends BaseEntity {
   }
 
   @OneToMany(() => Orders, (order) => order.user)
-  public orders: Orders[];
+  orders: Orders[];
+
+  @OneToMany(() => Items, (v) => v.user)
+  items: Items[];
 
   @Column({
     type: 'enum',
@@ -59,8 +60,4 @@ export class User extends BaseEntity {
     default: RolesEnum.USER,
   })
   public roles: RolesEnum;
-
-  @OneToOne(() => UserSettings, { eager: true, cascade: true })
-  @JoinColumn()
-  settings: UserSettings;
 }

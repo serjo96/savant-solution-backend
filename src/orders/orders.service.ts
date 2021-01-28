@@ -1,77 +1,85 @@
 import {
-  Body,
+  HttpException,
+  HttpStatus,
   Injectable,
+  Logger,
   NotFoundException,
-  Query,
-  Res,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToClass } from 'class-transformer';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { paginator } from '../common/paginator';
 import { SortWithPaginationQuery, sort } from '../common/sort';
 import { EditOrderDto } from './dto/editOrder.dto';
 
-import { OrderDto } from './dto/order.dto';
-import { ResponseOrdersDto } from './dto/response-orders.dto';
-import { Orders, StatusEnum } from './orders.entity';
+import { CreateOrderDto } from './dto/createOrderDto';
+import { GetOrderDto } from './dto/get-order.dto';
+import { OrderStatusEnum, Orders } from './orders.entity';
 import { CollectionResponse } from '../common/collection-response';
 import * as CSVToJSON from 'csvtojson';
 import { Readable } from 'stream';
 import { Column, Workbook } from 'exceljs';
+import { Items } from '../items/item.entity';
+import { checkRequiredItemFieldsReducer } from '../reducers/items.reducer';
+import {
+  checkIncorrectOrderStateReducer,
+  checkUpperCaseOrderStateReducer,
+} from '../reducers/orders.reducer';
+import { Interval } from '@nestjs/schedule';
+import { AiService } from '../ai/ai.service';
+import { GraingerStatusEnum } from '../ai/dto/get-grainger-order';
 
 @Injectable()
 export class OrdersService {
+  private readonly logger = new Logger(OrdersService.name);
+
   constructor(
+    private readonly aiService: AiService,
     @InjectRepository(Orders)
     private readonly ordersRepository: Repository<Orders>,
   ) {}
 
   async find(where: any): Promise<Orders[]> {
-    return await this.ordersRepository.find(where);
+    return this.ordersRepository.find(where);
   }
 
   async findOne(where: any): Promise<Orders> {
-    const result = await this.ordersRepository.findOne(where);
-    if (!result) {
-      throw new NotFoundException();
+    const existOrder = await this.ordersRepository.findOne(where);
+    if (!existOrder) {
+      throw new HttpException(`Order doesn't exist`, HttpStatus.OK);
     }
-    return result;
+    return existOrder;
   }
 
-  async getAll(
-    where,
-    query?: any,
-  ): Promise<CollectionResponse<ResponseOrdersDto>> {
+  async getAll(where, query?: any): Promise<CollectionResponse<GetOrderDto>> {
     const clause: any = {
       ...sort(query),
       ...paginator(query),
       where,
     };
+    clause.relations = ['items'];
     const [result, count] = await this.ordersRepository.findAndCount(clause);
     if (!result) {
       throw new NotFoundException();
     }
 
     return {
-      result: result.map((order: Orders) =>
-        plainToClass(ResponseOrdersDto, order),
-      ),
+      result: result.map((order: Orders) => plainToClass(GetOrderDto, order)),
       count,
     };
   }
 
   async delete(where: any): Promise<any> {
-    const result = await this.ordersRepository.findOne(where);
-    if (!result) {
-      throw new NotFoundException();
+    const existOrder = await this.ordersRepository.findOne(where);
+    if (!existOrder) {
+      throw new HttpException(`Order doesn't exist`, HttpStatus.OK);
     }
-    return await this.ordersRepository.softDelete(where);
+    return this.ordersRepository.softDelete(where);
   }
 
   async exportToXlxs(
     res,
-    statuses: { label: string; value: StatusEnum }[],
+    statuses: { label: string; value: OrderStatusEnum }[],
     query: SortWithPaginationQuery,
   ) {
     let allItems: any = await this.getAll(query);
@@ -90,20 +98,23 @@ export class OrdersService {
     const worksheet = workbook.addWorksheet('Orders');
     worksheet.columns = [
       { header: 'ID', key: 'id', width: 40 },
-      { header: 'A Oder ID', key: 'amazonOrderId', width: 40 },
-      { header: 'A Item ID', key: 'amazonItemId', width: 40 },
-      { header: 'A Quantity', key: 'quantity', width: 20 },
-      { header: 'G Ship Date', key: 'graingerShipDate', width: 20 },
-      { header: 'G Tracking Number', key: 'graingerTrackingNumber', width: 20 },
-      { header: 'G Ship Method', key: 'graingerShipMethod', width: 20 },
-      { header: 'A-SKU', key: 'amazonSku', width: 20 },
+      { header: 'Amazon Oder ID', key: 'amazonOrderId', width: 40 },
+      { header: 'Amazon Item ID', key: 'amazonItemId', width: 40 },
+      { header: 'Amazon Quantity', key: 'amazonQuantity', width: 20 },
+      { header: 'Grainger Ship Date', key: 'graingerShipDate', width: 20 },
+      {
+        header: 'Grainger Tracking Number',
+        key: 'graingerTrackingNumber',
+        width: 20,
+      },
+      { header: 'Grainger Ship Method', key: 'graingerShipMethod', width: 20 },
+      { header: 'Amazon SKU', key: 'amazonSku', width: 20 },
       { header: 'Recipient Name', key: 'recipientName', width: 20 },
       { header: 'Order Status', key: 'status', width: 20 },
-      { header: 'G Account', key: 'graingerAccountId', width: 20 },
-      { header: 'G Web Number', key: 'graingerWebNumber', width: 20 },
-      { header: 'G Order ID', key: 'graingerOrderId', width: 40 },
+      { header: 'Grainger Account', key: 'graingerAccountId', width: 20 },
+      { header: 'Grainger Web Number', key: 'graingerWebNumber', width: 20 },
+      { header: 'Grainger Order ID', key: 'graingerOrderId', width: 40 },
       { header: 'Order date', key: 'orderDate', width: 20 },
-      { header: 'Supplier', key: 'supplier', width: 20 },
       { header: 'Note', key: 'note', width: 20 },
     ] as Array<Column>;
     worksheet.addRows(allItems);
@@ -118,7 +129,7 @@ export class OrdersService {
   }
 
   async uploadFromCsv(stream: Readable, user) {
-    const orders: Orders[] = await CSVToJSON({
+    const orderItemsDto: any[] = await CSVToJSON({
       headers: [
         'amazonOrderId',
         'amazonItemId',
@@ -129,7 +140,7 @@ export class OrdersService {
         null,
         'amazonSku',
         null,
-        'quantity',
+        'amazonQuantity',
         null,
         null,
         null,
@@ -137,50 +148,178 @@ export class OrdersService {
         null,
         null,
         'recipientName',
-        'firstShipAddress',
-        'secondShipAddress',
-        'thirdShipAddress',
+        'shipAddress',
+        null,
+        null,
         'shipCity',
         'shipState',
         'shipPostalCode',
       ],
     }).fromStream(stream);
-    orders.forEach((order) => (order.userId = user.id));
-    return this.saveAll(orders);
+
+    const uniqAmazonOrderIds: string[] = [
+      ...new Set(orderItemsDto.map((item) => item.amazonOrderId)),
+    ];
+
+    const orders: Orders[] = await this.ordersRepository.find({
+      where: { amazonOrderId: In(uniqAmazonOrderIds) },
+      relations: ['items'],
+    });
+
+    orderItemsDto.forEach((dtoOrder) => {
+      let existAmazonOrder: Orders = orders.find(
+        (amazonOrder) => amazonOrder.amazonOrderId === dtoOrder.amazonOrderId,
+      );
+      if (!existAmazonOrder) {
+        existAmazonOrder = Orders.create(dtoOrder) as any;
+        existAmazonOrder.user = user;
+        existAmazonOrder.items = [];
+        orders.push(existAmazonOrder);
+      }
+
+      let existItem: Items = existAmazonOrder.items.find(
+        (i) => i.amazonItemId === dtoOrder.amazonItemId,
+      );
+      if (!existItem) {
+        existItem = Items.create(dtoOrder) as any;
+        existItem.user = user;
+        const { order, item } = checkRequiredItemFieldsReducer(
+          existItem,
+          existAmazonOrder,
+        );
+        existAmazonOrder = { ...order } as any;
+        existAmazonOrder.items.push(item);
+      }
+    });
+
+    // Если из CSV приходят названия штатов апперкейсом, нужно привести к общему виду
+    orders
+      .filter((order) => order.shipState?.length > 2)
+      .forEach(checkUpperCaseOrderStateReducer);
+
+    // Если из CSV приходят названия штатов сокращенно, нужно найти полное название
+    orders
+      .filter((order) => order.shipState?.length <= 2)
+      .forEach(checkIncorrectOrderStateReducer);
+
+    return this.ordersRepository.save(orders);
   }
 
-  async saveAll(data: OrderDto[]): Promise<Orders[]> {
-    let orders = data.map((order) => Orders.create(order));
-    //TODO КОСТЫЛЬ
-    orders = orders.filter((o) => o.shipState?.length <= 2);
-
-    try {
-      return await this.ordersRepository.save(orders);
-    } catch (e) {
-      throw new Error(e);
+  async save(data: CreateOrderDto): Promise<Orders> {
+    let existOrder = await this.ordersRepository.findOne({
+      where: { amazonOrderId: data.amazonOrderId },
+    });
+    if (existOrder) {
+      throw new HttpException(`Order already exist`, HttpStatus.OK);
     }
+    existOrder = Orders.create(data);
+
+    return this.ordersRepository.save(existOrder);
   }
 
-  async save(data: OrderDto): Promise<Orders> {
-    let entity = data;
-
-    if (!(data instanceof Orders)) {
-      entity = Orders.create(data);
+  async updateStatus(
+    where: {
+      id: string;
+      user: {
+        id: string;
+      };
+    },
+    status: OrderStatusEnum,
+  ): Promise<Orders> {
+    const existOrder = await this.ordersRepository.findOne({
+      where,
+      relations: ['items'],
+    });
+    if (!existOrder) {
+      throw new HttpException(`Order doesn't exist`, HttpStatus.OK);
     }
 
-    try {
-      return await this.ordersRepository.save(entity);
-    } catch (e) {
-      throw new Error(e);
+    if (status === OrderStatusEnum.PROCEED) {
+      const haveInactiveItem = existOrder.items.some(
+        (item) => !!checkRequiredItemFieldsReducer(item).errorMessage,
+      );
+      if (haveInactiveItem) {
+        throw new HttpException(
+          `All order items must have status ACTIVE`,
+          HttpStatus.OK,
+        );
+      }
     }
+
+    existOrder.status = status;
+    return this.ordersRepository.save(existOrder);
+  }
+
+  /**
+   * Получает все заказы со статусом Proceed, запрашивает у AI статус по ним
+   */
+  @Interval(10000)
+  async updateOrderStatusesFromAI() {
+    const orders = await this.ordersRepository.find({
+      relations: ['items'],
+      where: { status: OrderStatusEnum.PROCEED },
+    });
+    if (!orders.length) {
+      return;
+    }
+    const graingerOrders = await this.aiService.getOrderStatusesFromAI(
+      orders.map((order) => order.amazonOrderId),
+    );
+    graingerOrders.forEach((graingerOrder) => {
+      const existOrder = orders.find(
+        (order) => order.amazonOrderId === graingerOrder.amazonOrderId,
+      );
+      if (!existOrder) {
+        return;
+      }
+      if (graingerOrder.status === GraingerStatusEnum.Success) {
+        existOrder.status = OrderStatusEnum.SUCCESS;
+      }
+
+      graingerOrder.graingerOrders.forEach((graingerItem) => {
+        let existItem = existOrder.items.find(
+          (item) => item.graingerItemNumber === graingerItem.graingerItemNumber,
+        );
+        if (!existItem) {
+          return;
+        }
+        existItem = Object.assign(existItem, {
+          graingerWebNumber: graingerItem.g_web_number,
+          graingerOrderId: graingerItem.graingerOrderId,
+        });
+
+        existOrder.items = [...existOrder.items, existItem];
+      });
+    });
+
+    await this.ordersRepository.save(orders);
+
+    const successOrdersCount = orders.filter(
+      (order) => order.status === OrderStatusEnum.SUCCESS,
+    ).length;
+    const errorOrdersCount = graingerOrders.filter(
+      (order) => order.status === GraingerStatusEnum.Error,
+    ).length;
+
+    this.logger.debug(
+      `[Update Order Status] Success: ${successOrdersCount}, Error: ${errorOrdersCount}`,
+    );
   }
 
   async update(
-    where: { id: string; userId: string },
+    where: {
+      id: string;
+      user: {
+        id: string;
+      };
+    },
     item: EditOrderDto,
   ): Promise<Orders> {
-    const toUpdate = await this.ordersRepository.findOne(where);
-    const updated = Object.assign(toUpdate, item);
-    return await this.ordersRepository.save(updated);
+    const existOrder = await this.ordersRepository.findOne(where);
+    if (!existOrder) {
+      throw new HttpException(`Order doesn't exist`, HttpStatus.OK);
+    }
+    const updated = Object.assign(existOrder, item);
+    return this.ordersRepository.save(updated);
   }
 }

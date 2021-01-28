@@ -38,10 +38,6 @@ export class AuthController {
   @Post('login')
   @HttpCode(200)
   public async login(@Body() login: LoginByEmail) {
-    try {
-      return await this.authService.login(login);
-    } catch (error) {
-      throw new BadRequestException(error);
-    }
+    return this.authService.login(login);
   }
 }

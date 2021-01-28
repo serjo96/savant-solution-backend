@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { toUserDto } from '@shared/mapper.service';
 import * as bcrypt from 'bcrypt';
@@ -15,7 +15,8 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-  ) {}
+  ) {
+  }
 
   findAll(where: any): Promise<User[]> {
     return this.userRepository.find(where);
@@ -39,19 +40,20 @@ export class UsersService {
   async create(
     userDto: Partial<CreateUserDto>,
   ): Promise<UserResponseDto | undefined> {
-    const { password, email } = userDto;
+    const { password, email, name } = userDto;
 
     const userInDb = await this.userRepository.findOne({
       where: { email },
     });
 
     if (userInDb) {
-      throw new BadRequestException('User already exists');
+      throw new HttpException(`User already exists`, HttpStatus.OK);
     }
 
     const user: User = await this.userRepository.create({
       password,
       email,
+      name,
     });
     await this.userRepository.save(user);
     return toUserDto(user);
@@ -59,19 +61,19 @@ export class UsersService {
 
   async editUser(id: string, data: any) {
     const toUpdate = await this.userRepository.findOne(id);
-    const updated: any = Object.assign(toUpdate, data);
+
+    if (!toUpdate) {
+      throw new HttpException(`User doesn't exists`, HttpStatus.OK);
+    }
     try {
-      return await this.userRepository.save(updated);
+      const updated: any = Object.assign(toUpdate, data);
+      return this.userRepository.save(updated);
     } catch (error) {
-      console.log(error);
+      throw new BadRequestException(error);
     }
   }
 
   async removeUser(id) {
-    return await this.userRepository.softDelete({ id });
-  }
-
-  async removeProfile(id) {
     return await this.userRepository.softDelete({ id });
   }
 }

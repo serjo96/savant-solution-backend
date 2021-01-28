@@ -1,21 +1,7 @@
-import {
-  Entity,
-} from 'typeorm';
 import { Exclude } from 'class-transformer';
-import { IsEmail, IsString } from 'class-validator';
+import { BaseGraingerAccountDto } from './base-grainger-account.dto';
 
-@Entity('grainger-account')
-export class CreateGraingerAccountDto {
+export class CreateGraingerAccountDto extends BaseGraingerAccountDto {
   @Exclude()
-  id?: string;
-
-  @IsString()
-  @IsEmail()
-  email: string;
-
-  @IsString()
-  password: string;
-
-  @IsString()
-  public name: string;
+  id: string;
 }

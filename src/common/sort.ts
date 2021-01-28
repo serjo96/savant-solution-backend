@@ -1,4 +1,4 @@
-import { IsBoolean, IsOptional } from 'class-validator';
+import { IsBoolean, IsOptional, IsString } from 'class-validator';
 import { IsOrderDirection } from './decorators/sortValidation';
 import { PaginatorQuery } from './paginator';
 import { Type } from 'class-transformer';
@@ -19,6 +19,10 @@ export class SortWithPaginationQuery extends PaginatorQuery {
   @IsBoolean()
   @Type(() => Boolean)
   notMapped: boolean;
+
+  @IsOptional()
+  @IsString()
+  amazonSku: string;
 }
 
 export default interface ISort {

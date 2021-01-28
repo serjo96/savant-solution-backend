@@ -62,9 +62,7 @@ export class UsersController {
     const { user } = req;
     let deletedUser;
     if (user.id === id) {
-      throw new BadRequestException({
-        message: 'You can delete yourself',
-      });
+      throw new HttpException('You can delete yourself', HttpStatus.OK);
     }
     try {
       await this.usersService.removeUser(id);
