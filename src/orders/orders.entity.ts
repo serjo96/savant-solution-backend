@@ -9,7 +9,7 @@ export enum OrderStatusEnum {
   MANUAL = 3,
   PROCEED = 2,
   SUCCESS = 1,
-  CANCEL = 0,
+  ERROR = 0,
 }
 
 @Entity('orders')

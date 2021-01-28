@@ -31,6 +31,7 @@ import { GraingerStatusEnum } from '../ai/dto/get-grainger-order';
 import { User } from '@user/users.entity';
 import { ItemStatusEnum } from '../items/items.entity';
 import { ItemsService } from '../items/items.service';
+import { filter } from '../common/filter';
 
 @Injectable()
 export class OrdersService {
@@ -41,7 +42,8 @@ export class OrdersService {
     private readonly itemsService: ItemsService,
     @InjectRepository(Orders)
     private readonly ordersRepository: Repository<Orders>,
-  ) {}
+  ) {
+  }
 
   async find(where: any): Promise<Orders[]> {
     return this.ordersRepository.find(where);
@@ -59,8 +61,9 @@ export class OrdersService {
     const clause: any = {
       ...sort(query),
       ...paginator(query),
-      where,
+      ...filter(query),
     };
+    clause.where = { ...clause.where, ...where };
     clause.relations = ['items'];
     const [result, count] = await this.ordersRepository.findAndCount(clause);
     if (!result) {
