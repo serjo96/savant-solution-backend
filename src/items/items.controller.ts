@@ -7,99 +7,126 @@ import {
   Post,
   Put,
   Query,
-  Res,
+  Req,
   UseGuards,
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { plainToClass } from 'class-transformer';
 
 import { Roles } from '../common/decorators/roles';
 import { TransformInterceptor } from '../common/interceptors/TransformInterceptor';
 import { ValidationPipe } from '../common/Pipes/validation.pipe';
 import { SortWithPaginationQuery } from '../common/sort';
-import { ResponseOrdersDto } from '../orders/dto/response-orders.dto';
-import { Orders } from '../orders/orders.entity';
-import { EditItemDto } from './dto/editItem.dto';
+import { EditItemDto } from './dto/edit-item.dto';
 
-import { ItemDto } from './dto/item.dto';
-import { Items } from './item.entity';
-import { IReponseItemsList, ItemsService } from './items.service';
-import { ResponseItemsDto } from './dto/response-items.dto';
-import { Buffer, Column, Workbook } from 'exceljs';
+import { ItemsService } from './items.service';
+import { GetItemDto } from './dto/get-item.dto';
+import { CollectionResponse } from '../common/collection-response';
+import { Request } from 'express';
+import { CreateItemDto } from './dto/create-item-dto';
+import { GetOrderDto } from '../orders/dto/get-order.dto';
+import { ChangeOrderStatusDto } from '../orders/dto/change-order-status.dto';
 
 @UseGuards(AuthGuard('jwt'))
 @Roles('user', 'admin')
 @Controller('items')
 export class ItemsController {
-  constructor(private readonly itemsService: ItemsService) {}
+  constructor(private readonly itemsService: ItemsService) {
+  }
 
   @Post('/create')
   @UsePipes(new ValidationPipe())
-  @UseInterceptors(new TransformInterceptor(ResponseItemsDto))
-  async createItem(@Body() item: ItemDto): Promise<ResponseItemsDto> {
-    return await this.itemsService.save(item);
+  @UseInterceptors(new TransformInterceptor(GetItemDto))
+  createItem(
+    @Req() req: Request,
+    @Body() item: CreateItemDto,
+  ): Promise<GetItemDto> {
+    const { user } = req;
+    const itemData = {
+      ...item,
+      user: {
+        id: user.id,
+      },
+    };
+    return this.itemsService.save(itemData);
   }
 
-  @Get('/download')
-  @UsePipes(new ValidationPipe())
-  async exportXlSX(
-    @Res() res,
+  @Get('/search')
+  // @UseInterceptors(new TransformInterceptor(GetItemDto))
+  searchAmazonSKU(
     @Query() query: SortWithPaginationQuery,
-  ): Promise<Buffer> {
-    const allItems: IReponseItemsList = await this.itemsService.getAll(query);
-    const workbook = new Workbook();
-    const worksheet = workbook.addWorksheet('Items');
-    worksheet.columns = [
-      { header: 'ID', key: 'id', width: 40 },
-      { header: 'G-PACKQTY', key: 'quantity', width: 12 },
-      { header: 'A-SKU', key: 'amazonSku', width: 25 },
-      { header: 'G-ItemNumber', key: 'itemNumber', width: 18 },
-      { header: 'Treshold', key: 'threshold', width: 10 },
-      { header: 'Supplier', key: 'supplier', width: 20 },
-      { header: 'Alt supplier', key: 'altSupplier', width: 20 },
-      { header: 'Note', key: 'note', width: 20 },
-      { header: 'Order date', key: 'createdAt', width: 25 },
-    ] as Array<Column>;
-    worksheet.addRows(allItems.data.result);
-
-    res.setHeader(
-      'Content-Disposition',
-      'attachment; filename=' + 'items.xlsx',
-    );
-
-    await workbook.xlsx.write(res);
-    return await workbook.xlsx.writeBuffer();
+    @Req() { user }: Request,
+  ): Promise<GetItemDto[]> {
+    return this.itemsService.findAllSku(user, query);
   }
 
   @Get(':id')
-  @UseInterceptors(new TransformInterceptor(ResponseItemsDto))
-  async getItem(@Param() id: { id: string }): Promise<ResponseItemsDto> {
-    return await this.itemsService.findOne(id);
+  @UseInterceptors(new TransformInterceptor(GetItemDto))
+  getItem(@Param() id: { id: string }): Promise<GetItemDto> {
+    return this.itemsService.findOne(id);
   }
 
   @Get()
   @UsePipes(new ValidationPipe())
   async finAll(
     @Query() query: SortWithPaginationQuery,
-  ): Promise<{ data: { result: ResponseItemsDto[]; count: number } }> {
-    return await this.itemsService.getAll(query);
+    @Req() { user }: Request,
+  ): Promise<CollectionResponse<GetItemDto>> {
+    return this.itemsService.getAll(user, query);
   }
 
   @Put(':id')
   @UsePipes(new ValidationPipe())
-  @UseInterceptors(new TransformInterceptor(ResponseItemsDto))
+  @UseInterceptors(new TransformInterceptor(GetItemDto))
   async updateItem(
-    @Param() id: { id: string },
+    @Param() { id }: { id: string },
     @Body() item: EditItemDto,
-  ): Promise<ResponseItemsDto> {
-    return this.itemsService.update(id, item);
+    @Req() req: Request,
+  ): Promise<GetItemDto> {
+    const { user } = req;
+    const where = {
+      id,
+      user: {
+        id: user.id,
+      }
+    };
+
+    return this.itemsService.update(where, item);
+  }
+
+  @Put(':id/status')
+  @UsePipes(new ValidationPipe())
+  @UseInterceptors(new TransformInterceptor(GetItemDto))
+  async changeOrderStatus(
+    @Param() { id }: { id: string },
+    @Body() { status }: any,
+    @Req() req: Request,
+  ): Promise<GetItemDto> {
+    const { user } = req;
+    const where = {
+      id,
+      user: {
+        id: user.id,
+      },
+    };
+
+    return this.itemsService.updateStatus(where, status);
   }
 
   @Delete(':id')
-  @UseInterceptors(new TransformInterceptor(ResponseItemsDto))
-  async removeItem(@Param() id: { id: string }): Promise<ResponseItemsDto> {
-    return await this.itemsService.delete(id);
+  @UseInterceptors(new TransformInterceptor(GetItemDto))
+  removeItem(
+    @Req() req: Request,
+    @Param() id: { id: string },
+  ): Promise<GetItemDto> {
+    const { user } = req;
+    const where = {
+      id,
+      user: {
+        id: user.id,
+      },
+    };
+    return this.itemsService.delete(where);
   }
 }

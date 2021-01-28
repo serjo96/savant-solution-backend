@@ -67,6 +67,10 @@ export class ConfigService {
     return validatedEnvConfig;
   }
 
+  get AIURL(): string {
+    return this.envConfig.AI_URL as string;
+  }
+
   get dbURL(): string {
     return this.envConfig.DATABASE_URL as string;
   }

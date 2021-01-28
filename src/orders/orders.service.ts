@@ -1,85 +1,254 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToClass } from 'class-transformer';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { paginator } from '../common/paginator';
-import { sort } from '../common/sort';
+import { SortWithPaginationQuery, sort } from '../common/sort';
 import { SearchService } from '../search/search.service';
 import { EditOrderDto } from './dto/editOrder.dto';
 
-import { OrderDto } from './dto/order.dto';
-import { ResponseOrdersDto } from './dto/response-orders.dto';
-import { Orders } from './orders.entity';
+import { CreateOrderDto } from './dto/createOrderDto';
+import { GetOrderDto } from './dto/get-order.dto';
+import { OrderStatusEnum, Orders } from './orders.entity';
+import { CollectionResponse } from '../common/collection-response';
+import * as CSVToJSON from 'csvtojson';
+import { Readable } from 'stream';
+import { Column, Workbook } from 'exceljs';
+import { Items } from '../items/item.entity';
+import { checkRequiredItemFieldsReducer } from '../reducers/items.reducer';
+import {
+  checkIncorrectOrderStateReducer,
+  checkUpperCaseOrderStateReducer,
+} from '../reducers/orders.reducer';
+import { Interval } from '@nestjs/schedule';
+import { AiService } from '../ai/ai.service';
+import { GraingerStatusEnum } from '../ai/dto/get-grainger-order';
 
 @Injectable()
 export class OrdersService {
+  private readonly logger = new Logger(OrdersService.name);
+
   constructor(
     @InjectRepository(Orders)
     private readonly ordersRepository: Repository<Orders>,
     private readonly searchService: SearchService,
+    private readonly aiService: AiService,
   ) {}
 
   async find(where: any): Promise<Orders[]> {
-    return await this.ordersRepository.find(where);
+    return this.ordersRepository.find(where);
   }
 
   async findOne(where: any): Promise<Orders> {
-    const result = await this.ordersRepository.findOne(where);
-    if (!result) {
-      throw new NotFoundException();
+    const existOrder = await this.ordersRepository.findOne(where);
+    if (!existOrder) {
+      throw new HttpException(`Order doesn't exist`, HttpStatus.OK);
     }
-    return result;
+    return existOrder;
   }
 
-  async getAll(
-    where,
-    query?: any,
-  ): Promise<{ data: { result: ResponseOrdersDto[]; count: number } }> {
+  async getAll(where, query?: any): Promise<CollectionResponse<GetOrderDto>> {
     const clause: any = {
       ...sort(query),
       ...paginator(query),
       where,
     };
+    clause.relations = ['items'];
     const [result, count] = await this.ordersRepository.findAndCount(clause);
     if (!result) {
       throw new NotFoundException();
     }
 
     return {
-      data: {
-        result: result.map((order: Orders) =>
-          plainToClass(ResponseOrdersDto, order),
-        ),
-        count,
-      },
+      result: result.map((order: Orders) => plainToClass(GetOrderDto, order)),
+      count,
     };
   }
 
   async delete(where: any): Promise<any> {
-    const result = await this.ordersRepository.findOne(where);
-    if (!result) {
-      throw new NotFoundException();
+    const existOrder = await this.ordersRepository.findOne(where);
+    if (!existOrder) {
+      throw new HttpException(`Order doesn't exist`, HttpStatus.OK);
     }
-    return await this.ordersRepository.softDelete(where);
+    return this.ordersRepository.softDelete(where);
   }
 
-  async saveAll(data: OrderDto[]): Promise<Orders[]> {
-    const orders = data.map((order) => Orders.create(order));
+  async exportToXlxs(
+    res,
+    statuses: { label: string; value: OrderStatusEnum }[],
+    query: SortWithPaginationQuery,
+  ) {
+    let allItems: any = await this.getAll(query);
 
-    try {
-      return await this.ordersRepository.save(orders);
-    } catch (e) {
-      throw new Error(e);
-    }
+    const statusesDict = statuses.reduce(
+      (acc, curr) => ({ ...acc, [curr.value]: curr.label }),
+      {},
+    );
+
+    allItems = allItems.result.map((order) => ({
+      ...order,
+      status: statusesDict[order.status],
+    }));
+
+    const workbook = new Workbook();
+    const worksheet = workbook.addWorksheet('Orders');
+    worksheet.columns = [
+      { header: 'ID', key: 'id', width: 40 },
+      { header: 'Amazon Oder ID', key: 'amazonOrderId', width: 40 },
+      { header: 'Amazon Item ID', key: 'amazonItemId', width: 40 },
+      { header: 'Amazon Quantity', key: 'amazonQuantity', width: 20 },
+      { header: 'Grainger Ship Date', key: 'graingerShipDate', width: 20 },
+      {
+        header: 'Grainger Tracking Number',
+        key: 'graingerTrackingNumber',
+        width: 20,
+      },
+      { header: 'Grainger Ship Method', key: 'graingerShipMethod', width: 20 },
+      { header: 'Amazon SKU', key: 'amazonSku', width: 20 },
+      { header: 'Recipient Name', key: 'recipientName', width: 20 },
+      { header: 'Order Status', key: 'status', width: 20 },
+      { header: 'Grainger Account', key: 'graingerAccountId', width: 20 },
+      { header: 'Grainger Web Number', key: 'graingerWebNumber', width: 20 },
+      { header: 'Grainger Order ID', key: 'graingerOrderId', width: 40 },
+      { header: 'Order date', key: 'orderDate', width: 20 },
+      { header: 'Note', key: 'note', width: 20 },
+    ] as Array<Column>;
+    worksheet.addRows(allItems);
+
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename=' + 'orders.xlsx',
+    );
+
+    await workbook.xlsx.write(res);
+    return workbook.xlsx.writeBuffer();
   }
 
-  async save(data: OrderDto): Promise<Orders> {
-    let entity = data;
+  async uploadFromCsv(stream: Readable, user) {
+    const orderItemsDto: any[] = await CSVToJSON({
+      headers: [
+        'amazonOrderId',
+        'amazonItemId',
+        'createdAt',
+        null,
+        null,
+        'recipientName',
+        null,
+        'amazonSku',
+        null,
+        'amazonQuantity',
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        'recipientName',
+        'shipAddress',
+        null,
+        null,
+        'shipCity',
+        'shipState',
+        'shipPostalCode',
+      ],
+    }).fromStream(stream);
 
-    if (!(data instanceof Orders)) {
-      entity = Orders.create(data);
+    const uniqAmazonOrderIds: string[] = [
+      ...new Set(orderItemsDto.map((item) => item.amazonOrderId)),
+    ];
+
+    const orders: Orders[] = await this.ordersRepository.find({
+      where: { amazonOrderId: In(uniqAmazonOrderIds) },
+      relations: ['items'],
+    });
+
+    orderItemsDto.forEach((dtoOrder) => {
+      let existAmazonOrder: Orders = orders.find(
+        (amazonOrder) => amazonOrder.amazonOrderId === dtoOrder.amazonOrderId,
+      );
+      if (!existAmazonOrder) {
+        existAmazonOrder = Orders.create(dtoOrder) as any;
+        existAmazonOrder.user = user;
+        existAmazonOrder.items = [];
+        orders.push(existAmazonOrder);
+      }
+
+      let existItem: Items = existAmazonOrder.items.find(
+        (i) => i.amazonItemId === dtoOrder.amazonItemId,
+      );
+      if (!existItem) {
+        existItem = Items.create(dtoOrder) as any;
+        existItem.user = user;
+        const { order, item } = checkRequiredItemFieldsReducer(
+          existItem,
+          existAmazonOrder,
+        );
+        existAmazonOrder = { ...order } as any;
+        existAmazonOrder.items.push(item);
+      }
+    });
+
+    // Если из CSV приходят названия штатов апперкейсом, нужно привести к общему виду
+    orders
+      .filter((order) => order.shipState?.length > 2)
+      .forEach(checkUpperCaseOrderStateReducer);
+
+    // Если из CSV приходят названия штатов сокращенно, нужно найти полное название
+    orders
+      .filter((order) => order.shipState?.length <= 2)
+      .forEach(checkIncorrectOrderStateReducer);
+
+    return this.ordersRepository.save(orders);
+  }
+
+  async save(data: CreateOrderDto): Promise<Orders> {
+    let existOrder = await this.ordersRepository.findOne({
+      where: { amazonOrderId: data.amazonOrderId },
+    });
+    if (existOrder) {
+      throw new HttpException(`Order already exist`, HttpStatus.OK);
+    }
+    existOrder = Orders.create(data);
+
+    return this.ordersRepository.save(existOrder);
+  }
+
+  async updateStatus(
+    where: {
+      id: string;
+      user: {
+        id: string;
+      };
+    },
+    status: OrderStatusEnum,
+  ): Promise<Orders> {
+    const existOrder = await this.ordersRepository.findOne({
+      where,
+      relations: ['items'],
+    });
+    if (!existOrder) {
+      throw new HttpException(`Order doesn't exist`, HttpStatus.OK);
     }
 
+    if (status === OrderStatusEnum.PROCEED) {
+      const haveInactiveItem = existOrder.items.some(
+        (item) => !!checkRequiredItemFieldsReducer(item).errorMessage,
+      );
+      if (haveInactiveItem) {
+        throw new HttpException(
+          `All order items must have status ACTIVE`,
+          HttpStatus.OK,
+        );
+      }
+    }
+
+    existOrder.status = status;
     try {
       this.searchService.indexPost(entity);
       return await this.ordersRepository.save(entity);
@@ -88,17 +257,77 @@ export class OrdersService {
     }
   }
 
-  async update(
-    where: { id: string; userId: string },
-    item: EditOrderDto,
-  ): Promise<Orders> {
-    const toUpdate = await this.ordersRepository.findOne(where);
-    const updated = Object.assign(toUpdate, item);
-    return await this.ordersRepository.save(updated);
+  /**
+   * Получает все заказы со статусом Proceed, запрашивает у AI статус по ним
+   */
+  @Interval(10000)
+  async updateOrderStatusesFromAI() {
+    const orders = await this.ordersRepository.find({
+      relations: ['items'],
+      where: { status: OrderStatusEnum.PROCEED },
+    });
+    if (!orders.length) {
+      return;
+    }
+    const graingerOrders = await this.aiService.getOrderStatusesFromAI(
+      orders.map((order) => order.amazonOrderId),
+    );
+    graingerOrders.forEach((graingerOrder) => {
+      const existOrder = orders.find(
+        (order) => order.amazonOrderId === graingerOrder.amazonOrderId,
+      );
+      if (!existOrder) {
+        return;
+      }
+      if (graingerOrder.status === GraingerStatusEnum.Success) {
+        existOrder.status = OrderStatusEnum.SUCCESS;
+      }
+
+      graingerOrder.graingerOrders.forEach((graingerItem) => {
+        let existItem = existOrder.items.find(
+          (item) => item.graingerItemNumber === graingerItem.graingerItemNumber,
+        );
+        if (!existItem) {
+          return;
+        }
+        existItem = Object.assign(existItem, {
+          graingerWebNumber: graingerItem.g_web_number,
+          graingerOrderId: graingerItem.graingerOrderId,
+        });
+
+        existOrder.items = [...existOrder.items, existItem];
+      });
+    });
+
+    await this.ordersRepository.save(orders);
+
+    const successOrdersCount = orders.filter(
+      (order) => order.status === OrderStatusEnum.SUCCESS,
+    ).length;
+    const errorOrdersCount = graingerOrders.filter(
+      (order) => order.status === GraingerStatusEnum.Error,
+    ).length;
+
+    this.logger.debug(
+      `[Update Order Status] Success: ${successOrdersCount}, Error: ${errorOrdersCount}`,
+    );
   }
 
-  async updateRaw({ where, data }: { where: any; data: any }): Promise<any> {
-    return await this.ordersRepository.update(where, data);
+  async update(
+    where: {
+      id: string;
+      user: {
+        id: string;
+      };
+    },
+    item: EditOrderDto,
+  ): Promise<Orders> {
+    const existOrder = await this.ordersRepository.findOne(where);
+    if (!existOrder) {
+      throw new HttpException(`Order doesn't exist`, HttpStatus.OK);
+    }
+    const updated = Object.assign(existOrder, item);
+    return this.ordersRepository.save(updated);
   }
 
   async search(query: any): Promise<any> {

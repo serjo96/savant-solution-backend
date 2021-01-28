@@ -1,89 +1,143 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToClass } from 'class-transformer';
 import { Repository } from 'typeorm';
 import { paginator } from '../common/paginator';
-import { sort } from '../common/sort';
-import { EditItemDto } from './dto/editItem.dto';
+import { SortWithPaginationQuery, sort } from '../common/sort';
+import { EditItemDto } from './dto/edit-item.dto';
 
-import { ItemDto } from './dto/item.dto';
-import { ResponseItemsDto } from './dto/response-items.dto';
-import { Items } from './item.entity';
-
-export interface IReponseItemsList {
-   data: {
-     result: ResponseItemsDto[];
-     count: number
-   }
-}
+import { CreateItemDto } from './dto/create-item-dto';
+import { GetItemDto } from './dto/get-item.dto';
+import { ItemStatusEnum, Items } from './item.entity';
+import { filter } from '../common/filter';
+import { CollectionResponse } from '../common/collection-response';
+import { OrderStatusEnum, Orders } from '../orders/orders.entity';
+import { checkRequiredItemFieldsReducer } from '../reducers/items.reducer';
+import { User } from '@user/users.entity';
 
 @Injectable()
 export class ItemsService {
   constructor(
     @InjectRepository(Items)
-    private readonly productsRepository: Repository<Items>,
+    private readonly repository: Repository<Items>,
   ) {}
 
   async find(where: any): Promise<Items[]> {
-    return await this.productsRepository.find(where);
+    return this.repository.find(where);
   }
 
   async findOne(where: any): Promise<Items> {
-    const result = await this.productsRepository.findOne(where);
-    if (!result) {
-      throw new NotFoundException();
+    const existItem = await this.repository.findOne(where);
+    if (!existItem) {
+      throw new HttpException(`Item doesn't exist`, HttpStatus.OK);
     }
-    return result;
+    return existItem;
+  }
+
+  findAllSku(user: User, query?: SortWithPaginationQuery): Promise<Items[]> {
+    return this.repository
+      .createQueryBuilder('items')
+      .where('items.user.id=:id', { id: user.id })
+      .andWhere('items.amazonSku LIKE :amazonSku', {
+        amazonSku: `%${query.amazonSku}%`,
+      })
+      .select(
+        'DISTINCT ("amazonSku"), "graingerPackQuantity", "graingerItemNumber"',
+      )
+      .getRawMany();
   }
 
   async getAll(
-    query: any,
-  ): Promise<IReponseItemsList> {
+    user: User,
+    query?: any,
+  ): Promise<CollectionResponse<GetItemDto>> {
     const clause: any = {
       ...sort(query),
       ...paginator(query),
+      ...filter(query),
     };
-    const [result, count] = await this.productsRepository.findAndCount(clause);
+    const [result, count] = await this.repository.findAndCount({
+      ...clause,
+      where: {
+        ...clause.where,
+        user: {
+          id: user.id,
+        },
+      },
+    });
 
     if (!result) {
       throw new NotFoundException();
     }
     return {
-      data: {
-        result: result.map((order: Items) =>
-          plainToClass(ResponseItemsDto, order),
-        ),
-        count,
-      },
+      result: result.map((order: Items) => plainToClass(GetItemDto, order)),
+      count,
     };
   }
 
   async delete(where: any): Promise<any> {
-    const result = await this.productsRepository.findOne(where);
-    if (!result) {
-      throw new NotFoundException();
+    const existItem = await this.repository.findOne(where);
+    if (!existItem) {
+      throw new HttpException(`Item doesn't exist`, HttpStatus.OK);
     }
-    return await this.productsRepository.softDelete(where);
+    return await this.repository.softDelete(where);
   }
 
-  async save(data: ItemDto): Promise<Items> {
-    let entity = data;
-    if (!(data instanceof Items)) {
-      entity = Items.create(data);
+  async save(data: CreateItemDto): Promise<Items> {
+    let existItem = await this.repository.findOne({ amazonItemId: data.amazonItemId });
+    if (existItem) {
+      throw new HttpException(`Item already exist`, HttpStatus.OK);
     }
-    try {
-      return await this.productsRepository.save(entity);
-    } catch (e) {
-      throw new Error(e);
+
+    existItem = Items.create(data);
+    const { errorMessage } = checkRequiredItemFieldsReducer(existItem);
+    if (errorMessage) {
+      throw new HttpException(errorMessage, HttpStatus.OK);
     }
-  }
-  async update(id: { id: string }, item: EditItemDto): Promise<Items> {
-    const toUpdate = await this.productsRepository.findOne(id);
-    const updated = Object.assign(toUpdate, item);
-    return await this.productsRepository.save(updated);
+
+    if (!existItem.graingerItemNumber) {
+      existItem.status = ItemStatusEnum.INACTIVE;
+    }
+    return this.repository.save(existItem);
   }
 
-  async updateRaw({ where, data }: { where: any; data: any }): Promise<any> {
-    return await this.productsRepository.update(where, data);
+  async update(where: any, editItem: EditItemDto): Promise<Items> {
+    const existItem = await this.repository.findOne(where);
+    if (!existItem) {
+      throw new HttpException(`Item doesn't exist`, HttpStatus.OK);
+    }
+    const updated = Object.assign(existItem, editItem);
+    const { errorMessage, item } = checkRequiredItemFieldsReducer(updated);
+    if (errorMessage) {
+      throw new HttpException(errorMessage, HttpStatus.OK);
+    }
+    return this.repository.save(item);
+  }
+
+  async updateStatus(
+    where: {
+      id: string;
+      user: {
+        id: string;
+      };
+    },
+    status: ItemStatusEnum,
+  ): Promise<Items> {
+    const existItem = await this.repository.findOne(where);
+    if (!existItem) {
+      throw new HttpException(`Item doesn't exist`, HttpStatus.OK);
+    }
+    const { errorMessage } = checkRequiredItemFieldsReducer(existItem);
+    if (errorMessage) {
+      throw new HttpException(errorMessage, HttpStatus.OK);
+    }
+
+    existItem.status = status;
+    return this.repository.save(existItem);
   }
 }

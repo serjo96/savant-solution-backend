@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpException,
+  HttpStatus,
   Param,
   Put,
   Req,
@@ -60,9 +62,7 @@ export class UsersController {
     const { user } = req;
     let deletedUser;
     if (user.id === id) {
-      throw new BadRequestException({
-        message: 'You can delete yourself',
-      });
+      throw new HttpException('You can delete yourself', HttpStatus.OK);
     }
     try {
       await this.usersService.removeUser(id);
@@ -81,27 +81,26 @@ export class UsersController {
     @Param() { id }: { id: string },
     @Body() body: EditUserDto,
   ): Promise<{ data: User }> {
-    let editedUser;
     const updatingUser = await this.usersService.findById(id);
     if (!updatingUser) {
-      throw new BadRequestException({
-        message: `User doesn't exist`,
-      });
+      throw new HttpException(`User doesn't exist`, HttpStatus.OK);
     }
 
     const userEmail = body.email;
     if (userEmail) {
       const existEmail = await this.usersService.findByEmail(userEmail);
-      if (existEmail) {
-        throw new BadRequestException({
-          message: `User with current email already exist`,
-        });
+      if (existEmail && existEmail.id !== updatingUser.id) {
+        throw new HttpException(
+          `User with current email already exist`,
+          HttpStatus.OK,
+        );
       }
     }
+
+    let editedUser;
     try {
       editedUser = await this.usersService.editUser(id, body);
     } catch (error) {
-      console.log(error);
       throw new BadRequestException(error);
     }
 

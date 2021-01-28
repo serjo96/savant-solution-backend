@@ -27,9 +27,7 @@ export class TransformInterceptor<T> implements NestInterceptor {
           response = plainToClass(this.classType, data);
         }
 
-        return {
-          data: response,
-        };
+        return response;
       }),
     );
   }

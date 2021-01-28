@@ -1,10 +1,18 @@
-import { BeforeInsert, Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 import { BaseEntity } from '../common/base-entity';
+import { GraingerAccount } from '../grainger-accounts/grainger-account.entity';
+import { Orders } from '../orders/orders.entity';
+import { User } from '@user/users.entity';
 
-export enum StatusEnum {
+export enum ItemStatusEnum {
   ACTIVE = 1,
   INACTIVE = 0,
+}
+
+export enum GraingerShipMethodEnum {
+  EXPRESS = 1,
+  NEXT_DAY = 2,
 }
 
 @Entity('items')
@@ -13,22 +21,17 @@ export class Items extends BaseEntity {
   id: string;
 
   @Column({
+    unique: true,
     type: 'varchar',
-    nullable: false,
   })
-  itemNumber: string;
+  amazonItemId: string;
 
   @Column({
     type: 'integer',
     nullable: false,
+    default: 0,
   })
-  quantity: number;
-
-  @Column({
-    type: 'integer',
-    nullable: true,
-  })
-  threshold?: number;
+  amazonQuantity: number;
 
   @Column({
     type: 'varchar',
@@ -38,15 +41,52 @@ export class Items extends BaseEntity {
 
   @Column({
     type: 'varchar',
-    nullable: false,
+    nullable: true,
   })
-  supplier: string;
+  graingerTrackingNumber?: string;
+
+  @Column({
+    type: 'enum',
+    enum: GraingerShipMethodEnum,
+    nullable: true,
+  })
+  graingerShipMethod?: GraingerShipMethodEnum;
 
   @Column({
     type: 'varchar',
     nullable: true,
   })
-  altSupplier?: string;
+  graingerOrderId?: string;
+
+  @Column({
+    type: 'date',
+    nullable: true,
+  })
+  graingerShipDate?: Date;
+
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
+  graingerWebNumber?: string;
+
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
+  graingerItemNumber: string;
+
+  @Column({
+    type: 'integer',
+    nullable: true,
+  })
+  graingerPackQuantity?: number;
+
+  @Column({
+    type: 'integer',
+    nullable: true,
+  })
+  graingerThreshold?: number;
 
   @Column({
     type: 'varchar',
@@ -56,8 +96,20 @@ export class Items extends BaseEntity {
 
   @Column({
     type: 'enum',
-    enum: StatusEnum,
-    default: StatusEnum.ACTIVE,
+    enum: ItemStatusEnum,
+    default: ItemStatusEnum.ACTIVE,
   })
-  public status: StatusEnum;
+  public status: ItemStatusEnum;
+
+  @ManyToOne(() => GraingerAccount, (v) => v.items, {
+    nullable: true,
+    eager: true,
+  })
+  graingerAccount: GraingerAccount;
+
+  @ManyToOne(() => Orders, (v) => v.items)
+  order: Orders;
+
+  @ManyToOne(() => User, (user) => user.orders, {eager: true})
+  user: User;
 }

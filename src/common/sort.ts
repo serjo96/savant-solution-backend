@@ -1,6 +1,7 @@
-import { IsOptional } from 'class-validator';
+import { IsBoolean, IsOptional, IsString } from 'class-validator';
 import { IsOrderDirection } from './decorators/sortValidation';
 import { PaginatorQuery } from './paginator';
+import { Type } from 'class-transformer';
 
 export class SortBy {
   id = '';
@@ -13,6 +14,15 @@ export class SortWithPaginationQuery extends PaginatorQuery {
   @IsOptional()
   @IsOrderDirection()
   sort_by: string;
+
+  @IsOptional()
+  @IsBoolean()
+  @Type(() => Boolean)
+  notMapped: boolean;
+
+  @IsOptional()
+  @IsString()
+  amazonSku: string;
 }
 
 export default interface ISort {
@@ -27,6 +37,10 @@ export const sort = (query: SortWithPaginationQuery): ISort => {
       createdAt: 'asc',
     },
   };
+
+  if (!query) {
+    return result;
+  }
 
   const { sort_by } = query;
 
