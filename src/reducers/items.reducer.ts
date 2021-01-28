@@ -1,11 +1,11 @@
 import { OrderStatusEnum, Orders } from '../orders/orders.entity';
-import { ItemStatusEnum, Items } from '../items/item.entity';
+import { ItemStatusEnum, OrderItem } from '../orders/order-item.entity';
 
 // Если нет необходимых полей для Димы, пишем ошибку
 export const checkRequiredItemFieldsReducer = (
-  item: Items,
+  item: OrderItem,
   order?: Orders,
-): { order?: Orders; item: Items; errorMessage?: string } => {
+): { order?: Orders; item: OrderItem; errorMessage?: string } => {
   let errorMessage;
   if (
     !item.graingerItemNumber ||

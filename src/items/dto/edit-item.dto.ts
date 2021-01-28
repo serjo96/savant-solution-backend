@@ -7,7 +7,7 @@ import {
   IsString, Max, MaxLength, Min,
 } from 'class-validator';
 
-import { GraingerShipMethodEnum, ItemStatusEnum } from '../item.entity';
+import { GraingerShipMethodEnum, ItemStatusEnum } from '../../orders/order-item.entity';
 import { GraingerAccount } from '../../grainger-accounts/grainger-account.entity';
 import { Orders } from '../../orders/orders.entity';
 import { GetOrderDto } from '../../orders/dto/get-order.dto';

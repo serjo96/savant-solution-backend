@@ -19,7 +19,7 @@ import { CollectionResponse } from '../common/collection-response';
 import * as CSVToJSON from 'csvtojson';
 import { Readable } from 'stream';
 import { Column, Workbook } from 'exceljs';
-import { Items } from '../items/item.entity';
+import { OrderItem } from './order-item.entity';
 import { checkRequiredItemFieldsReducer } from '../reducers/items.reducer';
 import {
   checkIncorrectOrderStateReducer,
@@ -177,11 +177,11 @@ export class OrdersService {
         orders.push(existAmazonOrder);
       }
 
-      let existItem: Items = existAmazonOrder.items.find(
+      let existItem: OrderItem = existAmazonOrder.items.find(
         (i) => i.amazonItemId === dtoOrder.amazonItemId,
       );
       if (!existItem) {
-        existItem = Items.create(dtoOrder) as any;
+        existItem = OrderItem.create(dtoOrder) as any;
         existItem.user = user;
         const { order, item } = checkRequiredItemFieldsReducer(
           existItem,

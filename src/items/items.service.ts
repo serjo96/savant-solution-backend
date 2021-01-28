@@ -13,7 +13,7 @@ import { EditItemDto } from './dto/edit-item.dto';
 
 import { CreateItemDto } from './dto/create-item-dto';
 import { GetItemDto } from './dto/get-item.dto';
-import { ItemStatusEnum, Items } from './item.entity';
+import { ItemStatusEnum, OrderItem } from '../orders/order-item.entity';
 import { filter } from '../common/filter';
 import { CollectionResponse } from '../common/collection-response';
 import { OrderStatusEnum, Orders } from '../orders/orders.entity';
@@ -23,15 +23,15 @@ import { User } from '@user/users.entity';
 @Injectable()
 export class ItemsService {
   constructor(
-    @InjectRepository(Items)
-    private readonly repository: Repository<Items>,
+    @InjectRepository(OrderItem)
+    private readonly repository: Repository<OrderItem>,
   ) {}
 
-  async find(where: any): Promise<Items[]> {
+  async find(where: any): Promise<OrderItem[]> {
     return this.repository.find(where);
   }
 
-  async findOne(where: any): Promise<Items> {
+  async findOne(where: any): Promise<OrderItem> {
     const existItem = await this.repository.findOne(where);
     if (!existItem) {
       throw new HttpException(`Item doesn't exist`, HttpStatus.OK);
@@ -39,7 +39,7 @@ export class ItemsService {
     return existItem;
   }
 
-  findAllSku(user: User, query?: SortWithPaginationQuery): Promise<Items[]> {
+  findAllSku(user: User, query?: SortWithPaginationQuery): Promise<OrderItem[]> {
     return this.repository
       .createQueryBuilder('items')
       .where('items.user.id=:id', { id: user.id })
@@ -75,7 +75,7 @@ export class ItemsService {
       throw new NotFoundException();
     }
     return {
-      result: result.map((order: Items) => plainToClass(GetItemDto, order)),
+      result: result.map((order: OrderItem) => plainToClass(GetItemDto, order)),
       count,
     };
   }
@@ -88,13 +88,13 @@ export class ItemsService {
     return await this.repository.softDelete(where);
   }
 
-  async save(data: CreateItemDto): Promise<Items> {
+  async save(data: CreateItemDto): Promise<OrderItem> {
     let existItem = await this.repository.findOne({ amazonItemId: data.amazonItemId });
     if (existItem) {
       throw new HttpException(`Item already exist`, HttpStatus.OK);
     }
 
-    existItem = Items.create(data);
+    existItem = OrderItem.create(data);
     const { errorMessage } = checkRequiredItemFieldsReducer(existItem);
     if (errorMessage) {
       throw new HttpException(errorMessage, HttpStatus.OK);
@@ -106,7 +106,7 @@ export class ItemsService {
     return this.repository.save(existItem);
   }
 
-  async update(where: any, editItem: EditItemDto): Promise<Items> {
+  async update(where: any, editItem: EditItemDto): Promise<OrderItem> {
     const existItem = await this.repository.findOne(where);
     if (!existItem) {
       throw new HttpException(`Item doesn't exist`, HttpStatus.OK);
@@ -127,7 +127,7 @@ export class ItemsService {
       };
     },
     status: ItemStatusEnum,
-  ): Promise<Items> {
+  ): Promise<OrderItem> {
     const existItem = await this.repository.findOne(where);
     if (!existItem) {
       throw new HttpException(`Item doesn't exist`, HttpStatus.OK);

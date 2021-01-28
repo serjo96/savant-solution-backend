@@ -3,7 +3,7 @@ import { BeforeInsert, Column, Entity, ManyToOne, OneToMany } from 'typeorm';
 import { v4 as uuid4 } from 'uuid';
 
 import { BaseEntity } from '../common/base-entity';
-import { Items } from '../items/item.entity';
+import { OrderItem } from './order-item.entity';
 
 export enum OrderStatusEnum {
   MANUAL = 3,
@@ -88,11 +88,11 @@ export class Orders extends BaseEntity {
   })
   public status: OrderStatusEnum;
 
-  @OneToMany(() => Items, (v) => v.order, { cascade: true })
-  items: Items[];
+  @OneToMany(() => OrderItem, (v) => v.order, { cascade: true })
+  items: OrderItem[];
 
-  @ManyToOne(() => User, (user) => user.orders, {eager: true})
-  public user: User;
+  @ManyToOne(() => User, (user) => user.orders, { eager: true })
+  user: User;
 
   @BeforeInsert()
   public baseEntityOnCreate(): void {
