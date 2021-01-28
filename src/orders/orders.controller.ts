@@ -51,7 +51,6 @@ export class OrdersController {
   ): Promise<ResponseOrdersDto> {
     const { user } = req;
     const orderData = { ...item, userId: user.id };
-    await this.searchService.indexPost(orderData);
     return await this.ordersService.save(orderData);
   }
 
@@ -98,6 +97,13 @@ export class OrdersController {
     } catch (error) {
       throw new BadRequestException(error);
     }
+  }
+
+  @Get('/search')
+  async searchOrders(
+    @Query('search') search: string,
+  ): Promise<any> {
+    return await this.ordersService.search(search);
   }
 
   @Get(':id')
@@ -156,12 +162,5 @@ export class OrdersController {
     const { user } = req;
     const where = { id, userId: user.id };
     return await this.ordersService.delete(where);
-  }
-
-  @Post('/search')
-  async searchOrders(
-    @Query('search') search: string,
-  ): Promise<any> {
-    return await this.ordersService.search(search);
   }
 }
