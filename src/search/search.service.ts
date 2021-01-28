@@ -1,69 +1,67 @@
 import { Injectable } from '@nestjs/common';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
 import { BadRequestException } from '../common/exceptions/bad-request';
-// import * as moviesJson from '../../../movies.json';
 import { ConfigService } from '../config/config.service';
 
-interface IMoviesJsonResponse {
-  title: string;
-  year: number;
-  cast: string[];
-  genres: string[];
-}
-
-interface PostSearchBody{
-  some: any
-};
-
-interface PostSearchResult {
+interface ISearchResult<T> {
   hits: {
     total: number;
     hits: Array<{
-      _source: PostSearchBody;
+      _source: T;
     }>;
   };
 }
 @Injectable()
 export class SearchService {
-  constructor(
-    private readonly elasticsearchService: ElasticsearchService,
-    private readonly configService: ConfigService,
-  ) {}
-  index = 'orders';
+  constructor(private readonly elasticsearchService: ElasticsearchService) {}
 
-  async indexPost(post: any) {
-    return this.elasticsearchService.index<any>({
-      index: this.index,
-      body: post
-    })
-  }
-
-  async search(text: string) {
-    this.elasticsearchService.on('request', (err, meta)=> {
+  async indexPost<T>(post: any, index: string) {
+    this.elasticsearchService.on('request', (err, meta) => {
       console.log(err);
       console.log('request', meta);
     });
 
-    this.elasticsearchService.on('sniff', (err, meta)=> {
+    this.elasticsearchService.on('sniff', (err, meta) => {
       console.log(err);
       console.log('sniff', meta);
     });
 
-    this.elasticsearchService.on('response', (err, meta)=> {
+    this.elasticsearchService.on('response', (err, meta) => {
       console.log(err);
       console.log('sniff', meta);
     });
-    const { body } = await this.elasticsearchService.search<any>({
-      index: this.index,
+    return this.elasticsearchService.index<ISearchResult<T>, T>({
+      index,
+      body: post,
+    });
+  }
+
+  async search<T>(query: string, index: string) {
+    this.elasticsearchService.on('request', (err, meta) => {
+      console.log(err);
+      console.log('request', meta);
+    });
+
+    this.elasticsearchService.on('sniff', (err, meta) => {
+      console.log(err);
+      console.log('sniff', meta);
+    });
+
+    this.elasticsearchService.on('response', (err, meta) => {
+      console.log(err);
+      console.log('sniff', meta);
+    });
+    const { body } = await this.elasticsearchService.search<ISearchResult<T>>({
+      index,
       body: {
         query: {
           multi_match: {
-            query: text,
-            fields: ['supplier', 'amazonSku']
-          }
-        }
-      }
-    })
+            query,
+            fields: ['supplier', 'amazonSku'],
+          },
+        },
+      },
+    });
     const hits = body.hits.hits;
     return hits.map((item) => item._source);
   }
