@@ -2,7 +2,7 @@ import { Item, ItemStatusEnum } from '../items/items.entity';
 
 // Если нет необходимых полей для Димы, пишем ошибку
 export const checkRequiredItemFieldsReducer = (
-  item: Item
+  item: Item,
 ): { item: Item; errorMessage?: string } => {
   let errorMessage;
   if (

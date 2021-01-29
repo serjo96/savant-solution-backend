@@ -146,7 +146,7 @@ export class OrdersController {
     const order = await this.ordersService.updateStatus(where, status);
     if (status === OrderStatusEnum.PROCEED) {
       const result = await this.aiService.addOrdersToAI([order]);
-      console.log(result);
+      // TODO
     }
     return order;
   }

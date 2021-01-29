@@ -1,14 +1,9 @@
-import {
-  HttpException,
-  HttpStatus,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToClass } from 'class-transformer';
 import { Repository } from 'typeorm';
 import { paginator } from '../common/paginator';
-import { SortWithPaginationQuery, sort } from '../common/sort';
+import { sort, SortWithPaginationQuery } from '../common/sort';
 import { filter } from '../common/filter';
 import { CollectionResponse } from '../common/collection-response';
 import { checkRequiredItemFieldsReducer } from '../reducers/items.reducer';
@@ -19,7 +14,6 @@ import { Item, ItemStatusEnum } from './items.entity';
 import { GetItemDto } from './dto/get-item.dto';
 import { CreateItemDto } from './dto/create-item-dto';
 import { EditItemDto } from './dto/edit-item.dto';
-import { OrderStatusEnum } from '../orders/orders.entity';
 import { Column, Workbook } from 'exceljs';
 
 @Injectable()
@@ -27,7 +21,8 @@ export class ItemsService {
   constructor(
     @InjectRepository(Item)
     private readonly repository: Repository<Item>,
-  ) {}
+  ) {
+  }
 
   async find(where: any): Promise<Item[]> {
     return this.repository.find(where);
@@ -65,6 +60,16 @@ export class ItemsService {
         user,
       }),
     );
+
+    // Если Item имеет не все поля, ставим статус InActive
+    items.forEach((itemForCheck: Item) => {
+      const { errorMessage } = checkRequiredItemFieldsReducer(
+        itemForCheck,
+      );
+      if (errorMessage) {
+        itemForCheck.status = ItemStatusEnum.INACTIVE;
+      }
+    });
 
     return this.repository.save(items);
   }

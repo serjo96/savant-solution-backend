@@ -45,7 +45,8 @@ export class GraingerAccountsController {
   ): Promise<GetGraingerAccountDto> {
     const account = await this.service.add(item);
     const result = await this.aiService.addAccount(account);
-    console.log(result);
+    // TODO
+    // console.log(result);
     return account;
   }
 

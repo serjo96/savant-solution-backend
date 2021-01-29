@@ -58,7 +58,6 @@ export class AiService {
       .post(`${this.configService.AIURL}/orders`, { orders: aiOrders })
       .pipe(
         catchError((err) => {
-          console.log(err);
           return throwError(err);
         }),
         map((response) => response.data.orders),
