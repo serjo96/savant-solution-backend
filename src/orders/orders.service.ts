@@ -1,4 +1,10 @@
-import { HttpException, HttpStatus, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToClass } from 'class-transformer';
 import { In, Repository } from 'typeorm';
@@ -16,7 +22,10 @@ import { Readable } from 'stream';
 import { Column, Workbook } from 'exceljs';
 import { OrderItem } from './order-item.entity';
 import { checkRequiredItemFieldsReducer } from '../reducers/items.reducer';
-import { checkIncorrectOrderStateReducer, checkUpperCaseOrderStateReducer } from '../reducers/orders.reducer';
+import {
+  checkIncorrectOrderStateReducer,
+  checkUpperCaseOrderStateReducer,
+} from '../reducers/orders.reducer';
 import { Interval } from '@nestjs/schedule';
 import { AiService } from '../ai/ai.service';
 import { GraingerStatusEnum } from '../ai/dto/get-grainger-order';
@@ -357,8 +366,10 @@ export class OrdersService {
     const successOrdersCount = amazonOrders.filter(
       (order) => order.status === GraingerStatusEnum.Success,
     ).length;
-    const pendingCount = amazonOrders.filter(
-      (order) => [GraingerStatusEnum.WaitForProceed, GraingerStatusEnum.Proceed].includes(order.status),
+    const pendingCount = amazonOrders.filter((order) =>
+      [GraingerStatusEnum.WaitForProceed, GraingerStatusEnum.Proceed].includes(
+        order.status,
+      ),
     ).length;
     const errorOrdersCount = amazonOrders.filter(
       (order) => order.status === GraingerStatusEnum.Error,
