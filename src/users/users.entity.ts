@@ -10,7 +10,7 @@ import {
 
 import { BaseEntity } from '../common/base-entity';
 import { Orders } from '../orders/orders.entity';
-import { Items } from '../items/item.entity';
+import { Item } from '../items/items.entity';
 
 export enum RolesEnum {
   GUEST = 0,
@@ -51,8 +51,8 @@ export class User extends BaseEntity {
   @OneToMany(() => Orders, (order) => order.user)
   orders: Orders[];
 
-  @OneToMany(() => Items, (v) => v.user)
-  items: Items[];
+  @OneToMany(() => Item, (v) => v.user)
+  items: Item[];
 
   @Column({
     type: 'enum',

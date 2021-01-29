@@ -6,12 +6,15 @@ import { Orders } from './orders.entity';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
 import { AiModule } from '../ai/ai.module';
+import { OrderItem } from './order-item.entity';
+import { ItemsModule } from '../items/items.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Orders]),
+    TypeOrmModule.forFeature([Orders, OrderItem]),
     SearchModule,
-    AiModule
+    ItemsModule,
+    AiModule,
   ],
   controllers: [OrdersController],
   providers: [OrdersService],

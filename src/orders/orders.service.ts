@@ -20,7 +20,7 @@ import { CollectionResponse } from '../common/collection-response';
 import * as CSVToJSON from 'csvtojson';
 import { Readable } from 'stream';
 import { Column, Workbook } from 'exceljs';
-import { Items } from '../items/item.entity';
+import { OrderItem } from './order-item.entity';
 import { checkRequiredItemFieldsReducer } from '../reducers/items.reducer';
 import {
   checkIncorrectOrderStateReducer,
@@ -29,6 +29,10 @@ import {
 import { Interval } from '@nestjs/schedule';
 import { AiService } from '../ai/ai.service';
 import { GraingerStatusEnum } from '../ai/dto/get-grainger-order';
+import { User } from '@user/users.entity';
+import { ItemStatusEnum } from '../items/items.entity';
+import { ItemsService } from '../items/items.service';
+import { filter } from '../common/filter';
 
 @Injectable()
 export class OrdersService {
@@ -38,6 +42,7 @@ export class OrdersService {
     @InjectRepository(Orders)
     private readonly ordersRepository: Repository<Orders>,
     private readonly searchService: SearchService,
+    private readonly itemsService: ItemsService,
     private readonly aiService: AiService,
   ) {}
 
@@ -57,8 +62,9 @@ export class OrdersService {
     const clause: any = {
       ...sort(query),
       ...paginator(query),
-      where,
+      ...filter(query),
     };
+    clause.where = { ...clause.where, ...where };
     clause.relations = ['items'];
     const [result, count] = await this.ordersRepository.findAndCount(clause);
     if (!result) {
@@ -82,9 +88,13 @@ export class OrdersService {
   async exportToXlxs(
     res,
     statuses: { label: string; value: OrderStatusEnum }[],
-    query: SortWithPaginationQuery,
+    user: User,
   ) {
-    let allItems: any = await this.getAll(query);
+    let allItems: any = await this.getAll({
+      user: {
+        id: user.id,
+      },
+    });
 
     const statusesDict = statuses.reduce(
       (acc, curr) => ({ ...acc, [curr.value]: curr.label }),
@@ -101,22 +111,22 @@ export class OrdersService {
     worksheet.columns = [
       { header: 'ID', key: 'id', width: 40 },
       { header: 'Amazon Oder ID', key: 'amazonOrderId', width: 40 },
-      { header: 'Amazon Item ID', key: 'amazonItemId', width: 40 },
-      { header: 'Amazon Quantity', key: 'amazonQuantity', width: 20 },
-      { header: 'Grainger Ship Date', key: 'graingerShipDate', width: 20 },
-      {
-        header: 'Grainger Tracking Number',
-        key: 'graingerTrackingNumber',
-        width: 20,
-      },
-      { header: 'Grainger Ship Method', key: 'graingerShipMethod', width: 20 },
-      { header: 'Amazon SKU', key: 'amazonSku', width: 20 },
-      { header: 'Recipient Name', key: 'recipientName', width: 20 },
+      // { header: 'Amazon Item ID', key: 'amazonItemId', width: 40 },
+      // { header: 'Amazon Quantity', key: 'amazonQuantity', width: 20 },
+      // { header: 'Grainger Ship Date', key: 'graingerShipDate', width: 20 },
+      // {
+      //   header: 'Grainger Tracking Number',
+      //   key: 'graingerTrackingNumber',
+      //   width: 20,
+      // },
+      // { header: 'Grainger Ship Method', key: 'graingerShipMethod', width: 20 },
+      // { header: 'Amazon SKU', key: 'amazonSku', width: 20 },
+      // { header: 'Recipient Name', key: 'recipientName', width: 20 },
       { header: 'Order Status', key: 'status', width: 20 },
-      { header: 'Grainger Account', key: 'graingerAccountId', width: 20 },
-      { header: 'Grainger Web Number', key: 'graingerWebNumber', width: 20 },
-      { header: 'Grainger Order ID', key: 'graingerOrderId', width: 40 },
-      { header: 'Order date', key: 'orderDate', width: 20 },
+      // { header: 'Grainger Account', key: 'graingerAccountId', width: 20 },
+      // { header: 'Grainger Web Number', key: 'graingerWebNumber', width: 20 },
+      // { header: 'Grainger Order ID', key: 'graingerOrderId', width: 40 },
+      // { header: 'Order date', key: 'orderDate', width: 20 },
       { header: 'Note', key: 'note', width: 20 },
     ] as Array<Column>;
     worksheet.addRows(allItems);
@@ -168,7 +178,7 @@ export class OrdersService {
       relations: ['items'],
     });
 
-    orderItemsDto.forEach((dtoOrder) => {
+    for (const dtoOrder of orderItemsDto) {
       let existAmazonOrder: Orders = orders.find(
         (amazonOrder) => amazonOrder.amazonOrderId === dtoOrder.amazonOrderId,
       );
@@ -179,20 +189,28 @@ export class OrdersService {
         orders.push(existAmazonOrder);
       }
 
-      let existItem: Items = existAmazonOrder.items.find(
+      let existOrderItem: OrderItem = existAmazonOrder.items.find(
         (i) => i.amazonItemId === dtoOrder.amazonItemId,
       );
-      if (!existItem) {
-        existItem = Items.create(dtoOrder) as any;
-        existItem.user = user;
-        const { order, item } = checkRequiredItemFieldsReducer(
-          existItem,
-          existAmazonOrder,
-        );
-        existAmazonOrder = { ...order } as any;
-        existAmazonOrder.items.push(item);
+      if (!existOrderItem) {
+        existOrderItem = OrderItem.create(dtoOrder) as any;
+        try {
+          existOrderItem.item = await this.itemsService.findOne({
+            amazonSku: existOrderItem.amazonSku,
+            status: ItemStatusEnum.ACTIVE,
+          });
+          //TODO ПОДУМАТЬ
+          // const { order, item } = checkRequiredItemFieldsReducer(
+          //   existOrderItem,
+          //   existAmazonOrder,
+          // );
+          // existAmazonOrder = { ...order } as any;
+        } catch (e) {
+        } finally {
+          existAmazonOrder.items.push(existOrderItem);
+        }
       }
-    });
+    }
 
     // Если из CSV приходят названия штатов апперкейсом, нужно привести к общему виду
     orders
@@ -238,7 +256,7 @@ export class OrdersService {
 
     if (status === OrderStatusEnum.PROCEED) {
       const haveInactiveItem = existOrder.items.some(
-        (item) => !!checkRequiredItemFieldsReducer(item).errorMessage,
+        ({ item }) => !!checkRequiredItemFieldsReducer(item).errorMessage,
       );
       if (haveInactiveItem) {
         throw new HttpException(
@@ -281,11 +299,25 @@ export class OrdersService {
       }
       if (graingerOrder.status === GraingerStatusEnum.Success) {
         existOrder.status = OrderStatusEnum.SUCCESS;
+        existOrder.orderDate = new Date();
+      }
+      if (graingerOrder.status === GraingerStatusEnum.Error) {
+        existOrder.status = OrderStatusEnum.ERROR;
+      }
+
+      if (
+        [
+          GraingerStatusEnum.Proceed,
+          GraingerStatusEnum.WaitForProceed,
+        ].includes(graingerOrder.status)
+      ) {
+        return;
       }
 
       graingerOrder.graingerOrders.forEach((graingerItem) => {
         let existItem = existOrder.items.find(
-          (item) => item.graingerItemNumber === graingerItem.graingerItemNumber,
+          (item) =>
+            item.item?.graingerItemNumber === graingerItem.graingerItemNumber,
         );
         if (!existItem) {
           return;

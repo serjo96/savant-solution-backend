@@ -99,13 +99,13 @@ export class OrdersController {
   }
 
   @Post('/download')
-  @UsePipes(new ValidationPipe())
+  // @UsePipes(new ValidationPipe())
   async exportXlSX(
     @Res() res,
     @Body() statuses: { label: string; value: OrderStatusEnum }[],
-    @Query() query: SortWithPaginationQuery,
+    @Req() { user }: Request,
   ): Promise<Buffer> {
-    return this.ordersService.exportToXlxs(res, statuses, query);
+    return this.ordersService.exportToXlxs(res, statuses, user);
   }
 
   @Get('/states')

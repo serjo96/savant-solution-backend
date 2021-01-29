@@ -2,18 +2,25 @@ import ISort, { SortWithPaginationQuery } from './sort';
 import { IsNull, Not } from 'typeorm';
 
 export const filter = (query: SortWithPaginationQuery): ISort => {
-  let result: any = {
+  const result: any = {
     where: {},
   };
 
-  const { notMapped } = query;
+  if (!query) {
+    return result;
+  }
+
+  const { notMapped, status } = query;
 
   if (notMapped) {
-    result = {
-      where: {
-        graingerItemNumber: notMapped ? IsNull() : Not(null),
-      },
+    result.where = {
+      ...result.where,
+      graingerItemNumber: notMapped ? IsNull() : Not(null),
     };
+  }
+
+  if (status !== undefined) {
+    result.where = { ...result.where, status: status };
   }
 
   return result;
