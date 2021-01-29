@@ -37,6 +37,8 @@ export class OrdersService {
     private readonly aiService: AiService,
   ) {}
 
+  elasticIndex = 'orders';
+
   async find(where: any): Promise<Orders[]> {
     return this.ordersRepository.find(where);
   }
@@ -73,7 +75,12 @@ export class OrdersService {
     if (!existOrder) {
       throw new HttpException(`Order doesn't exist`, HttpStatus.OK);
     }
-    return this.ordersRepository.softDelete(where);
+    try {
+      await this.searchService.remove(where.id, this.elasticIndex);
+      return this.ordersRepository.softDelete(where);
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   async exportToXlxs(
@@ -223,7 +230,7 @@ export class OrdersService {
     existOrder = Orders.create(data);
 
     try {
-      this.searchService.createIndex(existOrder, 'orders');
+      this.searchService.createIndex(existOrder, this.elasticIndex);
       return this.ordersRepository.save(existOrder);
     } catch (e) {
       throw new Error(e);
@@ -376,7 +383,7 @@ export class OrdersService {
       throw new HttpException(`Order doesn't exist`, HttpStatus.OK);
     }
     const updated = Object.assign(existOrder, item);
-    this.searchService.update<Orders>(updated, where.user.id);
+    await this.searchService.update<Orders>(updated, this.elasticIndex);
     return this.ordersRepository.save(updated);
   }
 
@@ -388,6 +395,7 @@ export class OrdersService {
       offset: query.offset,
       limit: query.count,
       ...paginator(query),
+      index: this.elasticIndex,
       matchFields: {
         userId,
         query: query.search,
