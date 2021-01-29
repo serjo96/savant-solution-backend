@@ -27,7 +27,8 @@ export class AiService {
   constructor(
     private readonly http: HttpService,
     private readonly configService: ConfigService,
-  ) {}
+  ) {
+  }
 
   addAccount({ email, id, password }: GraingerAccount) {
     return this.http.post(`${this.configService.AIURL}/users`, {
@@ -56,12 +57,7 @@ export class AiService {
 
     return this.http
       .post(`${this.configService.AIURL}/orders`, { orders: aiOrders })
-      .pipe(
-        catchError((err) => {
-          return throwError(err);
-        }),
-        map((response) => response.data.orders),
-      );
+      .pipe(map((response) => response.data));
   }
 
   deleteOrdersFromAI() {

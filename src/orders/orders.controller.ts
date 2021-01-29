@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Logger,
   Param,
   Post,
   Put,
@@ -40,6 +41,7 @@ import { AiService } from '../ai/ai.service';
 @Roles('user', 'admin')
 @Controller('orders')
 export class OrdersController {
+  private readonly logger = new Logger(OrdersController.name);
   constructor(
     private readonly ordersService: OrdersService,
     private aiService: AiService,
@@ -145,8 +147,16 @@ export class OrdersController {
     };
     const order = await this.ordersService.updateStatus(where, status);
     if (status === OrderStatusEnum.PROCEED) {
-      const result = await this.aiService.addOrdersToAI([order]);
-      // TODO
+      try {
+        await this.aiService.addOrdersToAI([order]);
+        this.logger.debug(
+          `[Change Order Status] Order ${order.id} went successfully to AI`,
+        );
+      } catch (e) {
+        this.logger.debug(
+          `[Change Order Status] Order ${order.id} went to the AI with an error`,
+        );
+      }
     }
     return order;
   }

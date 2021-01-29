@@ -333,7 +333,7 @@ export class OrdersService {
     ).length;
 
     this.logger.debug(
-      `[Update Order Status] Success: ${successOrdersCount}, Error: ${errorOrdersCount}`,
+      `[Check Order AI Status] Success: ${successOrdersCount}, Error: ${errorOrdersCount}`,
     );
   }
 
