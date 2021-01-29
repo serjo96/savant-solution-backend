@@ -87,7 +87,7 @@ export class ItemsController {
     @Query() query: SortWithPaginationQuery,
     @Req() { user }: Request,
   ): Promise<GetItemDto[]> {
-    return this.itemsService.findAllSku(user, query);
+    return this.itemsService.search(query, user.id);
   }
 
   @Get(':id')

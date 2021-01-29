@@ -15,6 +15,7 @@ import { checkRequiredItemFieldsReducer } from '../reducers/items.reducer';
 import { User } from '@user/users.entity';
 import { Readable } from 'stream';
 import * as CSVToJSON from 'csvtojson';
+import { SearchService } from '../search/search.service';
 import { Item, ItemStatusEnum } from './items.entity';
 import { GetItemDto } from './dto/get-item.dto';
 import { CreateItemDto } from './dto/create-item-dto';
@@ -27,6 +28,7 @@ export class ItemsService {
   constructor(
     @InjectRepository(Item)
     private readonly repository: Repository<Item>,
+    private readonly searchService: SearchService,
   ) {}
 
   async find(where: any): Promise<Item[]> {
@@ -108,17 +110,21 @@ export class ItemsService {
     return workbook.xlsx.writeBuffer();
   }
 
-  findAllSku(user: User, query?: SortWithPaginationQuery): Promise<Item[]> {
-    return this.repository
-      .createQueryBuilder('items')
-      .where('items.user.id=:id', { id: user.id })
-      .andWhere('items.amazonSku LIKE :amazonSku', {
-        amazonSku: `%${query.amazonSku}%`,
-      })
-      .select(
-        'DISTINCT ("amazonSku"), "graingerPackQuantity", "graingerItemNumber"',
-      )
-      .getRawMany();
+  async search(
+    query: SortWithPaginationQuery | any,
+    userId?: string,
+  ): Promise<any> {
+    const clause: any = {
+      offset: query.offset,
+      limit: query.count,
+      ...paginator(query),
+      index: 'grainger-item',
+      matchFields: {
+        query: query.search,
+        fields: ['recipientName', 'id'],
+      },
+    };
+    return this.searchService.search<Item>(clause);
   }
 
   async getAll(
@@ -174,7 +180,12 @@ export class ItemsService {
     if (!existItem.graingerItemNumber) {
       existItem.status = ItemStatusEnum.INACTIVE;
     }
-    return this.repository.save(existItem);
+    try {
+      this.searchService.createIndex(existItem, 'grainger-item');
+      return this.repository.save(existItem);
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   async update(where: any, editItem: EditItemDto): Promise<Item> {
