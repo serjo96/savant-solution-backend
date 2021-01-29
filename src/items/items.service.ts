@@ -173,12 +173,9 @@ export class ItemsService {
     existItem = Item.create(data);
     const { errorMessage } = checkRequiredItemFieldsReducer(existItem);
     if (errorMessage) {
-      throw new HttpException(errorMessage, HttpStatus.OK);
-    }
-
-    if (!existItem.graingerItemNumber) {
       existItem.status = ItemStatusEnum.INACTIVE;
     }
+
     return this.repository.save(existItem);
   }
 
