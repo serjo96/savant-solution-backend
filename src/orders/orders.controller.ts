@@ -3,6 +3,9 @@ import {
   Controller,
   Delete,
   Get,
+  HttpException,
+  HttpStatus,
+  Logger,
   Param,
   Post,
   Put,
@@ -40,6 +43,8 @@ import { AiService } from '../ai/ai.service';
 @Roles('user', 'admin')
 @Controller('orders')
 export class OrdersController {
+  private readonly logger = new Logger(OrdersController.name);
+
   constructor(
     private readonly ordersService: OrdersService,
     private aiService: AiService,
@@ -145,8 +150,19 @@ export class OrdersController {
     };
     const order = await this.ordersService.updateStatus(where, status);
     if (status === OrderStatusEnum.PROCEED) {
-      const result = await this.aiService.addOrdersToAI([order]);
-      console.log(result);
+      try {
+        const { error } = await this.aiService.addOrdersToAI([order]);
+        if (error) {
+          throw new Error(`[AI Service] ${error.message}`);
+        }
+        this.logger.debug(
+          `[Change Order Status] Order ${order.id} went successfully to AI`,
+        );
+      } catch ({ message }) {
+        await this.ordersService.updateStatus(where, OrderStatusEnum.MANUAL);
+        this.logger.debug(message);
+        throw new HttpException(message, HttpStatus.OK);
+      }
     }
     return order;
   }

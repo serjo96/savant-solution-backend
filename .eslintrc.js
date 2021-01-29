@@ -24,17 +24,6 @@ module.exports = {
     '@typescript-eslint/member-ordering': 'off',
     '@typescript/explicit-member-accessibility': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
-    "@typescript-eslint/naming-convention": [
-      "error",
-      {
-        "selector": "interface",
-        "format": ["PascalCase"],
-        "custom": {
-          "regex": "^I[A-Z]",
-          "match": true
-        }
-      }
-    ],
     'sort-imports': [
       'error',
       {
