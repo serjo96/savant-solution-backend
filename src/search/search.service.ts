@@ -11,48 +11,30 @@ interface ISearchResult<T> {
     }>;
   };
 }
+
+interface ISearchParams {
+  query: string;
+  index: string;
+  offset?: number;
+  limit?: number;
+}
+
 @Injectable()
 export class SearchService {
   constructor(private readonly elasticsearchService: ElasticsearchService) {}
 
   async indexPost<T>(post: any, index: string) {
-    this.elasticsearchService.on('request', (err, meta) => {
-      console.log(err);
-      console.log('request', meta);
-    });
-
-    this.elasticsearchService.on('sniff', (err, meta) => {
-      console.log(err);
-      console.log('sniff', meta);
-    });
-
-    this.elasticsearchService.on('response', (err, meta) => {
-      console.log(err);
-      console.log('sniff', meta);
-    });
     return this.elasticsearchService.index<ISearchResult<T>, T>({
       index,
       body: post,
     });
   }
 
-  async search<T>(query: string, index: string) {
-    this.elasticsearchService.on('request', (err, meta) => {
-      console.log(err);
-      console.log('request', meta);
-    });
-
-    this.elasticsearchService.on('sniff', (err, meta) => {
-      console.log(err);
-      console.log('sniff', meta);
-    });
-
-    this.elasticsearchService.on('response', (err, meta) => {
-      console.log(err);
-      console.log('sniff', meta);
-    });
+  async search<T>({ query, index, offset, limit }: ISearchParams) {
     const { body } = await this.elasticsearchService.search<ISearchResult<T>>({
       index,
+      from: offset,
+      size: limit,
       body: {
         query: {
           multi_match: {
