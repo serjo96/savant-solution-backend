@@ -7,7 +7,8 @@ import {
   Post,
   Put,
   Query,
-  Req,
+  Req, Res,
+  UploadedFile,
   UseGuards,
   UseInterceptors,
   UsePipes,
@@ -18,22 +19,25 @@ import { Roles } from '../common/decorators/roles';
 import { TransformInterceptor } from '../common/interceptors/TransformInterceptor';
 import { ValidationPipe } from '../common/Pipes/validation.pipe';
 import { SortWithPaginationQuery } from '../common/sort';
-import { EditItemDto } from './dto/edit-item.dto';
 
 import { ItemsService } from './items.service';
-import { GetItemDto } from './dto/get-item.dto';
 import { CollectionResponse } from '../common/collection-response';
 import { Request } from 'express';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { Readable } from 'stream';
+import { BadRequestException } from '../common/exceptions/bad-request';
+import { GetItemDto } from './dto/get-item.dto';
 import { CreateItemDto } from './dto/create-item-dto';
-import { GetOrderDto } from '../orders/dto/get-order.dto';
-import { ChangeOrderStatusDto } from '../orders/dto/change-order-status.dto';
+import { EditItemDto } from './dto/edit-item.dto';
+import { OrderStatusEnum } from '../orders/orders.entity';
+import { Buffer } from 'exceljs';
+import { ItemStatusEnum } from './items.entity';
 
 @UseGuards(AuthGuard('jwt'))
 @Roles('user', 'admin')
 @Controller('items')
 export class ItemsController {
-  constructor(private readonly itemsService: ItemsService) {
-  }
+  constructor(private readonly itemsService: ItemsService) {}
 
   @Post('/create')
   @UsePipes(new ValidationPipe())
@@ -50,6 +54,31 @@ export class ItemsController {
       },
     };
     return this.itemsService.save(itemData);
+  }
+
+  @Post('/upload')
+  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(new TransformInterceptor(GetItemDto))
+  async uploadOrders(
+    @Req() req: Request,
+    @UploadedFile() files,
+  ): Promise<GetItemDto[]> {
+    const stream = Readable.from(files.buffer.toString());
+    const { user } = req;
+    try {
+      return this.itemsService.uploadFromCsv(stream, user);
+    } catch (error) {
+      throw new BadRequestException(error);
+    }
+  }
+
+  @Post('/download')
+  async exportXlSX(
+    @Res() res,
+    @Body() statuses: { label: string; value: ItemStatusEnum }[],
+    @Req() { user }: Request,
+  ): Promise<Buffer> {
+    return this.itemsService.exportToXlxs(res, statuses, user);
   }
 
   @Get('/search')
@@ -89,7 +118,7 @@ export class ItemsController {
       id,
       user: {
         id: user.id,
-      }
+      },
     };
 
     return this.itemsService.update(where, item);

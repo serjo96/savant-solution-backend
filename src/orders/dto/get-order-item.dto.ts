@@ -2,12 +2,15 @@ import {
   IsString
 } from 'class-validator';
 
-import { EditItemDto } from './edit-item.dto';
+import { EditOrderItemDto } from './edit-order-item.dto';
 import { Exclude } from 'class-transformer';
 
-export class GetItemDto extends EditItemDto {
+export class GetOrderItemDto extends EditOrderItemDto {
   @IsString()
   id: string;
+
+  @Exclude()
+  order: any;
 
   @Exclude()
   createdAt: any;
