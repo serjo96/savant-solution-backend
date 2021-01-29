@@ -52,6 +52,19 @@ export class SearchService {
     });
   }
 
+  async remove(entityId: number, index: string) {
+    this.elasticsearchService.deleteByQuery({
+      index,
+      body: {
+        query: {
+          match: {
+            id: entityId,
+          },
+        },
+      },
+    });
+  }
+
   async search<T>({ matchFields, index, offset, count }: ISearchParams) {
     const { body } = await this.elasticsearchService.search<ISearchResult<T>>({
       index,
