@@ -52,8 +52,6 @@ jobs:
         s3-bucket: ['aws-codedeploy-krayber']
         s3-filename: ['staging-krayber-main-service-${{ github.sha }}']
 
-    needs: buildAndTest
-
     if: github.ref == 'refs/heads/main'
     steps:
       # Initialize Node.js
