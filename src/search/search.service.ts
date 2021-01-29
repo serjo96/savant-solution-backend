@@ -13,33 +13,54 @@ interface ISearchResult<T> {
 }
 
 interface ISearchParams {
-  query: string;
+  matchFields: {
+    query: string;
+  };
   index: string;
   offset?: number;
-  limit?: number;
+  count?: number;
 }
 
 @Injectable()
 export class SearchService {
   constructor(private readonly elasticsearchService: ElasticsearchService) {}
 
-  async indexPost<T>(post: any, index: string) {
+  async createIndex<T>(data: any, index: string) {
     return this.elasticsearchService.index<ISearchResult<T>, T>({
       index,
-      body: post,
+      body: data,
     });
   }
 
-  async search<T>({ query, index, offset, limit }: ISearchParams) {
+  async update<T>(data: any, index: string) {
+    const script = Object.entries(data).reduce((result, [key, value]) => {
+      return `${result} ctx._source.${key}='${value}';`;
+    }, '');
+
+    return this.elasticsearchService.updateByQuery({
+      index,
+      body: {
+        query: {
+          match: {
+            id: data.id,
+          },
+        },
+        script: {
+          inline: script,
+        },
+      },
+    });
+  }
+
+  async search<T>({ matchFields, index, offset, count }: ISearchParams) {
     const { body } = await this.elasticsearchService.search<ISearchResult<T>>({
       index,
       from: offset,
-      size: limit,
+      size: count,
       body: {
         query: {
           multi_match: {
-            query,
-            fields: ['supplier', 'amazonSku'],
+            ...matchFields,
           },
         },
       },
