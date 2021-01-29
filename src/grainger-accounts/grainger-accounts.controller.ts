@@ -2,7 +2,7 @@ import {
   Body,
   Controller,
   Delete,
-  Get,
+  Get, HttpException, HttpStatus, Logger,
   Param,
   Post,
   Put,
@@ -18,10 +18,13 @@ import { AiService } from '../ai/ai.service';
 
 @Controller('grainger-accounts')
 export class GraingerAccountsController {
+  private readonly logger = new Logger(GraingerAccountsController.name);
+
   constructor(
     private readonly service: GraingerAccountsService,
     private aiService: AiService,
-  ) {}
+  ) {
+  }
 
   @Get()
   @UsePipes(new ValidationPipe())
@@ -44,8 +47,20 @@ export class GraingerAccountsController {
     @Body() item: CreateGraingerAccountDto,
   ): Promise<GetGraingerAccountDto> {
     const account = await this.service.add(item);
-    const result = await this.aiService.addAccount(account);
-    console.log(result);
+    try {
+      const { error } = await this.aiService.addAccount(account);
+      if (error) {
+        throw new Error(`[AI Service] ${error.message}`);
+      }
+      this.logger.debug(
+        `[Add Grainger Account] Account ${account.id} went successfully to AI`,
+      );
+    } catch ({ message }) {
+      await this.service.deleteById(account.id);
+      const error = `[Add Grainger Account] ${message}`;
+      this.logger.debug(error);
+      throw new HttpException(error, HttpStatus.OK);
+    }
     return account;
   }
 

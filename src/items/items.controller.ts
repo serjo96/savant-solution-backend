@@ -29,7 +29,6 @@ import { BadRequestException } from '../common/exceptions/bad-request';
 import { GetItemDto } from './dto/get-item.dto';
 import { CreateItemDto } from './dto/create-item-dto';
 import { EditItemDto } from './dto/edit-item.dto';
-import { OrderStatusEnum } from '../orders/orders.entity';
 import { Buffer } from 'exceljs';
 import { ItemStatusEnum } from './items.entity';
 
@@ -42,7 +41,7 @@ export class ItemsController {
   @Post('/create')
   @UsePipes(new ValidationPipe())
   @UseInterceptors(new TransformInterceptor(GetItemDto))
-  createItem(
+  add(
     @Req() req: Request,
     @Body() item: CreateItemDto,
   ): Promise<GetItemDto> {

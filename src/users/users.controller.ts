@@ -37,9 +37,7 @@ export class UsersController {
   @Roles('admin')
   @UseInterceptors(new TransformInterceptor(UserResponseDto))
   async getAllUsers(): Promise<User[]> {
-    const data = await this.usersService.findAll({});
-    console.log(data);
-    return data;
+    return this.usersService.findAll({});
   }
 
   @Get('/current')

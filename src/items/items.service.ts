@@ -1,14 +1,9 @@
-import {
-  HttpException,
-  HttpStatus,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToClass } from 'class-transformer';
 import { Repository } from 'typeorm';
 import { paginator } from '../common/paginator';
-import { SortWithPaginationQuery, sort } from '../common/sort';
+import { sort, SortWithPaginationQuery } from '../common/sort';
 import { filter } from '../common/filter';
 import { CollectionResponse } from '../common/collection-response';
 import { checkRequiredItemFieldsReducer } from '../reducers/items.reducer';
@@ -20,7 +15,6 @@ import { Item, ItemStatusEnum } from './items.entity';
 import { GetItemDto } from './dto/get-item.dto';
 import { CreateItemDto } from './dto/create-item-dto';
 import { EditItemDto } from './dto/edit-item.dto';
-import { OrderStatusEnum } from '../orders/orders.entity';
 import { Column, Workbook } from 'exceljs';
 
 @Injectable()
@@ -36,11 +30,12 @@ export class ItemsService {
   }
 
   async findOne(where: any): Promise<Item> {
-    const existItem = await this.repository.findOne(where);
-    if (!existItem) {
-      throw new HttpException(`Item doesn't exist`, HttpStatus.OK);
-    }
-    return existItem;
+    // const existItem = await this.repository.findOne(where);
+    // if (!existItem) {
+    //   throw new HttpException(`Item doesn't exist`, HttpStatus.OK);
+    // }
+    // return existItem;
+    return this.repository.findOne(where);
   }
 
   async uploadFromCsv(stream: Readable, user: User): Promise<Item[]> {
@@ -67,6 +62,16 @@ export class ItemsService {
         user,
       }),
     );
+
+    // Если Item имеет не все поля, ставим статус InActive
+    items.forEach((itemForCheck: Item) => {
+      const { errorMessage } = checkRequiredItemFieldsReducer(
+        itemForCheck,
+      );
+      if (errorMessage) {
+        itemForCheck.status = ItemStatusEnum.INACTIVE;
+      }
+    });
 
     return this.repository.save(items);
   }
@@ -174,10 +179,6 @@ export class ItemsService {
     existItem = Item.create(data);
     const { errorMessage } = checkRequiredItemFieldsReducer(existItem);
     if (errorMessage) {
-      throw new HttpException(errorMessage, HttpStatus.OK);
-    }
-
-    if (!existItem.graingerItemNumber) {
       existItem.status = ItemStatusEnum.INACTIVE;
     }
     try {
@@ -196,7 +197,7 @@ export class ItemsService {
     const updated = Object.assign(existItem, editItem);
     const { errorMessage, item } = checkRequiredItemFieldsReducer(updated);
     if (errorMessage) {
-      throw new HttpException(errorMessage, HttpStatus.OK);
+      existItem.status = ItemStatusEnum.INACTIVE;
     }
     return this.repository.save(item);
   }
