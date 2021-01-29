@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 import { BaseEntity } from '../common/base-entity';
 import { GraingerAccount } from '../grainger-accounts/grainger-account.entity';
@@ -25,7 +25,7 @@ export class Item extends BaseEntity {
     type: 'varchar',
     nullable: true,
   })
-  graingerItemNumber: string;
+  graingerItemNumber?: string;
 
   @Column({
     type: 'integer',
@@ -44,17 +44,15 @@ export class Item extends BaseEntity {
     enum: ItemStatusEnum,
     default: ItemStatusEnum.ACTIVE,
   })
-  public status: ItemStatusEnum;
+  status: ItemStatusEnum;
 
   @ManyToOne(() => GraingerAccount, (v) => v.items, {
     nullable: true,
     eager: true,
   })
-  graingerAccount: GraingerAccount;
+  graingerAccount?: GraingerAccount;
 
-  @ManyToOne(() => OrderItem, (v) => v.item, {
-    nullable: true,
-  })
+  @OneToMany(() => OrderItem, (v) => v.item)
   orderItems?: OrderItem[];
 
   @ManyToOne(() => User, (user) => user.items, { eager: true })
