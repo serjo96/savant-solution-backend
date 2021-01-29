@@ -48,15 +48,18 @@ export class GraingerAccountsController {
   ): Promise<GetGraingerAccountDto> {
     const account = await this.service.add(item);
     try {
-      await this.aiService.addAccount(account);
+      const { error } = await this.aiService.addAccount(account);
+      if (error) {
+        throw new Error(`[AI Service] ${error.message}`);
+      }
       this.logger.debug(
         `[Add Grainger Account] Account ${account.id} went successfully to AI`,
       );
-    } catch (e) {
-      const error = `[Add Grainger Account] Account ${account.id} went to the AI with an error`;
+    } catch ({ message }) {
+      await this.service.deleteById(account.id);
+      const error = `[Add Grainger Account] ${message}`;
       this.logger.debug(error);
       throw new HttpException(error, HttpStatus.OK);
-
     }
     return account;
   }

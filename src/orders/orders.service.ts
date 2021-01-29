@@ -243,17 +243,18 @@ export class OrdersService {
 
     // Пробегаемся по всем OrderItem, проверяем починили ли у них сопоставления
     const orderItemWithoutGraingerItems: OrderItem[] = existOrder.items.filter(
-      (i) => !i.item,
+      (i) => !i.item || i.item.status !== ItemStatusEnum.ACTIVE,
     );
     for (const orderItem of orderItemWithoutGraingerItems) {
       orderItem.item = await this.itemsService.findOne({
         amazonSku: orderItem.amazonSku,
-        status: ItemStatusEnum.ACTIVE,
       });
       const { errorMessage } = checkRequiredItemFieldsReducer(orderItem.item);
       if (errorMessage) {
         existOrder.status = OrderStatusEnum.MANUAL;
         existOrder.note = (existOrder.note ?? '') + errorMessage;
+      } else {
+        orderItem.item.status = ItemStatusEnum.ACTIVE;
       }
     }
 
@@ -287,10 +288,13 @@ export class OrdersService {
     if (!orders.length) {
       return;
     }
-    const graingerOrders = await this.aiService.getOrderStatusesFromAI(
+    const { amazonOrders, error } = await this.aiService.getOrderStatusesFromAI(
       orders.map((order) => order.amazonOrderId),
     );
-    graingerOrders.forEach((graingerOrder) => {
+    if (error) {
+      throw new HttpException(error.message, HttpStatus.OK);
+    }
+    amazonOrders.forEach((graingerOrder) => {
       const existOrder = orders.find(
         (order) => order.amazonOrderId === graingerOrder.amazonOrderId,
       );
@@ -333,15 +337,18 @@ export class OrdersService {
 
     await this.ordersRepository.save(orders);
 
-    const successOrdersCount = orders.filter(
-      (order) => order.status === OrderStatusEnum.SUCCESS,
+    const successOrdersCount = amazonOrders.filter(
+      (order) => order.status === GraingerStatusEnum.Success,
     ).length;
-    const errorOrdersCount = graingerOrders.filter(
+    const pendingCount = amazonOrders.filter(
+      (order) => [GraingerStatusEnum.WaitForProceed, GraingerStatusEnum.Proceed].includes(order.status),
+    ).length;
+    const errorOrdersCount = amazonOrders.filter(
       (order) => order.status === GraingerStatusEnum.Error,
     ).length;
 
     this.logger.debug(
-      `[Check Order AI Status] Success: ${successOrdersCount}, Error: ${errorOrdersCount}`,
+      `[Check Order AI Status] Success: ${successOrdersCount}, Pending: ${pendingCount}, Error: ${errorOrdersCount}`,
     );
   }
 

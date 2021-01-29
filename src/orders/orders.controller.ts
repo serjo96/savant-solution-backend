@@ -148,21 +148,20 @@ export class OrdersController {
         id: user.id,
       },
     };
-    let order = await this.ordersService.updateStatus(where, status);
+    const order = await this.ordersService.updateStatus(where, status);
     if (status === OrderStatusEnum.PROCEED) {
       try {
-        await this.aiService.addOrdersToAI([order]);
+        const { error } = await this.aiService.addOrdersToAI([order]);
+        if (error) {
+          throw new Error(`[AI Service] ${error.message}`);
+        }
         this.logger.debug(
           `[Change Order Status] Order ${order.id} went successfully to AI`,
         );
-      } catch (e) {
-        order = await this.ordersService.updateStatus(
-          where,
-          OrderStatusEnum.MANUAL,
-        );
-        const error = `[Change Order Status] Order ${order.id} went to the AI with an error`;
-        this.logger.debug(error);
-        throw new HttpException(error, HttpStatus.OK);
+      } catch ({ message }) {
+        await this.ordersService.updateStatus(where, OrderStatusEnum.MANUAL);
+        this.logger.debug(message);
+        throw new HttpException(message, HttpStatus.OK);
       }
     }
     return order;
