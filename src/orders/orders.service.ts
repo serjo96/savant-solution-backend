@@ -9,7 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { plainToClass } from 'class-transformer';
 import { In, Repository } from 'typeorm';
 import { paginator } from '../common/paginator';
-import { SortWithPaginationQuery, sort } from '../common/sort';
+import { sort } from '../common/sort';
 import { EditOrderDto } from './dto/editOrder.dto';
 
 import { CreateOrderDto } from './dto/createOrderDto';
@@ -42,7 +42,8 @@ export class OrdersService {
     private readonly itemsService: ItemsService,
     @InjectRepository(Orders)
     private readonly ordersRepository: Repository<Orders>,
-  ) {}
+  ) {
+  }
 
   async find(where: any): Promise<Orders[]> {
     return this.ordersRepository.find(where);
@@ -192,21 +193,19 @@ export class OrdersService {
       );
       if (!existOrderItem) {
         existOrderItem = OrderItem.create(dtoOrder) as any;
-        try {
-          existOrderItem.item = await this.itemsService.findOne({
-            amazonSku: existOrderItem.amazonSku,
-            status: ItemStatusEnum.ACTIVE,
-          });
-          //TODO ПОДУМАТЬ
-          // const { order, item } = checkRequiredItemFieldsReducer(
-          //   existOrderItem,
-          //   existAmazonOrder,
-          // );
-          // existAmazonOrder = { ...order } as any;
-        } catch (e) {
-        } finally {
-          existAmazonOrder.items.push(existOrderItem);
+        existOrderItem.item = await this.itemsService.findOne({
+          amazonSku: existOrderItem.amazonSku,
+          status: ItemStatusEnum.ACTIVE,
+        });
+        const { errorMessage } = checkRequiredItemFieldsReducer(
+          existOrderItem.item,
+        );
+        if (errorMessage) {
+          existAmazonOrder.status = OrderStatusEnum.MANUAL;
+          existAmazonOrder.note =
+            (existAmazonOrder.note ?? '') + errorMessage;
         }
+        existAmazonOrder.items.push(existOrderItem);
       }
     }
 

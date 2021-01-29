@@ -29,11 +29,12 @@ export class ItemsService {
   }
 
   async findOne(where: any): Promise<Item> {
-    const existItem = await this.repository.findOne(where);
-    if (!existItem) {
-      throw new HttpException(`Item doesn't exist`, HttpStatus.OK);
-    }
-    return existItem;
+    // const existItem = await this.repository.findOne(where);
+    // if (!existItem) {
+    //   throw new HttpException(`Item doesn't exist`, HttpStatus.OK);
+    // }
+    // return existItem;
+    return this.repository.findOne(where);
   }
 
   async uploadFromCsv(stream: Readable, user: User): Promise<Item[]> {
