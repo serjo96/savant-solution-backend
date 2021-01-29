@@ -187,7 +187,7 @@ export class ItemsService {
     const updated = Object.assign(existItem, editItem);
     const { errorMessage, item } = checkRequiredItemFieldsReducer(updated);
     if (errorMessage) {
-      throw new HttpException(errorMessage, HttpStatus.OK);
+      existItem.status = ItemStatusEnum.INACTIVE;
     }
     return this.repository.save(item);
   }
