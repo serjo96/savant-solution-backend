@@ -1,9 +1,14 @@
-import { HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToClass } from 'class-transformer';
 import { Repository } from 'typeorm';
 import { paginator } from '../common/paginator';
-import { sort, SortWithPaginationQuery } from '../common/sort';
+import { SortWithPaginationQuery, sort } from '../common/sort';
 import { filter } from '../common/filter';
 import { CollectionResponse } from '../common/collection-response';
 import { checkRequiredItemFieldsReducer } from '../reducers/items.reducer';
@@ -24,6 +29,8 @@ export class ItemsService {
     private readonly repository: Repository<Item>,
     private readonly searchService: SearchService,
   ) {}
+
+  private readonly elasticIndex = 'grainger-item';
 
   async find(where: any): Promise<Item[]> {
     return this.repository.find(where);
@@ -65,9 +72,7 @@ export class ItemsService {
 
     // Если Item имеет не все поля, ставим статус InActive
     items.forEach((itemForCheck: Item) => {
-      const { errorMessage } = checkRequiredItemFieldsReducer(
-        itemForCheck,
-      );
+      const { errorMessage } = checkRequiredItemFieldsReducer(itemForCheck);
       if (errorMessage) {
         itemForCheck.status = ItemStatusEnum.INACTIVE;
       }
@@ -123,7 +128,7 @@ export class ItemsService {
       offset: query.offset,
       limit: query.count,
       ...paginator(query),
-      index: 'grainger-item',
+      index: this.elasticIndex,
       matchFields: {
         query: query.search,
         fields: ['recipientName', 'id'],
@@ -165,6 +170,7 @@ export class ItemsService {
     if (!existItem) {
       throw new HttpException(`Item doesn't exist`, HttpStatus.OK);
     }
+    this.searchService.remove(where.id, this.elasticIndex);
     return await this.repository.softDelete(where);
   }
 
@@ -199,7 +205,12 @@ export class ItemsService {
     if (errorMessage) {
       existItem.status = ItemStatusEnum.INACTIVE;
     }
-    return this.repository.save(item);
+    try {
+      this.searchService.update<Item>(updated, this.elasticIndex);
+      return this.repository.save(item);
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   async updateStatus(
