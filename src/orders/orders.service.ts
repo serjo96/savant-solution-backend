@@ -234,7 +234,12 @@ export class OrdersService {
     }
     existOrder = Orders.create(data);
 
-    return this.ordersRepository.save(existOrder);
+    try {
+      this.searchService.createIndex(existOrder, 'orders');
+      return this.ordersRepository.save(existOrder);
+    } catch (e) {
+      throw new Error(e);
+    }
   }
 
   async updateStatus(
@@ -268,8 +273,7 @@ export class OrdersService {
 
     existOrder.status = status;
     try {
-      this.searchService.indexPost(entity);
-      return await this.ordersRepository.save(entity);
+      return this.ordersRepository.save(existOrder);
     } catch (e) {
       throw new Error(e);
     }
@@ -294,6 +298,11 @@ export class OrdersService {
       const existOrder = orders.find(
         (order) => order.amazonOrderId === graingerOrder.amazonOrderId,
       );
+      const includesStatus = [
+        GraingerStatusEnum.Proceed,
+        GraingerStatusEnum.WaitForProceed,
+      ].includes(graingerOrder.status);
+
       if (!existOrder) {
         return;
       }
@@ -305,12 +314,7 @@ export class OrdersService {
         existOrder.status = OrderStatusEnum.ERROR;
       }
 
-      if (
-        [
-          GraingerStatusEnum.Proceed,
-          GraingerStatusEnum.WaitForProceed,
-        ].includes(graingerOrder.status)
-      ) {
+      if (includesStatus) {
         return;
       }
 
@@ -359,10 +363,24 @@ export class OrdersService {
       throw new HttpException(`Order doesn't exist`, HttpStatus.OK);
     }
     const updated = Object.assign(existOrder, item);
+    this.searchService.update<Orders>(updated, where.user.id);
     return this.ordersRepository.save(updated);
   }
 
-  async search(query: any): Promise<any> {
-    return this.searchService.search(query);
+  async search(
+    query: SortWithPaginationQuery | any,
+    userId: string,
+  ): Promise<any> {
+    const clause: any = {
+      offset: query.offset,
+      limit: query.count,
+      ...paginator(query),
+      matchFields: {
+        userId,
+        query: query.search,
+        fields: ['recipientName', 'id'],
+      },
+    };
+    return this.searchService.search<Orders>(clause);
   }
 }
