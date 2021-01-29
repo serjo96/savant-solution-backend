@@ -117,9 +117,11 @@ export class OrdersController {
 
   @Get('/search')
   async searchOrders(
-    @Query('search') search: string,
+    @Query() query: SortWithPaginationQuery,
+    @Req() req: Request,
   ): Promise<any> {
-    return await this.ordersService.search(search);
+    const { user } = req;
+    return await this.ordersService.search(query, user.id);
   }
 
   @Get(':id')
