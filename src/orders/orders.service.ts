@@ -1,10 +1,4 @@
-import {
-  HttpException,
-  HttpStatus,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToClass } from 'class-transformer';
 import { In, Repository } from 'typeorm';
@@ -14,17 +8,14 @@ import { EditOrderDto } from './dto/editOrder.dto';
 
 import { CreateOrderDto } from './dto/createOrderDto';
 import { GetOrderDto } from './dto/get-order.dto';
-import { OrderStatusEnum, Orders } from './orders.entity';
+import { Orders, OrderStatusEnum } from './orders.entity';
 import { CollectionResponse } from '../common/collection-response';
 import * as CSVToJSON from 'csvtojson';
 import { Readable } from 'stream';
 import { Column, Workbook } from 'exceljs';
 import { OrderItem } from './order-item.entity';
 import { checkRequiredItemFieldsReducer } from '../reducers/items.reducer';
-import {
-  checkIncorrectOrderStateReducer,
-  checkUpperCaseOrderStateReducer,
-} from '../reducers/orders.reducer';
+import { checkIncorrectOrderStateReducer, checkUpperCaseOrderStateReducer } from '../reducers/orders.reducer';
 import { Interval } from '@nestjs/schedule';
 import { AiService } from '../ai/ai.service';
 import { GraingerStatusEnum } from '../ai/dto/get-grainger-order';
@@ -202,8 +193,7 @@ export class OrdersService {
         );
         if (errorMessage) {
           existAmazonOrder.status = OrderStatusEnum.MANUAL;
-          existAmazonOrder.note =
-            (existAmazonOrder.note ?? '') + errorMessage;
+          existAmazonOrder.note = (existAmazonOrder.note ?? '') + errorMessage;
         }
         existAmazonOrder.items.push(existOrderItem);
       }
@@ -251,7 +241,25 @@ export class OrdersService {
       throw new HttpException(`Order doesn't exist`, HttpStatus.OK);
     }
 
-    if (status === OrderStatusEnum.PROCEED) {
+    // Пробегаемся по всем OrderItem, проверяем починили ли у них сопоставления
+    const orderItemWithoutGraingerItems: OrderItem[] = existOrder.items.filter(
+      (i) => !i.item,
+    );
+    for (const orderItem of orderItemWithoutGraingerItems) {
+      orderItem.item = await this.itemsService.findOne({
+        amazonSku: orderItem.amazonSku,
+        status: ItemStatusEnum.ACTIVE,
+      });
+      const { errorMessage } = checkRequiredItemFieldsReducer(orderItem.item);
+      if (errorMessage) {
+        existOrder.status = OrderStatusEnum.MANUAL;
+        existOrder.note = (existOrder.note ?? '') + errorMessage;
+      }
+    }
+
+    // Если таки заказ не весь готов, сохраняем то что удалось изменить и кидаем ошибку
+    if (status === OrderStatusEnum.MANUAL) {
+      await this.ordersRepository.save(existOrder);
       const haveInactiveItem = existOrder.items.some(
         ({ item }) => !!checkRequiredItemFieldsReducer(item).errorMessage,
       );
