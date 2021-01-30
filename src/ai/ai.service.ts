@@ -53,9 +53,9 @@ export class AiService {
               state: order.shipState,
             },
             items: order.items.map((orderItem) => ({
-              graingerItemNumber: orderItem.item.graingerItemNumber,
+              graingerItemNumber: orderItem.graingerItem.graingerItemNumber,
               graingerQuantity: orderItem.amazonQuantity?.toString(),
-              account_id: orderItem.item.graingerAccount.id,
+              account_id: orderItem.graingerItem.graingerAccount.id,
             })),
           } as SendAIOrder),
       )

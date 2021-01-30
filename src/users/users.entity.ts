@@ -10,7 +10,7 @@ import {
 
 import { BaseEntity } from '../common/base-entity';
 import { Orders } from '../orders/orders.entity';
-import { Item } from '../items/items.entity';
+import { GraingerItem } from '../grainger-items/grainger-items.entity';
 
 export enum RolesEnum {
   GUEST = 0,
@@ -51,8 +51,8 @@ export class User extends BaseEntity {
   @OneToMany(() => Orders, (order) => order.user)
   orders: Orders[];
 
-  @OneToMany(() => Item, (v) => v.user)
-  items: Item[];
+  @OneToMany(() => GraingerItem, (v) => v.user)
+  items: GraingerItem[];
 
   @Column({
     type: 'enum',
