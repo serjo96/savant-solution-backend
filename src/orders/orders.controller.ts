@@ -39,6 +39,7 @@ import { Buffer } from 'exceljs';
 import { ChangeOrderStatusDto } from './dto/change-order-status.dto';
 import { AiService } from '../ai/ai.service';
 import { GetItemDto } from '../grainger-items/dto/get-item.dto';
+import { In } from 'typeorm';
 
 @UseGuards(AuthGuard('jwt'))
 @Roles('user', 'admin')
@@ -49,7 +50,8 @@ export class OrdersController {
   constructor(
     private readonly ordersService: OrdersService,
     private aiService: AiService,
-  ) {}
+  ) {
+  }
 
   @Post()
   @UsePipes(new ValidationPipe())
@@ -118,6 +120,19 @@ export class OrdersController {
     @Req() { user }: Request,
   ): Promise<Buffer> {
     return this.ordersService.exportToXlxs(res, statuses, user);
+  }
+
+  @Post('/status')
+  async checkOrderStatuses(
+    @Body() { orderIds }: { orderIds: string[] },
+    @Req() { user }: Request,
+  ): Promise<CollectionResponse<GetOrderDto>> {
+    return this.ordersService.getAll({
+      user: {
+        id: user.id,
+      },
+      id: In(orderIds),
+    });
   }
 
   @Get('/states')
