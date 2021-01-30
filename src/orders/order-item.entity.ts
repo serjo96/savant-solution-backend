@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, ManyToOne} from 'typeorm';
 
 import { BaseEntity } from '../common/base-entity';
 import { Orders } from './orders.entity';
@@ -11,9 +11,6 @@ export enum GraingerShipMethodEnum {
 
 @Entity('order-items')
 export class OrderItem extends BaseEntity {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
   @Column({
     unique: true,
     type: 'varchar',

@@ -50,7 +50,7 @@ export class OrdersController {
     private aiService: AiService,
   ) {}
 
-  @Post('/create')
+  @Post()
   @UsePipes(new ValidationPipe())
   @UseInterceptors(new TransformInterceptor(GetOrderDto))
   async createOrder(

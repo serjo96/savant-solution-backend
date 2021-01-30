@@ -93,11 +93,4 @@ export class Orders extends BaseEntity {
 
   @ManyToOne(() => User, (user) => user.orders, { eager: true })
   user: User;
-
-  @BeforeInsert()
-  public baseEntityOnCreate(): void {
-    if (!this.id) {
-      this.id = uuid4();
-    }
-  }
 }
