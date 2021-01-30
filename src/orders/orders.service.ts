@@ -42,8 +42,7 @@ export class OrdersService {
     private readonly graingerItemsService: GraingerItemsService,
     @InjectRepository(Orders)
     private readonly ordersRepository: Repository<Orders>,
-  ) {
-  }
+  ) {}
 
   async find(where: any): Promise<Orders[]> {
     return this.ordersRepository.find(where);
@@ -221,6 +220,24 @@ export class OrdersService {
     return this.ordersRepository.save(orders);
   }
 
+  async findByField(
+    user: User,
+    { amazonOrderId, amazonItemId },
+  ): Promise<Orders[]> {
+    return this.ordersRepository
+      .createQueryBuilder('orders')
+      .leftJoin(OrderItem, 'order-items', 'order-items.orderId = orders.id')
+      .where('orders.user.id=:id', { id: user.id })
+      .andWhere('orders.amazonOrderId LIKE :amazonOrderId', {
+        amazonOrderId: `%${amazonOrderId}%`,
+      })
+      .orWhere('order-items.amazonItemId LIKE :amazonItemId', {
+        amazonItemId: `%${amazonItemId}%`,
+      })
+      .select()
+      .getMany();
+  }
+
   async save(data: CreateOrderDto): Promise<Orders> {
     if (!data.items.length) {
       throw new HttpException(
@@ -233,7 +250,10 @@ export class OrdersService {
       where: { amazonOrderId: data.amazonOrderId },
     });
     if (existOrder) {
-      throw new HttpException(`Order with same Amazon Order Id "${data.amazonOrderId}" already exist`, HttpStatus.OK);
+      throw new HttpException(
+        `Order with same Amazon Order Id "${data.amazonOrderId}" already exist`,
+        HttpStatus.OK,
+      );
     }
     for (let i = 0; i < data.items.length; i++) {
       data.items[i] = OrderItem.create(data.items[i]);
@@ -399,9 +419,7 @@ export class OrdersService {
     }
     const updated = Object.assign(existOrder, item);
     updated.items = updated.items.map((orderItem) =>
-      orderItem.id
-        ? orderItem
-        : OrderItem.create(orderItem),
+      orderItem.id ? orderItem : OrderItem.create(orderItem),
     );
     return this.ordersRepository.save(updated);
   }

@@ -38,6 +38,7 @@ import { CollectionResponse } from '../common/collection-response';
 import { Buffer } from 'exceljs';
 import { ChangeOrderStatusDto } from './dto/change-order-status.dto';
 import { AiService } from '../ai/ai.service';
+import { GetItemDto } from '../grainger-items/dto/get-item.dto';
 
 @UseGuards(AuthGuard('jwt'))
 @Roles('user', 'admin')
@@ -65,6 +66,15 @@ export class OrdersController {
       },
     };
     return await this.ordersService.save(orderData);
+  }
+
+  @Get('/search')
+  @UseInterceptors(new TransformInterceptor(GetOrderDto))
+  searchAmazonSKU(
+    @Query() query: any,
+    @Req() { user }: Request,
+  ): Promise<GetOrderDto[]> {
+    return this.ordersService.findByField(user, query);
   }
 
   @Post('/upload')

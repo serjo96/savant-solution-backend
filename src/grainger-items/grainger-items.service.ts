@@ -116,15 +116,13 @@ export class GraingerItemsService {
 
   findAllSku(user: User, query?: SortWithPaginationQuery): Promise<GraingerItem[]> {
     return this.repository
-      .createQueryBuilder('items')
+      .createQueryBuilder('grainger-items')
       .where('grainger-items.user.id=:id', { id: user.id })
       .andWhere('grainger-items.amazonSku LIKE :amazonSku', {
         amazonSku: `%${query.amazonSku}%`,
       })
-      .select(
-        'DISTINCT ("amazonSku"), "graingerPackQuantity", "graingerItemNumber"',
-      )
-      .getRawMany();
+      .select()
+      .getMany();
   }
 
   async getAll(
