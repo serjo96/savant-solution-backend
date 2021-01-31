@@ -45,15 +45,19 @@ export class EditOrderDto {
   @IsString()
   @IsOptional()
   graingerAccountId?: string;
+
   @IsString()
   @IsOptional()
   shipAddress?: string;
+
   @IsString()
   @IsOptional()
   shipCity?: string;
+
   @IsString()
   @IsOptional()
   shipState?: string;
+
   @IsString()
   @IsOptional()
   shipPostalCode?: string;
