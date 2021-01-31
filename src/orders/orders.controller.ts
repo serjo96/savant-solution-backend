@@ -72,6 +72,15 @@ export class OrdersController {
     return response;
   }
 
+  @Get('/full-search')
+  async searchOrders(
+    @Query() query: SortWithPaginationQuery,
+    @Req() req: Request,
+  ): Promise<any> {
+    const { user } = req;
+    return await this.ordersSearchService.search(query, user.id);
+  }
+
   @Get('/search')
   @UseInterceptors(new TransformInterceptor(GetOrderDto))
   searchAmazonSKU(
@@ -142,15 +151,6 @@ export class OrdersController {
   // @UseInterceptors(new TransformInterceptor(ResponseOrdersDto))
   getStates(): any {
     return states.map(({ name, abbreviation }) => ({ name, abbreviation }));
-  }
-
-  @Get('/search')
-  async searchOrders(
-    @Query() query: SortWithPaginationQuery,
-    @Req() req: Request,
-  ): Promise<any> {
-    const { user } = req;
-    return await this.ordersSearchService.search(query, user.id);
   }
 
   @Get(':id')

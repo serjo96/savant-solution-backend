@@ -17,10 +17,11 @@ export class GraingerItemsSearchService {
       offset: query.offset,
       limit: query.count,
       ...paginator(query),
+      userId,
       index: this.elasticIndex,
       matchFields: {
         query: query.search,
-        fields: ['recipientName', 'id'],
+        fields: ['amazonSku', 'graingerItemNumber'],
       },
     };
     return this.searchService.search<GraingerItem>(clause);
