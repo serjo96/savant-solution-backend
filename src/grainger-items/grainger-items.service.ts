@@ -8,7 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { plainToClass } from 'class-transformer';
 import { Repository } from 'typeorm';
 import { paginator } from '../common/paginator';
-import { sort, SortWithPaginationQuery } from '../common/sort';
+import { SortWithPaginationQuery, sort } from '../common/sort';
 import { filter } from '../common/filter';
 import { CollectionResponse } from '../common/collection-response';
 import { checkRequiredItemFieldsReducer } from '../reducers/items.reducer';
@@ -26,8 +26,7 @@ export class GraingerItemsService {
   constructor(
     @InjectRepository(GraingerItem)
     private readonly repository: Repository<GraingerItem>,
-  ) {
-  }
+  ) {}
 
   async find(where: any): Promise<GraingerItem[]> {
     return this.repository.find(where);
@@ -69,9 +68,7 @@ export class GraingerItemsService {
 
     // Если Item имеет не все поля, ставим статус InActive
     items.forEach((itemForCheck: GraingerItem) => {
-      const { errorMessage } = checkRequiredItemFieldsReducer(
-        itemForCheck,
-      );
+      const { errorMessage } = checkRequiredItemFieldsReducer(itemForCheck);
       if (errorMessage) {
         itemForCheck.status = ItemStatusEnum.INACTIVE;
       }
@@ -119,7 +116,10 @@ export class GraingerItemsService {
     return workbook.xlsx.writeBuffer();
   }
 
-  findAllSku(user: User, query?: SortWithPaginationQuery): Promise<GraingerItem[]> {
+  findAllSku(
+    user: User,
+    query?: SortWithPaginationQuery,
+  ): Promise<GraingerItem[]> {
     return this.repository
       .createQueryBuilder('grainger-items')
       .where('grainger-items.user.id=:id', { id: user.id })
@@ -153,7 +153,9 @@ export class GraingerItemsService {
       throw new NotFoundException();
     }
     return {
-      result: result.map((order: GraingerItem) => plainToClass(GetItemDto, order)),
+      result: result.map((order: GraingerItem) =>
+        plainToClass(GetItemDto, order),
+      ),
       count,
     };
   }
@@ -194,7 +196,6 @@ export class GraingerItemsService {
       existItem.status = ItemStatusEnum.INACTIVE;
     }
     try {
-      this.searchService.update<Item>(updated, this.elasticIndex);
       return this.repository.save(item);
     } catch (error) {
       console.error(error);

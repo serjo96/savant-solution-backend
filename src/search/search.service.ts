@@ -1,7 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
-import { BadRequestException } from '../common/exceptions/bad-request';
-import { ConfigService } from '../config/config.service';
 
 interface ISearchResult<T> {
   hits: {
@@ -52,7 +50,7 @@ export class SearchService {
     });
   }
 
-  async remove(entityId: number, index: string) {
+  async remove(entityId: string, index: string) {
     this.elasticsearchService.deleteByQuery({
       index,
       body: {
