@@ -35,12 +35,15 @@ import { ItemStatusEnum } from '../grainger-items/grainger-items.entity';
 import { GraingerItemsService } from '../grainger-items/grainger-items.service';
 import { filter } from '../common/filter';
 import { Request } from 'express';
+import { CsvService } from '@shared/csv/csv.service';
+import { CsvCreateOrderDto } from './dto/csv-create-order.dto';
 
 @Injectable()
 export class OrdersService {
   private readonly logger = new Logger(OrdersService.name);
 
   constructor(
+    private readonly csvService: CsvService,
     private readonly aiService: AiService,
     private readonly graingerItemsService: GraingerItemsService,
     @InjectRepository(Orders)
@@ -142,33 +145,43 @@ export class OrdersService {
   }
 
   async uploadFromCsv(stream: Readable, user) {
-    const orderItemsDto: any[] = await CSVToJSON({
-      headers: [
-        'amazonOrderId',
-        'amazonItemId',
-        'createdAt',
-        null,
-        null,
-        'recipientName',
-        null,
-        'amazonSku',
-        null,
-        'amazonQuantity',
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        'recipientName',
-        'shipAddress',
-        null,
-        null,
-        'shipCity',
-        'shipState',
-        'shipPostalCode',
-      ],
-    }).fromStream(stream);
+    const headers = [
+      'amazonOrderId',
+      'amazonItemId',
+      'createdAt',
+      null,
+      null,
+      'recipientName',
+      null,
+      'amazonSku',
+      null,
+      'amazonQuantity',
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      'recipientName',
+      'shipAddress',
+      null,
+      null,
+      'shipCity',
+      'shipState',
+      'shipPostalCode',
+    ];
+
+    const orderItemsDto: CsvCreateOrderDto[] = await this.csvService.uploadFromCsv<CsvCreateOrderDto>(
+      stream,
+      headers,
+    );
+    if (
+      orderItemsDto.some(
+        (orderItem) => !this.csvService.isValidCSVRow(orderItem, headers),
+      )
+    ) {
+      throw new HttpException(`Invalid CSV file`, HttpStatus.OK);
+    }
 
     const uniqAmazonOrderIds: string[] = [
       ...new Set(orderItemsDto.map((item) => item.amazonOrderId)),

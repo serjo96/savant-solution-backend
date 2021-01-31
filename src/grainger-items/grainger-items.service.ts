@@ -1,9 +1,14 @@
-import { HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToClass } from 'class-transformer';
 import { Repository } from 'typeorm';
 import { paginator } from '../common/paginator';
-import { sort, SortWithPaginationQuery } from '../common/sort';
+import { SortWithPaginationQuery, sort } from '../common/sort';
 import { filter } from '../common/filter';
 import { CollectionResponse } from '../common/collection-response';
 import { checkRequiredItemFieldsReducer } from '../reducers/items.reducer';
@@ -15,14 +20,17 @@ import { GetItemDto } from './dto/get-item.dto';
 import { CreateItemDto } from './dto/create-item-dto';
 import { EditItemDto } from './dto/edit-item.dto';
 import { Column, Workbook } from 'exceljs';
+import { CsvService } from '@shared/csv/csv.service';
+import { CsvCreateOrderDto } from '../orders/dto/csv-create-order.dto';
+import { CsvCreateGraingerItem } from './dto/csv-create-grainger-item';
 
 @Injectable()
 export class GraingerItemsService {
   constructor(
+    private readonly csvService: CsvService,
     @InjectRepository(GraingerItem)
     private readonly repository: Repository<GraingerItem>,
-  ) {
-  }
+  ) {}
 
   async find(where: any): Promise<GraingerItem[]> {
     return this.repository.find(where);
@@ -38,21 +46,31 @@ export class GraingerItemsService {
   }
 
   async uploadFromCsv(stream: Readable, user: User): Promise<GraingerItem[]> {
-    let items: any[] = await CSVToJSON({
-      headers: [
-        null,
-        'amazonSku',
-        'graingerItemNumber',
-        'graingerPackQuantity',
-        null,
-        null,
-        'graingerThreshold',
-        'status',
-      ],
-      delimiter: ';',
-    }).fromStream(stream);
+    const headers = [
+      null,
+      'amazonSku',
+      'graingerItemNumber',
+      'graingerPackQuantity',
+      null,
+      null,
+      'graingerThreshold',
+      'status',
+    ];
 
-    items = items.map((item) =>
+    const csvItems: CsvCreateGraingerItem[] = await this.csvService.uploadFromCsv<CsvCreateGraingerItem>(
+      stream,
+      headers,
+      ';',
+    );
+    if (
+      csvItems.some(
+        (orderItem) => !this.csvService.isValidCSVRow(orderItem, headers),
+      )
+    ) {
+      throw new HttpException(`Invalid CSV file`, HttpStatus.OK);
+    }
+
+    const items = csvItems.map((item) =>
       GraingerItem.create({
         ...item,
         status: ItemStatusEnum[item.status.toUpperCase()],
@@ -64,9 +82,7 @@ export class GraingerItemsService {
 
     // Если Item имеет не все поля, ставим статус InActive
     items.forEach((itemForCheck: GraingerItem) => {
-      const { errorMessage } = checkRequiredItemFieldsReducer(
-        itemForCheck,
-      );
+      const { errorMessage } = checkRequiredItemFieldsReducer(itemForCheck);
       if (errorMessage) {
         itemForCheck.status = ItemStatusEnum.INACTIVE;
       }
@@ -114,7 +130,10 @@ export class GraingerItemsService {
     return workbook.xlsx.writeBuffer();
   }
 
-  findAllSku(user: User, query?: SortWithPaginationQuery): Promise<GraingerItem[]> {
+  findAllSku(
+    user: User,
+    query?: SortWithPaginationQuery,
+  ): Promise<GraingerItem[]> {
     return this.repository
       .createQueryBuilder('grainger-items')
       .where('grainger-items.user.id=:id', { id: user.id })
@@ -148,7 +167,9 @@ export class GraingerItemsService {
       throw new NotFoundException();
     }
     return {
-      result: result.map((order: GraingerItem) => plainToClass(GetItemDto, order)),
+      result: result.map((order: GraingerItem) =>
+        plainToClass(GetItemDto, order),
+      ),
       count,
     };
   }
