@@ -88,7 +88,7 @@ export class GraingerItemsController {
     return this.itemsService.exportToXlxs(res, statuses, user);
   }
 
-  @Get('/search')
+  @Get('/full-search')
   // @UseInterceptors(new TransformInterceptor(GetItemDto))
   searchAmazonSKU(
     @Query() query: SortWithPaginationQuery,
