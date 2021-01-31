@@ -72,7 +72,7 @@ export class GraingerItemsController {
     const { user } = req;
     try {
       const response = await this.itemsService.uploadFromCsv(stream, user);
-      this.itemsSearchService.save(response);
+      await this.itemsSearchService.save(response);
       return response;
     } catch (error) {
       throw new BadRequestException(error);
