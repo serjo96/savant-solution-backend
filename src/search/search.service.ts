@@ -26,7 +26,7 @@ export class SearchService {
   private readonly logger = new Logger(ElasticsearchService.name);
 
   async createIndex<T>(data: any, index: string) {
-    return this.elasticsearchService.index<ISearchResult<T>, T>({
+    return await this.elasticsearchService.index<ISearchResult<T>, T>({
       index,
       body: data,
     });
