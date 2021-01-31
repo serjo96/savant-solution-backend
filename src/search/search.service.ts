@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
+import { BadRequestException } from '../common/exceptions/bad-request';
 
 interface ISearchResult<T> {
   hits: {
@@ -95,6 +96,7 @@ export class SearchService {
       };
     } catch (error) {
       this.logger.error(error);
+      throw new BadRequestException();
     }
   }
 }
