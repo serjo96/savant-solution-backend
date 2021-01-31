@@ -20,7 +20,13 @@ export class OrdersSearchService {
       index: this.elasticIndex,
       matchFields: {
         query: query.search,
-        fields: ['recipientName', 'id'],
+        fields: [
+          'recipientName',
+          'id',
+          'items.id',
+          'items.graingerTrackingNumber',
+          'items.graingerWebNumber',
+        ],
       },
     };
     return this.searchService.search<Orders>(clause);
