@@ -4,12 +4,16 @@ import {
   IsNotEmpty,
   IsNumber,
   IsOptional,
-  IsString, Max, MaxLength, Min,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
 } from 'class-validator';
 
 import { GraingerShipMethodEnum } from '../order-item.entity';
 import { GraingerAccount } from '../../grainger-accounts/grainger-account.entity';
 import { GetOrderDto } from './get-order.dto';
+import { GraingerItem } from '../../grainger-items/grainger-items.entity';
 
 export class EditOrderItemDto {
   @IsOptional()
@@ -55,6 +59,9 @@ export class EditOrderItemDto {
 
   @IsString()
   amazonItemId: string;
+
+  @IsOptional()
+  item?: GraingerItem;
 
   @IsString()
   @MaxLength(256)

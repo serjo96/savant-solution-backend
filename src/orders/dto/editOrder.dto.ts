@@ -1,4 +1,5 @@
 import {
+  IsArray,
   IsDateString,
   IsEnum,
   IsNotEmpty,
@@ -62,6 +63,6 @@ export class EditOrderDto {
   @IsEnum(OrderStatusEnum)
   status: OrderStatusEnum;
 
-  @IsOptional()
-  items?: GetOrderItemDto[];
+  @IsArray()
+  items: GetOrderItemDto[];
 }
