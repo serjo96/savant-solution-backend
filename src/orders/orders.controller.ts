@@ -27,7 +27,6 @@ import { Roles } from '../common/decorators/roles';
 import { TransformInterceptor } from '../common/interceptors/TransformInterceptor';
 import { ValidationPipe } from '../common/Pipes/validation.pipe';
 import { SortWithPaginationQuery } from '../common/sort';
-import { SearchService } from '../search/search.service';
 import { EditOrderDto } from './dto/editOrder.dto';
 import { CreateOrderDto } from './dto/createOrderDto';
 import states from 'states-us';
@@ -39,6 +38,8 @@ import { CollectionResponse } from '../common/collection-response';
 import { Buffer } from 'exceljs';
 import { ChangeOrderStatusDto } from './dto/change-order-status.dto';
 import { AiService } from '../ai/ai.service';
+import { GetItemDto } from '../grainger-items/dto/get-item.dto';
+import { In } from 'typeorm';
 
 @UseGuards(AuthGuard('jwt'))
 @Roles('user', 'admin')
@@ -49,10 +50,9 @@ export class OrdersController {
   constructor(
     private readonly ordersService: OrdersService,
     private aiService: AiService,
-    private readonly searchService: SearchService,
   ) {}
 
-  @Post('/create')
+  @Post()
   @UsePipes(new ValidationPipe())
   @UseInterceptors(new TransformInterceptor(GetOrderDto))
   async createOrder(
@@ -67,6 +67,15 @@ export class OrdersController {
       },
     };
     return await this.ordersService.save(orderData);
+  }
+
+  @Get('/search')
+  @UseInterceptors(new TransformInterceptor(GetOrderDto))
+  searchAmazonSKU(
+    @Query() query: any,
+    @Req() { user }: Request,
+  ): Promise<GetOrderDto[]> {
+    return this.ordersService.findByField(user, query);
   }
 
   @Post('/upload')
@@ -112,20 +121,24 @@ export class OrdersController {
     return this.ordersService.exportToXlxs(res, statuses, user);
   }
 
+  @Post('/status')
+  async checkOrderStatuses(
+    @Body() { orderIds }: { orderIds: string[] },
+    @Req() { user }: Request,
+  ): Promise<CollectionResponse<GetOrderDto>> {
+    return this.ordersService.getAll({
+      user: {
+        id: user.id,
+      },
+      id: In(orderIds),
+    });
+  }
+
   @Get('/states')
   // @UsePipes(new ValidationPipe())
   // @UseInterceptors(new TransformInterceptor(ResponseOrdersDto))
   getStates(): any {
     return states.map(({ name, abbreviation }) => ({ name, abbreviation }));
-  }
-
-  @Get('/search')
-  async searchOrders(
-    @Query() query: SortWithPaginationQuery,
-    @Req() req: Request,
-  ): Promise<any> {
-    const { user } = req;
-    return await this.ordersService.search(query, user.id);
   }
 
   @Get(':id')

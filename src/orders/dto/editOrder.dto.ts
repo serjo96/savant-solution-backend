@@ -63,5 +63,5 @@ export class EditOrderDto {
   status: OrderStatusEnum;
 
   @IsOptional()
-  orderItems?: GetOrderItemDto[];
+  items?: GetOrderItemDto[];
 }

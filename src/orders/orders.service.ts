@@ -1,21 +1,22 @@
 import {
+  Body,
   HttpException,
   HttpStatus,
   Injectable,
   Logger,
   NotFoundException,
+  Req,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToClass } from 'class-transformer';
 import { In, Repository } from 'typeorm';
 import { paginator } from '../common/paginator';
-import { SortWithPaginationQuery, sort } from '../common/sort';
-import { SearchService } from '../search/search.service';
+import { sort } from '../common/sort';
 import { EditOrderDto } from './dto/editOrder.dto';
 
 import { CreateOrderDto } from './dto/createOrderDto';
 import { GetOrderDto } from './dto/get-order.dto';
-import { Orders, OrderStatusEnum } from './orders.entity';
+import { OrderStatusEnum, Orders } from './orders.entity';
 import { CollectionResponse } from '../common/collection-response';
 import * as CSVToJSON from 'csvtojson';
 import { Readable } from 'stream';
@@ -30,9 +31,10 @@ import { Interval } from '@nestjs/schedule';
 import { AiService } from '../ai/ai.service';
 import { GraingerStatusEnum } from '../ai/dto/get-grainger-order';
 import { User } from '@user/users.entity';
-import { ItemStatusEnum } from '../items/items.entity';
-import { ItemsService } from '../items/items.service';
+import { ItemStatusEnum } from '../grainger-items/grainger-items.entity';
+import { GraingerItemsService } from '../grainger-items/grainger-items.service';
 import { filter } from '../common/filter';
+import { Request } from 'express';
 
 @Injectable()
 export class OrdersService {
@@ -41,12 +43,9 @@ export class OrdersService {
   constructor(
     @InjectRepository(Orders)
     private readonly ordersRepository: Repository<Orders>,
-    private readonly searchService: SearchService,
-    private readonly itemsService: ItemsService,
     private readonly aiService: AiService,
+    private readonly graingerItemsService: GraingerItemsService,
   ) {}
-
-  elasticIndex = 'orders';
 
   async find(where: any): Promise<Orders[]> {
     return this.ordersRepository.find(where);
@@ -84,12 +83,7 @@ export class OrdersService {
     if (!existOrder) {
       throw new HttpException(`Order doesn't exist`, HttpStatus.OK);
     }
-    try {
-      await this.searchService.remove(where.id, this.elasticIndex);
-      return this.ordersRepository.softDelete(where);
-    } catch (error) {
-      console.error(error);
-    }
+    return this.ordersRepository.softDelete(where);
   }
 
   async exportToXlxs(
@@ -201,12 +195,12 @@ export class OrdersService {
       );
       if (!existOrderItem) {
         existOrderItem = OrderItem.create(dtoOrder) as any;
-        existOrderItem.item = await this.itemsService.findOne({
+        existOrderItem.graingerItem = await this.graingerItemsService.findOne({
           amazonSku: existOrderItem.amazonSku,
           status: ItemStatusEnum.ACTIVE,
         });
         const { errorMessage } = checkRequiredItemFieldsReducer(
-          existOrderItem.item,
+          existOrderItem.graingerItem,
         );
         if (errorMessage) {
           existAmazonOrder.status = OrderStatusEnum.MANUAL;
@@ -229,21 +223,47 @@ export class OrdersService {
     return this.ordersRepository.save(orders);
   }
 
+  async findByField(
+    user: User,
+    { amazonOrderId, amazonItemId },
+  ): Promise<Orders[]> {
+    return this.ordersRepository
+      .createQueryBuilder('orders')
+      .leftJoin(OrderItem, 'order-items', 'order-items.orderId = orders.id')
+      .where('orders.user.id=:id', { id: user.id })
+      .andWhere('orders.amazonOrderId LIKE :amazonOrderId', {
+        amazonOrderId: `%${amazonOrderId}%`,
+      })
+      .orWhere('order-items.amazonItemId LIKE :amazonItemId', {
+        amazonItemId: `%${amazonItemId}%`,
+      })
+      .select()
+      .getMany();
+  }
+
   async save(data: CreateOrderDto): Promise<Orders> {
-    let existOrder = await this.ordersRepository.findOne({
+    if (!data.items.length) {
+      throw new HttpException(
+        `Order must have one or more Order item`,
+        HttpStatus.OK,
+      );
+    }
+
+    let existOrder: Orders = await this.ordersRepository.findOne({
       where: { amazonOrderId: data.amazonOrderId },
     });
     if (existOrder) {
-      throw new HttpException(`Order already exist`, HttpStatus.OK);
+      throw new HttpException(
+        `Order with same Amazon Order Id "${data.amazonOrderId}" already exist`,
+        HttpStatus.OK,
+      );
+    }
+    for (let i = 0; i < data.items.length; i++) {
+      data.items[i] = OrderItem.create(data.items[i]);
     }
     existOrder = Orders.create(data);
 
-    try {
-      this.searchService.createIndex(existOrder, this.elasticIndex);
-      return this.ordersRepository.save(existOrder);
-    } catch (e) {
-      throw new Error(e);
-    }
+    return this.ordersRepository.save(existOrder);
   }
 
   async updateStatus(
@@ -265,18 +285,20 @@ export class OrdersService {
 
     // Пробегаемся по всем OrderItem, проверяем починили ли у них сопоставления
     const orderItemWithoutGraingerItems: OrderItem[] = existOrder.items.filter(
-      (i) => !i.item || i.item.status !== ItemStatusEnum.ACTIVE,
+      (i) => !i.graingerItem || i.graingerItem.status !== ItemStatusEnum.ACTIVE,
     );
     for (const orderItem of orderItemWithoutGraingerItems) {
-      orderItem.item = await this.itemsService.findOne({
+      orderItem.graingerItem = await this.graingerItemsService.findOne({
         amazonSku: orderItem.amazonSku,
       });
-      const { errorMessage } = checkRequiredItemFieldsReducer(orderItem.item);
+      const { errorMessage } = checkRequiredItemFieldsReducer(
+        orderItem.graingerItem,
+      );
       if (errorMessage) {
         existOrder.status = OrderStatusEnum.MANUAL;
         existOrder.note = (existOrder.note ?? '') + errorMessage;
       } else {
-        orderItem.item.status = ItemStatusEnum.ACTIVE;
+        orderItem.graingerItem.status = ItemStatusEnum.ACTIVE;
       }
     }
 
@@ -284,7 +306,8 @@ export class OrdersService {
     if (status === OrderStatusEnum.MANUAL) {
       await this.ordersRepository.save(existOrder);
       const haveInactiveItem = existOrder.items.some(
-        ({ item }) => !!checkRequiredItemFieldsReducer(item).errorMessage,
+        ({ graingerItem }) =>
+          !!checkRequiredItemFieldsReducer(graingerItem).errorMessage,
       );
       if (haveInactiveItem) {
         throw new HttpException(
@@ -295,11 +318,7 @@ export class OrdersService {
     }
 
     existOrder.status = status;
-    try {
-      return this.ordersRepository.save(existOrder);
-    } catch (e) {
-      throw new Error(e);
-    }
+    return this.ordersRepository.save(existOrder);
   }
 
   /**
@@ -347,7 +366,8 @@ export class OrdersService {
       graingerOrder.graingerOrders.forEach((graingerItem) => {
         let existItem = existOrder.items.find(
           (item) =>
-            item.item?.graingerItemNumber === graingerItem.graingerItemNumber,
+            item.graingerItem?.graingerItemNumber ===
+            graingerItem.graingerItemNumber,
         );
         if (!existItem) {
           return;
@@ -389,30 +409,21 @@ export class OrdersService {
     },
     item: EditOrderDto,
   ): Promise<Orders> {
+    if (!item.items.length) {
+      throw new HttpException(
+        `Order must have one or more Order item`,
+        HttpStatus.OK,
+      );
+    }
+
     const existOrder = await this.ordersRepository.findOne(where);
     if (!existOrder) {
       throw new HttpException(`Order doesn't exist`, HttpStatus.OK);
     }
     const updated = Object.assign(existOrder, item);
-    await this.searchService.update<Orders>(updated, this.elasticIndex);
+    updated.items = updated.items.map((orderItem) =>
+      orderItem.id ? orderItem : OrderItem.create(orderItem),
+    );
     return this.ordersRepository.save(updated);
-  }
-
-  async search(
-    query: SortWithPaginationQuery | any,
-    userId: string,
-  ): Promise<any> {
-    const clause: any = {
-      offset: query.offset,
-      limit: query.count,
-      ...paginator(query),
-      index: this.elasticIndex,
-      matchFields: {
-        userId,
-        query: query.search,
-        fields: ['recipientName', 'id'],
-      },
-    };
-    return this.searchService.search<Orders>(clause);
   }
 }

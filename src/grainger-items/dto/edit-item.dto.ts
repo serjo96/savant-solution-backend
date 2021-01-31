@@ -6,7 +6,7 @@ import {
 } from 'class-validator';
 
 import { GraingerAccount } from '../../grainger-accounts/grainger-account.entity';
-import { ItemStatusEnum } from '../items.entity';
+import { ItemStatusEnum } from '../grainger-items.entity';
 
 export class EditItemDto {
   @IsOptional()

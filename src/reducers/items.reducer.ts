@@ -1,9 +1,9 @@
-import { Item, ItemStatusEnum } from '../items/items.entity';
+import { GraingerItem, ItemStatusEnum } from '../grainger-items/grainger-items.entity';
 
 // Если нет необходимых полей для Димы, пишем ошибку
 export const checkRequiredItemFieldsReducer = (
-  item: Item,
-): { item: Item; errorMessage?: string } => {
+  item: GraingerItem,
+): { item: GraingerItem; errorMessage?: string } => {
   let errorMessage;
   if (
     !item?.graingerItemNumber ||

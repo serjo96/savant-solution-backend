@@ -8,35 +8,32 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { plainToClass } from 'class-transformer';
 import { Repository } from 'typeorm';
 import { paginator } from '../common/paginator';
-import { SortWithPaginationQuery, sort } from '../common/sort';
+import { sort, SortWithPaginationQuery } from '../common/sort';
 import { filter } from '../common/filter';
 import { CollectionResponse } from '../common/collection-response';
 import { checkRequiredItemFieldsReducer } from '../reducers/items.reducer';
 import { User } from '@user/users.entity';
 import { Readable } from 'stream';
 import * as CSVToJSON from 'csvtojson';
-import { SearchService } from '../search/search.service';
-import { Item, ItemStatusEnum } from './items.entity';
+import { GraingerItem, ItemStatusEnum } from './grainger-items.entity';
 import { GetItemDto } from './dto/get-item.dto';
 import { CreateItemDto } from './dto/create-item-dto';
 import { EditItemDto } from './dto/edit-item.dto';
 import { Column, Workbook } from 'exceljs';
 
 @Injectable()
-export class ItemsService {
+export class GraingerItemsService {
   constructor(
-    @InjectRepository(Item)
-    private readonly repository: Repository<Item>,
-    private readonly searchService: SearchService,
-  ) {}
+    @InjectRepository(GraingerItem)
+    private readonly repository: Repository<GraingerItem>,
+  ) {
+  }
 
-  private readonly elasticIndex = 'grainger-item';
-
-  async find(where: any): Promise<Item[]> {
+  async find(where: any): Promise<GraingerItem[]> {
     return this.repository.find(where);
   }
 
-  async findOne(where: any): Promise<Item> {
+  async findOne(where: any): Promise<GraingerItem> {
     // const existItem = await this.repository.findOne(where);
     // if (!existItem) {
     //   throw new HttpException(`Item doesn't exist`, HttpStatus.OK);
@@ -45,7 +42,7 @@ export class ItemsService {
     return this.repository.findOne(where);
   }
 
-  async uploadFromCsv(stream: Readable, user: User): Promise<Item[]> {
+  async uploadFromCsv(stream: Readable, user: User): Promise<GraingerItem[]> {
     let items: any[] = await CSVToJSON({
       headers: [
         null,
@@ -61,7 +58,7 @@ export class ItemsService {
     }).fromStream(stream);
 
     items = items.map((item) =>
-      Item.create({
+      GraingerItem.create({
         ...item,
         status: ItemStatusEnum[item.status.toUpperCase()],
         graingerPackQuantity: +item.graingerPackQuantity,
@@ -71,8 +68,10 @@ export class ItemsService {
     );
 
     // Если Item имеет не все поля, ставим статус InActive
-    items.forEach((itemForCheck: Item) => {
-      const { errorMessage } = checkRequiredItemFieldsReducer(itemForCheck);
+    items.forEach((itemForCheck: GraingerItem) => {
+      const { errorMessage } = checkRequiredItemFieldsReducer(
+        itemForCheck,
+      );
       if (errorMessage) {
         itemForCheck.status = ItemStatusEnum.INACTIVE;
       }
@@ -113,28 +112,22 @@ export class ItemsService {
 
     res.setHeader(
       'Content-Disposition',
-      'attachment; filename=' + 'items.xlsx',
+      'attachment; filename=' + 'grainger-items.xlsx',
     );
 
     await workbook.xlsx.write(res);
     return workbook.xlsx.writeBuffer();
   }
 
-  async search(
-    query: SortWithPaginationQuery | any,
-    userId?: string,
-  ): Promise<any> {
-    const clause: any = {
-      offset: query.offset,
-      limit: query.count,
-      ...paginator(query),
-      index: this.elasticIndex,
-      matchFields: {
-        query: query.search,
-        fields: ['recipientName', 'id'],
-      },
-    };
-    return this.searchService.search<Item>(clause);
+  findAllSku(user: User, query?: SortWithPaginationQuery): Promise<GraingerItem[]> {
+    return this.repository
+      .createQueryBuilder('grainger-items')
+      .where('grainger-items.user.id=:id', { id: user.id })
+      .andWhere('grainger-items.amazonSku LIKE :amazonSku', {
+        amazonSku: `%${query.amazonSku}%`,
+      })
+      .select()
+      .getMany();
   }
 
   async getAll(
@@ -160,7 +153,7 @@ export class ItemsService {
       throw new NotFoundException();
     }
     return {
-      result: result.map((order: Item) => plainToClass(GetItemDto, order)),
+      result: result.map((order: GraingerItem) => plainToClass(GetItemDto, order)),
       count,
     };
   }
@@ -170,11 +163,10 @@ export class ItemsService {
     if (!existItem) {
       throw new HttpException(`Item doesn't exist`, HttpStatus.OK);
     }
-    this.searchService.remove(where.id, this.elasticIndex);
     return await this.repository.softDelete(where);
   }
 
-  async save(data: CreateItemDto): Promise<Item> {
+  async save(data: CreateItemDto): Promise<GraingerItem> {
     let existItem = await this.repository.findOne({
       amazonSku: data.amazonSku,
     });
@@ -182,20 +174,16 @@ export class ItemsService {
       throw new HttpException(`Item already exist`, HttpStatus.OK);
     }
 
-    existItem = Item.create(data);
+    existItem = GraingerItem.create(data);
     const { errorMessage } = checkRequiredItemFieldsReducer(existItem);
     if (errorMessage) {
       existItem.status = ItemStatusEnum.INACTIVE;
     }
-    try {
-      this.searchService.createIndex(existItem, 'grainger-item');
-      return this.repository.save(existItem);
-    } catch (error) {
-      console.error(error);
-    }
+
+    return this.repository.save(existItem);
   }
 
-  async update(where: any, editItem: EditItemDto): Promise<Item> {
+  async update(where: any, editItem: EditItemDto): Promise<GraingerItem> {
     const existItem = await this.repository.findOne(where);
     if (!existItem) {
       throw new HttpException(`Item doesn't exist`, HttpStatus.OK);
@@ -221,7 +209,7 @@ export class ItemsService {
       };
     },
     status: ItemStatusEnum,
-  ): Promise<Item> {
+  ): Promise<GraingerItem> {
     const existItem = await this.repository.findOne(where);
     if (!existItem) {
       throw new HttpException(`Item doesn't exist`, HttpStatus.OK);

@@ -5,7 +5,7 @@ import { LoggerModule } from 'nestjs-pino';
 
 import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from './config/config.module';
-import { ItemsModule } from './items/items.module';
+import { GraingerItemsModule } from './grainger-items/grainger-items.module';
 import { OrdersModule } from './orders/orders.module';
 import { SearchModule } from './search/search.module';
 import { AiModule } from './ai/ai.module';
@@ -19,7 +19,7 @@ import { AppController } from './app.controller';
     TypeOrmModule.forRoot(),
     AuthModule,
     ConfigModule,
-    ItemsModule,
+    GraingerItemsModule,
     OrdersModule,
     SearchModule,
     AiModule,

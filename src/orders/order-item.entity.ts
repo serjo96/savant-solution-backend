@@ -1,19 +1,16 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, ManyToOne} from 'typeorm';
 
 import { BaseEntity } from '../common/base-entity';
 import { Orders } from './orders.entity';
-import { Item } from '../items/items.entity';
+import { GraingerItem } from '../grainger-items/grainger-items.entity';
 
 export enum GraingerShipMethodEnum {
   EXPRESS = 1,
   NEXT_DAY = 2,
 }
 
-@Entity('items')
+@Entity('order-items')
 export class OrderItem extends BaseEntity {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
   @Column({
     unique: true,
     type: 'varchar',
@@ -70,8 +67,8 @@ export class OrderItem extends BaseEntity {
   })
   note?: string;
 
-  @ManyToOne(() => Item, (v) => v.orderItems, { eager: true })
-  item: Item;
+  @ManyToOne(() => GraingerItem, (v) => v.orderItems, { eager: true })
+  graingerItem: GraingerItem;
 
   @ManyToOne(() => Orders, (v) => v.items)
   order: Orders;

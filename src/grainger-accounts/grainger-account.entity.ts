@@ -5,7 +5,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { Item } from '../items/items.entity';
+import { GraingerItem } from '../grainger-items/grainger-items.entity';
 
 @Entity('grainger-account')
 export class GraingerAccount extends BaseEntity {
@@ -30,6 +30,6 @@ export class GraingerAccount extends BaseEntity {
   })
   public name: string;
 
-  @OneToMany(() => Item, (v) => v.graingerAccount)
-  items: Item[];
+  @OneToMany(() => GraingerItem, (v) => v.graingerAccount)
+  items: GraingerItem[];
 }

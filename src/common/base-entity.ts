@@ -17,20 +17,23 @@ export abstract class BaseEntity extends Base {
 
   @CreateDateColumn({
     type: 'timestamptz',
-  })@IsDate()
+  })
+  @IsDate()
   public createdAt: Date;
 
   @UpdateDateColumn({
     nullable: true,
     type: 'timestamptz',
-  })@IsDate()
+  })
+  @IsDate()
   @IsOptional()
   public updatedAt: Date;
 
   @DeleteDateColumn({
     nullable: true,
     type: 'timestamptz',
-  })@IsDate()
+  })
+  @IsDate()
   @IsOptional()
   public deletedAt: Date;
 

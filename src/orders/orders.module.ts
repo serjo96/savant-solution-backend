@@ -7,13 +7,13 @@ import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
 import { AiModule } from '../ai/ai.module';
 import { OrderItem } from './order-item.entity';
-import { ItemsModule } from '../items/items.module';
+import { GraingerItemsModule } from '../grainger-items/grainger-items.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Orders, OrderItem]),
     SearchModule,
-    ItemsModule,
+    GraingerItemsModule,
     AiModule,
   ],
   controllers: [OrdersController],

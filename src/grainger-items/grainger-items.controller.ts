@@ -20,7 +20,7 @@ import { TransformInterceptor } from '../common/interceptors/TransformIntercepto
 import { ValidationPipe } from '../common/Pipes/validation.pipe';
 import { SortWithPaginationQuery } from '../common/sort';
 
-import { ItemsService } from './items.service';
+import { GraingerItemsService } from './grainger-items.service';
 import { CollectionResponse } from '../common/collection-response';
 import { Request } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -30,13 +30,13 @@ import { GetItemDto } from './dto/get-item.dto';
 import { CreateItemDto } from './dto/create-item-dto';
 import { EditItemDto } from './dto/edit-item.dto';
 import { Buffer } from 'exceljs';
-import { ItemStatusEnum } from './items.entity';
+import { ItemStatusEnum } from './grainger-items.entity';
 
 @UseGuards(AuthGuard('jwt'))
 @Roles('user', 'admin')
-@Controller('items')
-export class ItemsController {
-  constructor(private readonly itemsService: ItemsService) {}
+@Controller('grainger-items')
+export class GraingerItemsController {
+  constructor(private readonly itemsService: GraingerItemsService) {}
 
   @Post('/create')
   @UsePipes(new ValidationPipe())

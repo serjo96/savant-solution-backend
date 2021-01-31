@@ -10,8 +10,8 @@ export enum ItemStatusEnum {
   INACTIVE = 0,
 }
 
-@Entity('grainger-item')
-export class Item extends BaseEntity {
+@Entity('grainger-items')
+export class GraingerItem extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
@@ -52,7 +52,7 @@ export class Item extends BaseEntity {
   })
   graingerAccount?: GraingerAccount;
 
-  @OneToMany(() => OrderItem, (v) => v.item)
+  @OneToMany(() => OrderItem, (v) => v.graingerItem)
   orderItems?: OrderItem[];
 
   @ManyToOne(() => User, (user) => user.items, { eager: true })
