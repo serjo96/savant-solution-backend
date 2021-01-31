@@ -30,6 +30,7 @@ import { SortWithPaginationQuery } from '../common/sort';
 import { EditOrderDto } from './dto/editOrder.dto';
 import { CreateOrderDto } from './dto/createOrderDto';
 import states from 'states-us';
+import { OrdersSearchService } from './orders-search.service';
 
 import { OrderStatusEnum } from './orders.entity';
 import { OrdersService } from './orders.service';
@@ -50,6 +51,7 @@ export class OrdersController {
   constructor(
     private readonly ordersService: OrdersService,
     private aiService: AiService,
+    private readonly ordersSearchService: OrdersSearchService,
   ) {}
 
   @Post()
@@ -66,7 +68,9 @@ export class OrdersController {
         id: user.id,
       },
     };
-    return await this.ordersService.save(orderData);
+    const response = await this.ordersService.save(orderData);
+    await this.ordersSearchService.save(response);
+    return response;
   }
 
   @Get('/search')
@@ -141,6 +145,15 @@ export class OrdersController {
     return states.map(({ name, abbreviation }) => ({ name, abbreviation }));
   }
 
+  @Get('/search')
+  async searchOrders(
+    @Query() query: SortWithPaginationQuery,
+    @Req() req: Request,
+  ): Promise<any> {
+    const { user } = req;
+    return await this.ordersSearchService.search(query, user.id);
+  }
+
   @Get(':id')
   @UseInterceptors(new TransformInterceptor(GetOrderDto))
   async getOrder(
@@ -207,13 +220,15 @@ export class OrdersController {
       },
     };
 
-    return await this.ordersService.update(where, item);
+    const response = await this.ordersService.update(where, item);
+    await this.ordersSearchService.update(response);
+    return response;
   }
 
   @Delete(':id')
   @UseInterceptors(new TransformInterceptor(GetOrderDto))
   async removeOrder(
-    @Param() id: { id: string },
+    @Param() { id }: { id: string },
     @Req() req: Request,
   ): Promise<GetOrderDto> {
     const { user } = req;
@@ -223,6 +238,8 @@ export class OrdersController {
         id: user.id,
       },
     };
-    return await this.ordersService.delete(where);
+    const response = await this.ordersService.delete(where);
+    await this.ordersSearchService.delete(id);
+    return response;
   }
 }

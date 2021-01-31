@@ -7,7 +7,7 @@ import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
 import { AiModule } from '../ai/ai.module';
 import { OrderItem } from './order-item.entity';
-import { GraingerItemsModule } from '../grainger-items/grainger-items.module';
+import { GraingerItemsModule } from '../grainger-items/grainger-items.module';import { OrdersSearchService } from './orders-search.service';
 
 @Module({
   imports: [
@@ -17,7 +17,7 @@ import { GraingerItemsModule } from '../grainger-items/grainger-items.module';
     AiModule,
   ],
   controllers: [OrdersController],
-  providers: [OrdersService],
+  providers: [OrdersService, OrdersSearchService],
   exports: [OrdersService],
 })
 export class OrdersModule {}
