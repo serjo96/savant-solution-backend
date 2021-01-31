@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SearchModule } from '../search/search.module';
+import { OrdersSearchService } from './orders-search.service';
 
 import { Orders } from './orders.entity';
 import { OrdersController } from './orders.controller';

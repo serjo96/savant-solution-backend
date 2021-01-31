@@ -39,6 +39,8 @@ export class OrdersService {
   private readonly logger = new Logger(OrdersService.name);
 
   constructor(
+    @InjectRepository(OrderItem)
+    private readonly orderItemsRepository: Repository<OrderItem>,
     @InjectRepository(Orders)
     private readonly ordersRepository: Repository<Orders>,
     private readonly aiService: AiService,
