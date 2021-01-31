@@ -1,11 +1,9 @@
 import {
-  Body,
   HttpException,
   HttpStatus,
   Injectable,
   Logger,
   NotFoundException,
-  Req,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToClass } from 'class-transformer';
@@ -18,7 +16,6 @@ import { CreateOrderDto } from './dto/createOrderDto';
 import { GetOrderDto } from './dto/get-order.dto';
 import { OrderStatusEnum, Orders } from './orders.entity';
 import { CollectionResponse } from '../common/collection-response';
-import * as CSVToJSON from 'csvtojson';
 import { Readable } from 'stream';
 import { Column, Workbook } from 'exceljs';
 import { OrderItem } from './order-item.entity';
@@ -34,7 +31,8 @@ import { User } from '@user/users.entity';
 import { ItemStatusEnum } from '../grainger-items/grainger-items.entity';
 import { GraingerItemsService } from '../grainger-items/grainger-items.service';
 import { filter } from '../common/filter';
-import { Request } from 'express';
+import { CsvService } from '@shared/csv/csv.service';
+import { CsvCreateOrderDto } from './dto/csv-create-order.dto';
 
 @Injectable()
 export class OrdersService {
@@ -45,6 +43,7 @@ export class OrdersService {
     private readonly ordersRepository: Repository<Orders>,
     private readonly aiService: AiService,
     private readonly graingerItemsService: GraingerItemsService,
+    private readonly csvService: CsvService,
   ) {}
 
   async find(where: any): Promise<Orders[]> {
@@ -52,11 +51,7 @@ export class OrdersService {
   }
 
   async findOne(where: any): Promise<Orders> {
-    const existOrder = await this.ordersRepository.findOne(where);
-    if (!existOrder) {
-      throw new HttpException(`Order doesn't exist`, HttpStatus.OK);
-    }
-    return existOrder;
+    return this.getOrderIfExist(where);
   }
 
   async getAll(where, query?: any): Promise<CollectionResponse<GetOrderDto>> {
@@ -79,10 +74,7 @@ export class OrdersService {
   }
 
   async delete(where: any): Promise<any> {
-    const existOrder = await this.ordersRepository.findOne(where);
-    if (!existOrder) {
-      throw new HttpException(`Order doesn't exist`, HttpStatus.OK);
-    }
+    await this.getOrderIfExist(where);
     return this.ordersRepository.softDelete(where);
   }
 
@@ -142,37 +134,55 @@ export class OrdersService {
   }
 
   async uploadFromCsv(stream: Readable, user) {
-    const orderItemsDto: any[] = await CSVToJSON({
-      headers: [
-        'amazonOrderId',
-        'amazonItemId',
-        'createdAt',
-        null,
-        null,
-        'recipientName',
-        null,
-        'amazonSku',
-        null,
-        'amazonQuantity',
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        'recipientName',
-        'shipAddress',
-        null,
-        null,
-        'shipCity',
-        'shipState',
-        'shipPostalCode',
-      ],
-    }).fromStream(stream);
-
-    const uniqAmazonOrderIds: string[] = [
-      ...new Set(orderItemsDto.map((item) => item.amazonOrderId)),
+    const headers = [
+      'amazonOrderId',
+      'amazonItemId',
+      'createdAt',
+      null,
+      null,
+      'recipientName',
+      null,
+      'amazonSku',
+      null,
+      'amazonQuantity',
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      'recipientName',
+      'shipAddress',
+      null,
+      null,
+      'shipCity',
+      'shipState',
+      'shipPostalCode',
     ];
+
+    const orderItemsDto: CsvCreateOrderDto[] = await this.csvService.uploadFromCsv<CsvCreateOrderDto>(
+      stream,
+      headers,
+    );
+    if (
+      orderItemsDto.some(
+        (orderItem) => !this.csvService.isValidCSVRow(orderItem, headers),
+      )
+    ) {
+      throw new HttpException(`Invalid CSV file`, HttpStatus.OK);
+    }
+
+    const uniqAmazonItemIds: string[] = this.getUniqFields(
+      orderItemsDto,
+      'amazonItemId',
+    );
+
+    const uniqAmazonOrderIds: string[] = this.getUniqFields(
+      orderItemsDto,
+      'amazonOrderId',
+    );
+
+    await this.checkIfOrderItemsExist(uniqAmazonItemIds);
 
     const orders: Orders[] = await this.ordersRepository.find({
       where: { amazonOrderId: In(uniqAmazonOrderIds) },
@@ -242,28 +252,13 @@ export class OrdersService {
   }
 
   async save(data: CreateOrderDto): Promise<Orders> {
-    if (!data.items.length) {
-      throw new HttpException(
-        `Order must have one or more Order item`,
-        HttpStatus.OK,
-      );
-    }
+    await this.validateOrder(data);
 
-    let existOrder: Orders = await this.ordersRepository.findOne({
-      where: { amazonOrderId: data.amazonOrderId },
-    });
-    if (existOrder) {
-      throw new HttpException(
-        `Order with same Amazon Order Id "${data.amazonOrderId}" already exist`,
-        HttpStatus.OK,
-      );
-    }
     for (let i = 0; i < data.items.length; i++) {
       data.items[i] = OrderItem.create(data.items[i]);
     }
-    existOrder = Orders.create(data);
 
-    return this.ordersRepository.save(existOrder);
+    return this.ordersRepository.save(Orders.create(data));
   }
 
   async updateStatus(
@@ -275,13 +270,7 @@ export class OrdersService {
     },
     status: OrderStatusEnum,
   ): Promise<Orders> {
-    const existOrder = await this.ordersRepository.findOne({
-      where,
-      relations: ['items'],
-    });
-    if (!existOrder) {
-      throw new HttpException(`Order doesn't exist`, HttpStatus.OK);
-    }
+    const existOrder = await this.getOrderIfExist(where);
 
     // Пробегаемся по всем OrderItem, проверяем починили ли у них сопоставления
     const orderItemWithoutGraingerItems: OrderItem[] = existOrder.items.filter(
@@ -409,21 +398,89 @@ export class OrdersService {
     },
     item: EditOrderDto,
   ): Promise<Orders> {
-    if (!item.items.length) {
-      throw new HttpException(
-        `Order must have one or more Order item`,
-        HttpStatus.OK,
-      );
-    }
-
-    const existOrder = await this.ordersRepository.findOne(where);
-    if (!existOrder) {
-      throw new HttpException(`Order doesn't exist`, HttpStatus.OK);
-    }
+    const existOrder = await this.validateOrder({ ...where, ...item });
     const updated = Object.assign(existOrder, item);
     updated.items = updated.items.map((orderItem) =>
       orderItem.id ? orderItem : OrderItem.create(orderItem),
     );
     return this.ordersRepository.save(updated);
   }
+
+  private async validateOrder(orderDto: CreateOrderDto): Promise<Orders> {
+    // У заказа должен быть хотя бы один orderItem
+    if (!orderDto.items.length) {
+      throw new HttpException(
+        `Order must have one or more Order item`,
+        HttpStatus.OK,
+      );
+    }
+
+    const existOrder: Orders = await this.ordersRepository.findOne({
+      where: { amazonOrderId: orderDto.amazonOrderId },
+      relations: ['items'],
+    });
+
+    let amazonItemIds = orderDto.items.map((item) => item.amazonItemId);
+
+    // Если редактируем существующий заказ
+    if (existOrder && orderDto.id === existOrder.id) {
+      // Сверим все orderItem которые еще не были добавлены
+      const existAmazonItemIds = existOrder.items.map(
+        (orderItem) => orderItem.amazonItemId,
+      );
+      const uniqAmazonItemIds = this.getUniqFields(amazonItemIds);
+      // Если среди присланных amazonItemId есть дубликаты
+      if (uniqAmazonItemIds.length !== amazonItemIds.length) {
+        throw new HttpException(
+          `Order items must have unique Amazon Item Id`,
+          HttpStatus.OK,
+        );
+      }
+
+      amazonItemIds = amazonItemIds.filter(
+        (amazonItemId) => !existAmazonItemIds.includes(amazonItemId),
+      );
+    } else {
+      // Если создаем новый заказ, а такой amazonOrderId уже есть
+      if (existOrder) {
+        throw new HttpException(
+          `Order with same Amazon Order Id "${orderDto.amazonOrderId}" already exist`,
+          HttpStatus.OK,
+        );
+      }
+    }
+
+    await this.checkIfOrderItemsExist(amazonItemIds);
+
+    return existOrder;
+  }
+
+  private async checkIfOrderItemsExist(amazonItemIds: string[]) {
+    const existOrderItems: OrderItem[] = await this.orderItemsRepository.find({
+      where: { amazonItemId: In(amazonItemIds) },
+    });
+
+    if (existOrderItems.length) {
+      throw new HttpException(
+        `Order Items with same Amazon Item Id ${existOrderItems[0].amazonItemId} already exist`,
+        HttpStatus.OK,
+      );
+    }
+  }
+
+  private async getOrderIfExist(where: any): Promise<Orders> {
+    const existOrder = await this.ordersRepository.findOne({
+      where,
+      relations: ['items'],
+    });
+    if (!existOrder) {
+      throw new HttpException(`Order doesn't exist`, HttpStatus.OK);
+    }
+
+    return existOrder;
+  }
+
+  private getUniqFields = (array: any[], field?: string) => {
+    return [...new Set(array.map((item) => (field ? item[field] : item)))];
+  };
 }

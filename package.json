@@ -1,12 +1,13 @@
 {
   "name": "kryber-backaend",
-  "version": "0.0.1",
+  "version": "0.0.4",
   "description": "",
   "author": "",
   "license": "MIT",
   "scripts": {
     "prebuild": "rimraf dist",
-    "build": "nest build",
+    "build": "nest build && npm run copy-package",
+    "copy-package": "ncp ./package.json dist/package.json",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -72,6 +73,7 @@
     "@types/passport-jwt": "^3.0.3",
     "@types/supertest": "^2.0.8",
     "jest": "^24.9.0",
+    "ncp": "^2.0.0",
     "prettier": "^2.0.5",
     "supertest": "^4.0.2",
     "ts-jest": "^24.1.0",

@@ -5,9 +5,14 @@ import { GraingerItemsController } from './grainger-items.controller';
 import { GraingerItemsService } from './grainger-items.service';
 import { GraingerItem } from './grainger-items.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { CsvModule } from '@shared/csv/csv.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([GraingerItem]), SearchModule],
+  imports: [
+    TypeOrmModule.forFeature([GraingerItem]),
+    CsvModule,
+    SearchModule
+  ],
   controllers: [GraingerItemsController],
   providers: [GraingerItemsService, GraingerItemsSearchService],
   exports: [GraingerItemsService, GraingerItemsSearchService],

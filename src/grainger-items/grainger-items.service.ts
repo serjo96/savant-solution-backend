@@ -20,10 +20,14 @@ import { GetItemDto } from './dto/get-item.dto';
 import { CreateItemDto } from './dto/create-item-dto';
 import { EditItemDto } from './dto/edit-item.dto';
 import { Column, Workbook } from 'exceljs';
+import { CsvService } from '@shared/csv/csv.service';
+import { CsvCreateOrderDto } from '../orders/dto/csv-create-order.dto';
+import { CsvCreateGraingerItem } from './dto/csv-create-grainger-item';
 
 @Injectable()
 export class GraingerItemsService {
   constructor(
+    private readonly csvService: CsvService,
     @InjectRepository(GraingerItem)
     private readonly repository: Repository<GraingerItem>,
   ) {}
@@ -42,21 +46,31 @@ export class GraingerItemsService {
   }
 
   async uploadFromCsv(stream: Readable, user: User): Promise<GraingerItem[]> {
-    let items: any[] = await CSVToJSON({
-      headers: [
-        null,
-        'amazonSku',
-        'graingerItemNumber',
-        'graingerPackQuantity',
-        null,
-        null,
-        'graingerThreshold',
-        'status',
-      ],
-      delimiter: ';',
-    }).fromStream(stream);
+    const headers = [
+      null,
+      'amazonSku',
+      'graingerItemNumber',
+      'graingerPackQuantity',
+      null,
+      null,
+      'graingerThreshold',
+      'status',
+    ];
 
-    items = items.map((item) =>
+    const csvItems: CsvCreateGraingerItem[] = await this.csvService.uploadFromCsv<CsvCreateGraingerItem>(
+      stream,
+      headers,
+      ';',
+    );
+    if (
+      csvItems.some(
+        (orderItem) => !this.csvService.isValidCSVRow(orderItem, headers),
+      )
+    ) {
+      throw new HttpException(`Invalid CSV file`, HttpStatus.OK);
+    }
+
+    const items = csvItems.map((item) =>
       GraingerItem.create({
         ...item,
         status: ItemStatusEnum[item.status.toUpperCase()],
@@ -169,6 +183,9 @@ export class GraingerItemsService {
   }
 
   async save(data: CreateItemDto): Promise<GraingerItem> {
+    if (!data.amazonSku) {
+      throw new HttpException(`Amazon SKU Item required`, HttpStatus.OK);
+    }
     let existItem = await this.repository.findOne({
       amazonSku: data.amazonSku,
     });
