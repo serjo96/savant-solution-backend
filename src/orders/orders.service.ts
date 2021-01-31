@@ -39,15 +39,14 @@ export class OrdersService {
   private readonly logger = new Logger(OrdersService.name);
 
   constructor(
-    private readonly csvService: CsvService,
-    private readonly aiService: AiService,
-    private readonly graingerItemsService: GraingerItemsService,
     @InjectRepository(OrderItem)
     private readonly orderItemsRepository: Repository<OrderItem>,
     @InjectRepository(Orders)
     private readonly ordersRepository: Repository<Orders>,
-  ) {
-  }
+    private readonly aiService: AiService,
+    private readonly graingerItemsService: GraingerItemsService,
+    private readonly csvService: CsvService,
+  ) {}
 
   async find(where: any): Promise<Orders[]> {
     return this.ordersRepository.find(where);
@@ -335,6 +334,11 @@ export class OrdersService {
       const existOrder = orders.find(
         (order) => order.amazonOrderId === graingerOrder.amazonOrderId,
       );
+      const includesStatus = [
+        GraingerStatusEnum.Proceed,
+        GraingerStatusEnum.WaitForProceed,
+      ].includes(graingerOrder.status);
+
       if (!existOrder) {
         return;
       }
@@ -346,12 +350,7 @@ export class OrdersService {
         existOrder.status = OrderStatusEnum.ERROR;
       }
 
-      if (
-        [
-          GraingerStatusEnum.Proceed,
-          GraingerStatusEnum.WaitForProceed,
-        ].includes(graingerOrder.status)
-      ) {
+      if (includesStatus) {
         return;
       }
 

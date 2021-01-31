@@ -212,7 +212,11 @@ export class GraingerItemsService {
     if (errorMessage) {
       existItem.status = ItemStatusEnum.INACTIVE;
     }
-    return this.repository.save(item);
+    try {
+      return this.repository.save(item);
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   async updateStatus(

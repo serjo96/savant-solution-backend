@@ -21,6 +21,14 @@ export interface IJWTConfig {
   expiresIn: string;
 }
 
+export interface IElasticConfig {
+  node: string;
+  auth: {
+    username: string;
+    password: string;
+  };
+}
+
 @Injectable()
 export class ConfigService {
   private readonly envConfig: IEnvConfig;
@@ -69,6 +77,16 @@ export class ConfigService {
 
   get nodeEnv(): string {
     return this.envConfig.NODE_ENV as string;
+  }
+
+  get elasticConfig(): IElasticConfig {
+    return {
+      node: this.envConfig.ELASTICSEARCH_NODE as string,
+      auth: {
+        username: this.envConfig.ELASTICSEARCH_USERNAME as string,
+        password: this.envConfig.ELASTICSEARCH_PASSWORD as string,
+      },
+    };
   }
 
   get jwtConfig(): IJWTConfig {

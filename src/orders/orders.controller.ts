@@ -17,29 +17,29 @@ import {
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
 import { Readable } from 'stream';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { Buffer } from 'exceljs';
+import states from 'states-us';
+import { In } from 'typeorm';
 import { BadRequestException } from '../common/exceptions/bad-request';
 
-import { Roles } from '../common/decorators/roles';
 import { TransformInterceptor } from '../common/interceptors/TransformInterceptor';
+import { Roles } from '../common/decorators/roles';
 import { ValidationPipe } from '../common/Pipes/validation.pipe';
 import { SortWithPaginationQuery } from '../common/sort';
 import { EditOrderDto } from './dto/editOrder.dto';
 import { CreateOrderDto } from './dto/createOrderDto';
-import states from 'states-us';
-
-import { OrderStatusEnum } from './orders.entity';
-import { OrdersService } from './orders.service';
 import { GetOrderDto } from './dto/get-order.dto';
-import { CollectionResponse } from '../common/collection-response';
-import { Buffer } from 'exceljs';
 import { ChangeOrderStatusDto } from './dto/change-order-status.dto';
+
+import { CollectionResponse } from '../common/collection-response';
+import { OrderStatusEnum } from './orders.entity';
+import { OrdersSearchService } from './orders-search.service';
+import { OrdersService } from './orders.service';
 import { AiService } from '../ai/ai.service';
-import { GetItemDto } from '../grainger-items/dto/get-item.dto';
-import { In } from 'typeorm';
 
 @UseGuards(AuthGuard('jwt'))
 @Roles('user', 'admin')
@@ -50,8 +50,8 @@ export class OrdersController {
   constructor(
     private readonly ordersService: OrdersService,
     private aiService: AiService,
-  ) {
-  }
+    private readonly ordersSearchService: OrdersSearchService,
+  ) {}
 
   @Post()
   @UsePipes(new ValidationPipe())
@@ -67,7 +67,18 @@ export class OrdersController {
         id: user.id,
       },
     };
-    return await this.ordersService.save(orderData);
+    const response = await this.ordersService.save(orderData);
+    await this.ordersSearchService.save(response);
+    return response;
+  }
+
+  @Get('/full-search')
+  async searchOrders(
+    @Query() query: SortWithPaginationQuery,
+    @Req() req: Request,
+  ): Promise<any> {
+    const { user } = req;
+    return await this.ordersSearchService.search(query, user.id);
   }
 
   @Get('/search')
@@ -208,13 +219,15 @@ export class OrdersController {
       },
     };
 
-    return await this.ordersService.update(where, item);
+    const response = await this.ordersService.update(where, item);
+    await this.ordersSearchService.update(response);
+    return response;
   }
 
   @Delete(':id')
   @UseInterceptors(new TransformInterceptor(GetOrderDto))
   async removeOrder(
-    @Param() id: { id: string },
+    @Param() { id }: { id: string },
     @Req() req: Request,
   ): Promise<GetOrderDto> {
     const { user } = req;
@@ -224,6 +237,8 @@ export class OrdersController {
         id: user.id,
       },
     };
-    return await this.ordersService.delete(where);
+    const response = await this.ordersService.delete(where);
+    await this.ordersSearchService.delete(id);
+    return response;
   }
 }

@@ -1,21 +1,45 @@
 version: '3.1'
 
 services:
-  api:
-    env_file:
-      development.env
-    build:
-      context: .
-      dockerfile: Dockerfile
+#  api:
+#    env_file:
+#      development.env
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+#    ports:
+#      - 3000:3000
+#    depends_on:
+#      - elasticsearch
+#    links:
+#      - elasticsearch:elasticsearch
+#    volumes:
+#      - .:/usr/src/app
+#      - /usr/src/app/node_modules
+#    networks:
+#      - docker_elk
+
+  elasticsearch:
+    image: elasticsearch:6.5.0
     ports:
-      - 3000:3000
-    depends_on:
-      - postgres
-    links:
-      - postgres:postgres
-    volumes:
-      - .:/usr/src/app
-      - /usr/src/app/node_modules
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      - cluster.name=docker-cluster
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+
+
+  kibana:
+    image: kibana:6.5.0
+    ports:
+      - "5601:5601"
+
+
 
 #  postgres:
 #    image: postgres:alpine

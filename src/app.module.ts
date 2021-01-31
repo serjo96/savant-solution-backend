@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from './config/config.module';
 import { GraingerItemsModule } from './grainger-items/grainger-items.module';
 import { OrdersModule } from './orders/orders.module';
+import { SearchModule } from './search/search.module';
 import { AiModule } from './ai/ai.module';
 import { GraingerAccountsModule } from './grainger-accounts/grainger-accounts.module';
 import { AppController } from './app.controller';
@@ -20,6 +21,7 @@ import { AppController } from './app.controller';
     ConfigModule,
     GraingerItemsModule,
     OrdersModule,
+    SearchModule,
     AiModule,
     ScheduleModule.forRoot(),
     GraingerAccountsModule,

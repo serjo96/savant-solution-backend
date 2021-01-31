@@ -19,6 +19,7 @@ import { Roles } from '../common/decorators/roles';
 import { TransformInterceptor } from '../common/interceptors/TransformInterceptor';
 import { ValidationPipe } from '../common/Pipes/validation.pipe';
 import { SortWithPaginationQuery } from '../common/sort';
+import { GraingerItemsSearchService } from './grainger-items-search.service';
 
 import { GraingerItemsService } from './grainger-items.service';
 import { CollectionResponse } from '../common/collection-response';
@@ -36,12 +37,15 @@ import { ItemStatusEnum } from './grainger-items.entity';
 @Roles('user', 'admin')
 @Controller('grainger-items')
 export class GraingerItemsController {
-  constructor(private readonly itemsService: GraingerItemsService) {}
+  constructor(
+    private readonly itemsService: GraingerItemsService,
+    private readonly itemsSearchService: GraingerItemsSearchService,
+  ) {}
 
   @Post('/create')
   @UsePipes(new ValidationPipe())
   @UseInterceptors(new TransformInterceptor(GetItemDto))
-  add(
+  async add(
     @Req() req: Request,
     @Body() item: CreateItemDto,
   ): Promise<GetItemDto> {
@@ -52,7 +56,9 @@ export class GraingerItemsController {
         id: user.id,
       },
     };
-    return this.itemsService.save(itemData);
+    const response = await this.itemsService.save(itemData);
+    await this.itemsSearchService.save(response);
+    return response;
   }
 
   @Post('/upload')
@@ -65,7 +71,9 @@ export class GraingerItemsController {
     const stream = Readable.from(files.buffer.toString());
     const { user } = req;
     try {
-      return this.itemsService.uploadFromCsv(stream, user);
+      const response = await this.itemsService.uploadFromCsv(stream, user);
+      await this.itemsSearchService.save(response);
+      return response;
     } catch (error) {
       throw new BadRequestException(error);
     }
@@ -80,13 +88,13 @@ export class GraingerItemsController {
     return this.itemsService.exportToXlxs(res, statuses, user);
   }
 
-  @Get('/search')
+  @Get('/full-search')
   // @UseInterceptors(new TransformInterceptor(GetItemDto))
   searchAmazonSKU(
     @Query() query: SortWithPaginationQuery,
     @Req() { user }: Request,
   ): Promise<GetItemDto[]> {
-    return this.itemsService.findAllSku(user, query);
+    return this.itemsSearchService.search(query, user.id);
   }
 
   @Get(':id')
@@ -120,7 +128,9 @@ export class GraingerItemsController {
       },
     };
 
-    return this.itemsService.update(where, item);
+    const response = await this.itemsService.update(where, item);
+    await this.itemsSearchService.update(response);
+    return response;
   }
 
   @Put(':id/status')
@@ -144,9 +154,9 @@ export class GraingerItemsController {
 
   @Delete(':id')
   @UseInterceptors(new TransformInterceptor(GetItemDto))
-  removeItem(
+  async removeItem(
     @Req() req: Request,
-    @Param() id: { id: string },
+    @Param() { id }: { id: string },
   ): Promise<GetItemDto> {
     const { user } = req;
     const where = {
@@ -155,6 +165,8 @@ export class GraingerItemsController {
         id: user.id,
       },
     };
-    return this.itemsService.delete(where);
+    const response = await this.itemsService.delete(where);
+    await this.itemsSearchService.delete(id);
+    return response;
   }
 }

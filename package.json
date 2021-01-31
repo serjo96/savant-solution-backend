@@ -26,10 +26,12 @@
     "migration:revert": "yarn run typeorm migration:revert"
   },
   "dependencies": {
+    "@elastic/elasticsearch": "^7.10.0",
     "@hapi/joi": "^17.1.1",
     "@nestjs-modules/mailer": "^1.5.1",
     "@nestjs/common": "~7.5.5",
     "@nestjs/core": "7.5.5",
+    "@nestjs/elasticsearch": "^7.1.0",
     "@nestjs/jwt": "^7.1.0",
     "@nestjs/passport": "^7.1.0",
     "@nestjs/platform-express": "7.5.5",
