@@ -426,7 +426,7 @@ export class OrdersService {
     let amazonItemIds = orderDto.items.map((item) => item.amazonItemId);
 
     // Если редактируем существующий заказ
-    if (orderDto.id === existOrder.id) {
+    if (existOrder && orderDto.id === existOrder.id) {
       // Сверим все orderItem которые еще не были добавлены
       const existAmazonItemIds = existOrder.items.map(
         (orderItem) => orderItem.amazonItemId,
