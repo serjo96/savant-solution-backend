@@ -431,7 +431,7 @@ export class OrdersService {
       const existAmazonItemIds = existOrder.items.map(
         (orderItem) => orderItem.amazonItemId,
       );
-      const uniqAmazonItemIds = this.getUniqFields(existAmazonItemIds);
+      const uniqAmazonItemIds = this.getUniqFields(amazonItemIds);
       // Если среди присланных amazonItemId есть дубликаты
       if (uniqAmazonItemIds.length !== amazonItemIds.length) {
         throw new HttpException(
