@@ -7,6 +7,7 @@ export const checkRequiredItemFieldsReducer = (
   let errorMessage;
   if (
     !item?.graingerItemNumber ||
+    !item?.amazonSku ||
     !item?.graingerPackQuantity ||
     !item?.graingerThreshold ||
     !item?.graingerAccount
@@ -17,6 +18,7 @@ export const checkRequiredItemFieldsReducer = (
 
     errorMessage =
       [
+        !item?.amazonSku ? 'Amazon Sku' : '',
         !item?.graingerItemNumber ? 'Grainger Item Number' : '',
         !item?.graingerPackQuantity ? 'Grainger Pack Quantity' : '',
         !item?.graingerThreshold ? 'Grainger Threshold' : '',

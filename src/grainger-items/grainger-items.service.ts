@@ -162,6 +162,9 @@ export class GraingerItemsService {
   }
 
   async save(data: CreateItemDto): Promise<GraingerItem> {
+    if (!data.amazonSku) {
+      throw new HttpException(`Amazon SKU Item required`, HttpStatus.OK);
+    }
     let existItem = await this.repository.findOne({
       amazonSku: data.amazonSku,
     });
