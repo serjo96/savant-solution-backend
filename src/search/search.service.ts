@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
 
 interface ISearchResult<T> {
@@ -17,11 +17,13 @@ interface ISearchParams {
   index: string;
   offset?: number;
   count?: number;
+  userId?: string;
 }
 
 @Injectable()
 export class SearchService {
   constructor(private readonly elasticsearchService: ElasticsearchService) {}
+  private readonly logger = new Logger(ElasticsearchService.name);
 
   async createIndex<T>(data: any, index: string) {
     return this.elasticsearchService.index<ISearchResult<T>, T>({
@@ -63,20 +65,36 @@ export class SearchService {
     });
   }
 
-  async search<T>({ matchFields, index, offset, count }: ISearchParams) {
-    const { body } = await this.elasticsearchService.search<ISearchResult<T>>({
-      index,
-      from: offset,
-      size: count,
-      body: {
-        query: {
-          multi_match: {
-            ...matchFields,
+  async search<T>({
+    matchFields,
+    index,
+    offset,
+    count,
+    userId,
+  }: ISearchParams) {
+    try {
+      const { body } = await this.elasticsearchService.search<ISearchResult<T>>(
+        {
+          index,
+          from: offset,
+          size: count,
+          body: {
+            query: {
+              multi_match: {
+                ...matchFields,
+                type: 'most_fields',
+              },
+            },
           },
         },
-      },
-    });
-    const hits = body.hits.hits;
-    return hits.map((item) => item._source);
+      );
+      const hits = body.hits.hits;
+      return {
+        result: hits.map((item) => item._source),
+        total: body.hits.total,
+      };
+    } catch (error) {
+      this.logger.error(error);
+    }
   }
 }
