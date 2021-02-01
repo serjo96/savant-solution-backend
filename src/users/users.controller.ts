@@ -56,19 +56,12 @@ export class UsersController {
   async removeUser(
     @Param() { id }: { id: string },
     @Req() req: Request,
-  ): Promise<{ data: User[] }> {
+  ): Promise<any> {
     const { user } = req;
-    let deletedUser;
     if (user.id === id) {
       throw new HttpException('You can delete yourself', HttpStatus.OK);
     }
-    try {
-      await this.usersService.removeUser(id);
-      deletedUser = await this.usersService.findById(id, { withDeleted: true });
-    } catch (error) {
-      throw new BadRequestException(error);
-    }
-    return deletedUser;
+    return this.usersService.removeUser(id);
   }
 
   @Put(':id')
