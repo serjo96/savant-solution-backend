@@ -23,7 +23,8 @@
     "migration:generate": "yarn run typeorm migration:generate -n",
     "migration:create": "yarn run typeorm migration:create -n",
     "migration:run": "yarn run typeorm migration:run",
-    "migration:revert": "yarn run typeorm migration:revert"
+    "migration:revert": "yarn run typeorm migration:revert",
+    "version-patch": "npm version patch"
   },
   "dependencies": {
     "@elastic/elasticsearch": "^7.10.0",
