@@ -12,8 +12,8 @@ export class GraingerAccountsService {
   ) {
   }
 
-  getAll(): Promise<GraingerAccount[]> {
-    return this.repository.find();
+  getAll(where?: any): Promise<GraingerAccount[]> {
+    return this.repository.find(where);
   }
 
   getById(id: string, where?: any): Promise<GraingerAccount> {

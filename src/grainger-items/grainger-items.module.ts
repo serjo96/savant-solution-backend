@@ -6,11 +6,13 @@ import { GraingerItemsService } from './grainger-items.service';
 import { GraingerItem } from './grainger-items.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CsvModule } from '@shared/csv/csv.module';
+import { GraingerAccountsModule } from '../grainger-accounts/grainger-accounts.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([GraingerItem]),
     CsvModule,
+    GraingerAccountsModule,
     SearchModule
   ],
   controllers: [GraingerItemsController],

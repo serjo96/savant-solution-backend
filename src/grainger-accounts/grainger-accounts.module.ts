@@ -8,6 +8,7 @@ import { AiModule } from '../ai/ai.module';
 @Module({
   imports: [TypeOrmModule.forFeature([GraingerAccount]), AiModule],
   controllers: [GraingerAccountsController],
-  providers: [GraingerAccountsService]
+  providers: [GraingerAccountsService],
+  exports: [GraingerAccountsService]
 })
 export class GraingerAccountsModule {}
