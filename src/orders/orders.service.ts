@@ -361,20 +361,19 @@ export class OrdersService {
       }
 
       graingerOrder.graingerOrders.forEach((graingerItem) => {
-        let existItem = existOrder.items.find(
-          (item) =>
-            item.graingerItem?.graingerItemNumber ===
-            graingerItem.graingerItemNumber,
-        );
-        if (!existItem) {
-          return;
-        }
-        existItem = Object.assign(existItem, {
-          graingerWebNumber: graingerItem.g_web_number,
-          graingerOrderId: graingerItem.graingerOrderId,
-        });
+        graingerItem.items.forEach((graingerItemNumber) => {
+          const existItem = existOrder.items.find(
+            (item) =>
+              item.graingerItem?.graingerItemNumber === graingerItemNumber,
+          );
+          if (!existItem) {
+            return;
+          }
+          existItem.graingerWebNumber = graingerItem.g_web_number;
+          existItem.graingerOrderId = graingerItem.graingerOrderId;
 
-        existOrder.items = [...existOrder.items, existItem];
+          existOrder.items = [...existOrder.items, existItem];
+        });
       });
     });
 
