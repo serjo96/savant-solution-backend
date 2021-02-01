@@ -91,6 +91,6 @@ export class Orders extends BaseEntity {
   @OneToMany(() => OrderItem, (v) => v.order, { cascade: true })
   items: OrderItem[];
 
-  @ManyToOne(() => User, (user) => user.orders, { eager: true })
+  @ManyToOne(() => User, (user) => user.orders, { eager: true, onDelete: 'CASCADE' })
   user: User;
 }

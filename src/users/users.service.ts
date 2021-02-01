@@ -74,6 +74,6 @@ export class UsersService {
   }
 
   async removeUser(id) {
-    return await this.userRepository.softDelete({ id });
+    return await this.userRepository.delete({ id });
   }
 }
