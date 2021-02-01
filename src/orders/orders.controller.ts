@@ -51,7 +51,8 @@ export class OrdersController {
     private readonly ordersService: OrdersService,
     private aiService: AiService,
     private readonly ordersSearchService: OrdersSearchService,
-  ) {}
+  ) {
+  }
 
   @Post()
   @UsePipes(new ValidationPipe())
@@ -101,7 +102,32 @@ export class OrdersController {
     const stream = Readable.from(files.buffer.toString());
     const { user } = req;
     try {
-      return this.ordersService.uploadFromCsv(stream, user);
+      const orders = await this.ordersService.uploadFromCsv(stream, user);
+      const readyToProceedOrders = orders.filter(
+        (order) => order.status === OrderStatusEnum.PROCEED,
+      );
+      try {
+        const { error } = await this.aiService.addOrdersToAI(
+          readyToProceedOrders,
+        );
+        if (error) {
+          throw new Error(`[AI Service] ${error.message}`);
+        }
+        this.logger.debug(
+          `[Change Order Status] ${readyToProceedOrders.length} orders went successfully to AI`,
+        );
+        return orders;
+      } catch ({ message }) {
+        const where = {
+          id: In(readyToProceedOrders.map((order) => order.id)),
+          user: {
+            id: user.id,
+          },
+        };
+        await this.ordersService.updateStatus(where, OrderStatusEnum.MANUAL);
+        this.logger.debug(message);
+        throw new HttpException(message, HttpStatus.OK);
+      }
     } catch (error) {
       throw new BadRequestException(error);
     }

@@ -265,7 +265,7 @@ export class OrdersService {
 
   async updateStatus(
     where: {
-      id: string;
+      id: any;
       user: {
         id: string;
       };
