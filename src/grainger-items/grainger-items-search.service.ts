@@ -28,15 +28,15 @@ export class GraingerItemsSearchService {
   }
 
   save<GraingerItem>(data: GraingerItem | Array<GraingerItem>): any {
-    let response;
-    if (Array.isArray(data)) {
-      data.forEach((gItem: GraingerItem) => {
-        response = this.searchService.createIndex(gItem, this.elasticIndex);
-      });
-    } else {
-      response = this.searchService.createIndex(data, this.elasticIndex);
-    }
-    return response;
+    // let response;
+    // if (Array.isArray(data)) {
+    //   data.forEach((gItem: GraingerItem) => {
+    //     response = this.searchService.createIndex(gItem, this.elasticIndex);
+    //   });
+    // } else {
+    // response = this.searchService.createIndex(data, this.elasticIndex);
+    // }
+    return this.searchService.createIndex(data, this.elasticIndex);
   }
 
   update(data: Partial<GraingerItem>) {

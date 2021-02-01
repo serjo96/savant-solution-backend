@@ -71,9 +71,9 @@ export class GraingerItemsController {
     const stream = Readable.from(files.buffer.toString());
     const { user } = req;
     try {
-      const response = await this.itemsService.uploadFromCsv(stream, user);
-      await this.itemsSearchService.save(response);
-      return response;
+      // const response = await this.itemsService.uploadFromCsv(stream, user);
+      // this.itemsSearchService.save(response);
+      return await this.itemsService.uploadFromCsv(stream, user);
     } catch (error) {
       throw new BadRequestException(error);
     }
