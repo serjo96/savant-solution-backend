@@ -1,9 +1,7 @@
-import { IsEmail, IsString } from 'class-validator';
-import { CreateGraingerAccountDto } from './create-grainger-account.dto';
+import { IsString } from 'class-validator';
 
 export class BaseGraingerAccountDto  {
   @IsString()
-  @IsEmail()
   email: string;
 
   @IsString()

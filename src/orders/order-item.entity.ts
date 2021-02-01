@@ -70,6 +70,6 @@ export class OrderItem extends BaseEntity {
   @ManyToOne(() => GraingerItem, (v) => v.orderItems, { eager: true })
   graingerItem: GraingerItem;
 
-  @ManyToOne(() => Orders, (v) => v.items)
+  @ManyToOne(() => Orders, (v) => v.items, { onDelete: 'CASCADE' })
   order: Orders;
 }

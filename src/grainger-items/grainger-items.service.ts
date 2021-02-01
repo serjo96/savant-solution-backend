@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToClass } from 'class-transformer';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { paginator } from '../common/paginator';
 import { SortWithPaginationQuery, sort } from '../common/sort';
 import { filter } from '../common/filter';
@@ -23,10 +23,13 @@ import { Column, Workbook } from 'exceljs';
 import { CsvService } from '@shared/csv/csv.service';
 import { CsvCreateOrderDto } from '../orders/dto/csv-create-order.dto';
 import { CsvCreateGraingerItem } from './dto/csv-create-grainger-item';
+import { GraingerAccountsService } from '../grainger-accounts/grainger-accounts.service';
+import csv = require('csvtojson/index');
 
 @Injectable()
 export class GraingerItemsService {
   constructor(
+    private readonly graingerAccountService: GraingerAccountsService,
     private readonly csvService: CsvService,
     @InjectRepository(GraingerItem)
     private readonly repository: Repository<GraingerItem>,
@@ -55,20 +58,28 @@ export class GraingerItemsService {
       null,
       'graingerThreshold',
       'status',
+      'graingerLogin',
     ];
 
     const csvItems: CsvCreateGraingerItem[] = await this.csvService.uploadFromCsv<CsvCreateGraingerItem>(
       stream,
       headers,
-      ';',
     );
     if (
       csvItems.some(
-        (orderItem) => !this.csvService.isValidCSVRow(orderItem, headers),
+        (orderItem) =>
+          !this.csvService.isValidCSVRow(
+            orderItem,
+            headers.slice(0, headers.length - 2),
+          ), // Не считаем кастомный graingerLogin
       )
     ) {
       throw new HttpException(`Invalid CSV file`, HttpStatus.OK);
     }
+
+    const graingerAccounts = await this.graingerAccountService.getAll({
+      where: { email: In(this.getUniqFields(csvItems, 'graingerLogin')) },
+    });
 
     const items = csvItems.map((item) =>
       GraingerItem.create({
@@ -76,6 +87,9 @@ export class GraingerItemsService {
         status: ItemStatusEnum[item.status.toUpperCase()],
         graingerPackQuantity: +item.graingerPackQuantity,
         graingerThreshold: +item.graingerThreshold,
+        graingerAccount: graingerAccounts.find(
+          (i) => i.email === item.graingerLogin,
+        ),
         user,
       }),
     );
@@ -240,4 +254,8 @@ export class GraingerItemsService {
     existItem.status = status;
     return this.repository.save(existItem);
   }
+
+  private getUniqFields = (array: any[], field?: string) => {
+    return [...new Set(array.map((item) => (field ? item[field] : item)))];
+  };
 }

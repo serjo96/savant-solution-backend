@@ -55,6 +55,6 @@ export class GraingerItem extends BaseEntity {
   @OneToMany(() => OrderItem, (v) => v.graingerItem)
   orderItems?: OrderItem[];
 
-  @ManyToOne(() => User, (user) => user.items, { eager: true })
+  @ManyToOne(() => User, (user) => user.items, { eager: true, onDelete: 'CASCADE' })
   user: User;
 }

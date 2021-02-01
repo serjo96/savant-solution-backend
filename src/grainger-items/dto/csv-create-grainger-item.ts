@@ -4,4 +4,5 @@ export interface CsvCreateGraingerItem {
   graingerPackQuantity: number;
   graingerThreshold: number;
   status: string;
+  graingerLogin?: string;
 }

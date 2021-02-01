@@ -40,26 +40,24 @@ export class AiService {
   }
 
   addOrdersToAI(orders: Orders[]): Promise<ErrorResponse> {
-    const aiOrders: SendAIOrder[] = orders
-      .map(
-        (order) =>
-          ({
-            amazonOrderId: order.amazonOrderId,
-            address: {
-              contact_name: order.recipientName,
-              ship_address: order.shipAddress,
-              postal_code: order.shipPostalCode,
-              city: order.shipCity,
-              state: order.shipState,
-            },
-            items: order.items.map((orderItem) => ({
-              graingerItemNumber: orderItem.graingerItem.graingerItemNumber,
-              graingerQuantity: orderItem.amazonQuantity?.toString(),
-              account_id: orderItem.graingerItem.graingerAccount.id,
-            })),
-          } as SendAIOrder),
-      )
-      .slice(0, 1);
+    const aiOrders: SendAIOrder[] = orders.map(
+      (order) =>
+        ({
+          amazonOrderId: order.amazonOrderId,
+          address: {
+            contact_name: order.recipientName,
+            ship_address: order.shipAddress,
+            postal_code: order.shipPostalCode,
+            city: order.shipCity,
+            state: order.shipState,
+          },
+          items: order.items.map((orderItem) => ({
+            graingerItemNumber: orderItem.graingerItem.graingerItemNumber,
+            graingerQuantity: orderItem.amazonQuantity?.toString(),
+            account_id: orderItem.graingerItem.graingerAccount.id,
+          })),
+        } as SendAIOrder),
+    );
 
     return this.http
       .post(`${this.configService.AIURL}/orders`, { orders: aiOrders })
