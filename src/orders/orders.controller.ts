@@ -101,35 +101,31 @@ export class OrdersController {
   ): Promise<GetOrderDto[]> {
     const stream = Readable.from(files.buffer.toString());
     const { user } = req;
+    const orders = await this.ordersService.uploadFromCsv(stream, user);
+    const readyToProceedOrders = orders.filter(
+      (order) => order.status === OrderStatusEnum.PROCEED,
+    );
     try {
-      const orders = await this.ordersService.uploadFromCsv(stream, user);
-      const readyToProceedOrders = orders.filter(
-        (order) => order.status === OrderStatusEnum.PROCEED,
+      const { error } = await this.aiService.addOrdersToAI(
+        readyToProceedOrders,
       );
-      try {
-        const { error } = await this.aiService.addOrdersToAI(
-          readyToProceedOrders,
-        );
-        if (error) {
-          throw new Error(`[AI Service] ${error.message}`);
-        }
-        this.logger.debug(
-          `[Change Order Status] ${readyToProceedOrders.length} orders went successfully to AI`,
-        );
-        return orders;
-      } catch ({ message }) {
-        const where = {
-          id: In(readyToProceedOrders.map((order) => order.id)),
-          user: {
-            id: user.id,
-          },
-        };
-        await this.ordersService.updateStatus(where, OrderStatusEnum.MANUAL);
-        this.logger.debug(message);
-        throw new HttpException(message, HttpStatus.OK);
+      if (error) {
+        throw new Error(`[AI Service] ${error.message}`);
       }
-    } catch (error) {
-      throw new BadRequestException(error);
+      this.logger.debug(
+        `[Change Order Status] ${readyToProceedOrders.length} orders went successfully to AI`,
+      );
+      return orders;
+    } catch ({ message }) {
+      const where = {
+        id: In(readyToProceedOrders.map((order) => order.id)),
+        user: {
+          id: user.id,
+        },
+      };
+      await this.ordersService.updateStatus(where, OrderStatusEnum.MANUAL);
+      this.logger.debug(message);
+      throw new HttpException(message, HttpStatus.OK);
     }
   }
 
