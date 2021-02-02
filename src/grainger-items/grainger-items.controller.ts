@@ -71,9 +71,9 @@ export class GraingerItemsController {
     const stream = Readable.from(files.buffer.toString());
     const { user } = req;
     try {
-      // const response = await this.itemsService.uploadFromCsv(stream, user);
-      // this.itemsSearchService.save(response);
-      return await this.itemsService.uploadFromCsv(stream, user);
+      const response = await this.itemsService.uploadFromCsv(stream, user);
+      this.itemsSearchService.save(response);
+      return response;
     } catch (error) {
       throw new BadRequestException(error);
     }
@@ -149,7 +149,9 @@ export class GraingerItemsController {
       },
     };
 
-    return this.itemsService.updateStatus(where, status);
+    const result = await this.itemsService.updateStatus(where, status);
+    await this.itemsSearchService.update(result);
+    return result;
   }
 
   @Delete(':id')
