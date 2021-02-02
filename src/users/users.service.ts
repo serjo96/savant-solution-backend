@@ -69,7 +69,7 @@ export class UsersService {
       const updated: any = Object.assign(toUpdate, data);
       return this.userRepository.save(updated);
     } catch (error) {
-      throw new BadRequestException(error);
+      throw new HttpException(error, HttpStatus.OK);
     }
   }
 
