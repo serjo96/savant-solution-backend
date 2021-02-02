@@ -24,7 +24,6 @@ import { Readable } from 'stream';
 import { Buffer } from 'exceljs';
 import states from 'states-us';
 import { In } from 'typeorm';
-import { BadRequestException } from '../common/exceptions/bad-request';
 
 import { TransformInterceptor } from '../common/interceptors/TransformInterceptor';
 import { Roles } from '../common/decorators/roles';

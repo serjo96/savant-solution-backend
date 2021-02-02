@@ -1,10 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { toUserDto } from '@shared/mapper.service';
-import * as bcrypt from 'bcrypt';
 import { FindOneOptions, Repository } from 'typeorm';
-
-import { BadRequestException } from '../common/exceptions/bad-request';
 
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
