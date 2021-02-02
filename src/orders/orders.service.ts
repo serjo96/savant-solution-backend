@@ -162,6 +162,7 @@ export class OrdersService {
       'shipPostalCode',
     ];
 
+    // Прочитаем CSV и проверим что в ней есть все необходимые поля
     const orderItemsDto: CsvCreateOrderDto[] = await this.csvService.uploadFromCsv<CsvCreateOrderDto>(
       stream,
       headers,
@@ -174,23 +175,28 @@ export class OrdersService {
       throw new HttpException(`Invalid CSV file`, HttpStatus.OK);
     }
 
-    const uniqAmazonItemIds: string[] = this.getUniqFields(
-      orderItemsDto,
-      'amazonItemId',
-    );
+    // Проверка что таких amazonItemId еще не существует
+    const uniqAmazonItemIds = this.getUniqFields(orderItemsDto, 'amazonItemId');
+    await this.checkIfOrderItemsExist(uniqAmazonItemIds);
 
-    const uniqAmazonOrderIds: string[] = this.getUniqFields(
+    // Подгрузим уникальные заказы чтобы не создавать их повторно
+    const uniqAmazonOrderIds = this.getUniqFields(
       orderItemsDto,
       'amazonOrderId',
     );
-
-    await this.checkIfOrderItemsExist(uniqAmazonItemIds);
-
     const orders: Orders[] = await this.ordersRepository.find({
       where: { amazonOrderId: In(uniqAmazonOrderIds) },
       relations: ['items'],
     });
 
+    // Подгрузим все необходимые graingerAccount чтобы присвоить в graingerItems у которых совпадает логин
+    const uniqAmazonSkus = this.getUniqFields(orderItemsDto, 'amazonSku');
+    const existActiveGraingerItems = await this.graingerItemsService.find({
+      amazonSku: In(uniqAmazonSkus),
+      status: ItemStatusEnum.ACTIVE,
+    });
+
+    // Пробежимся по DTO и добавим все заказы и детали заказа, которых еще не существует
     for (const dtoOrder of orderItemsDto) {
       let existAmazonOrder: Orders = orders.find(
         (amazonOrder) => amazonOrder.amazonOrderId === dtoOrder.amazonOrderId,
@@ -205,21 +211,21 @@ export class OrdersService {
       let existOrderItem: OrderItem = existAmazonOrder.items.find(
         (i) => i.amazonItemId === dtoOrder.amazonItemId,
       );
-      if (!existOrderItem) {
-        existOrderItem = OrderItem.create(dtoOrder) as any;
-        existOrderItem.graingerItem = await this.graingerItemsService.findOne({
-          amazonSku: existOrderItem.amazonSku,
-          status: ItemStatusEnum.ACTIVE,
-        });
-        const { errorMessage } = checkRequiredItemFieldsReducer(
-          existOrderItem.graingerItem,
-        );
-        if (errorMessage) {
-          existAmazonOrder.status = OrderStatusEnum.MANUAL;
-          existAmazonOrder.note = (existAmazonOrder.note ?? '') + errorMessage;
-        }
-        existAmazonOrder.items.push(existOrderItem);
+      if (existOrderItem) {
+        continue;
       }
+      existOrderItem = OrderItem.create(dtoOrder) as any;
+      existOrderItem.graingerItem = existActiveGraingerItems.find(
+        (item) => (item.amazonSku = existOrderItem.amazonSku),
+      );
+      const { errorMessage } = checkRequiredItemFieldsReducer(
+        existOrderItem.graingerItem,
+      );
+      if (errorMessage) {
+        existAmazonOrder.status = OrderStatusEnum.MANUAL;
+        existAmazonOrder.note = (existAmazonOrder.note ?? '') + errorMessage;
+      }
+      existAmazonOrder.items.push(existOrderItem);
     }
 
     // Если из CSV приходят названия штатов апперкейсом, нужно привести к общему виду
@@ -355,20 +361,19 @@ export class OrdersService {
       }
 
       graingerOrder.graingerOrders.forEach((graingerItem) => {
-        let existItem = existOrder.items.find(
-          (item) =>
-            item.graingerItem?.graingerItemNumber ===
-            graingerItem.graingerItemNumber,
-        );
-        if (!existItem) {
-          return;
-        }
-        existItem = Object.assign(existItem, {
-          graingerWebNumber: graingerItem.g_web_number,
-          graingerOrderId: graingerItem.graingerOrderId,
-        });
+        graingerItem.items.forEach((graingerItemNumber) => {
+          const existItem = existOrder.items.find(
+            (item) =>
+              item.graingerItem?.graingerItemNumber === graingerItemNumber,
+          );
+          if (!existItem) {
+            return;
+          }
+          existItem.graingerWebNumber = graingerItem.g_web_number;
+          existItem.graingerOrderId = graingerItem.graingerOrderId;
 
-        existOrder.items = [...existOrder.items, existItem];
+          existOrder.items = [...existOrder.items, existItem];
+        });
       });
     });
 

@@ -9,8 +9,8 @@ export class GetGraingerOrder {
   amazonOrderId: string;
   status: GraingerStatusEnum;
   graingerOrders: {
-    graingerItemNumber: string;
     graingerOrderId: string;
     g_web_number: string;
+    items: string[]; // graingerItemNumber
   }[];
 }

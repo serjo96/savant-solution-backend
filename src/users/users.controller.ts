@@ -92,7 +92,7 @@ export class UsersController {
     try {
       editedUser = await this.usersService.editUser(id, body);
     } catch (error) {
-      throw new BadRequestException(error);
+      throw new HttpException(error, HttpStatus.OK);
     }
 
     return editedUser;

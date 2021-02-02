@@ -56,8 +56,8 @@ export class AuthService {
     try {
       user = await this.userService.create(userDto);
       token = this.jwtService.createUserToken(user);
-    } catch (err) {
-      throw new BadRequestException(err);
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.OK);
     }
     return {
       user: new UserClassResponseDto(user),

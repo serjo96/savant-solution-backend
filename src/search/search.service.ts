@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
 import { BadRequestException } from '../common/exceptions/bad-request';
 
@@ -96,7 +96,7 @@ export class SearchService {
       };
     } catch (error) {
       this.logger.error(error);
-      throw new BadRequestException();
+      throw new HttpException(error, HttpStatus.OK);
     }
   }
 }
