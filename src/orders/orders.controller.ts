@@ -123,7 +123,10 @@ export class OrdersController {
           id: user.id,
         },
       };
-      const result = await this.ordersService.updateStatus(where, OrderStatusEnum.MANUAL);
+      const result = await this.ordersService.updateStatus(
+        where,
+        OrderStatusEnum.MANUAL,
+      );
       await this.ordersSearchService.update(result);
       this.logger.debug(message);
       throw new HttpException(message, HttpStatus.OK);
