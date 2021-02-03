@@ -9,10 +9,7 @@ export class OrdersSearchService {
   constructor(private readonly searchService: SearchService) {}
   elasticIndex = 'orders';
 
-  async search(
-    query: SortWithPaginationQuery | any,
-    userId?: string,
-  ): Promise<any> {
+  search(query: SortWithPaginationQuery | any, userId?: string): Promise<any> {
     const clause: any = {
       offset: query.offset,
       limit: query.count,
@@ -44,7 +41,7 @@ export class OrdersSearchService {
     return response;
   }
 
-  update(data: Partial<Orders>) {
+  update(data: Partial<Orders>): Promise<any> {
     return this.searchService.update<Orders>(data, this.elasticIndex);
   }
 
