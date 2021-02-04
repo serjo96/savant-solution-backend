@@ -28,11 +28,15 @@ import { Interval } from '@nestjs/schedule';
 import { AiService } from '../ai/ai.service';
 import { GraingerStatusEnum } from '../ai/dto/get-grainger-order';
 import { User } from '@user/users.entity';
-import { ItemStatusEnum } from '../grainger-items/grainger-items.entity';
+import {
+  GraingerItem,
+  ItemStatusEnum,
+} from '../grainger-items/grainger-items.entity';
 import { GraingerItemsService } from '../grainger-items/grainger-items.service';
 import { filter } from '../common/filter';
 import { CsvService } from '@shared/csv/csv.service';
 import { CsvCreateOrderDto } from './dto/csv-create-order.dto';
+import { GraingerAccount } from '../grainger-accounts/grainger-account.entity';
 
 @Injectable()
 export class OrdersService {
@@ -46,7 +50,8 @@ export class OrdersService {
     private readonly aiService: AiService,
     private readonly graingerItemsService: GraingerItemsService,
     private readonly csvService: CsvService,
-  ) {}
+  ) {
+  }
 
   async find(where: any): Promise<Orders[]> {
     return this.ordersRepository.find(where);
@@ -85,44 +90,101 @@ export class OrdersService {
     statuses: { label: string; value: OrderStatusEnum }[],
     user: User,
   ) {
-    let allItems: any = await this.getAll({
-      user: {
-        id: user.id,
-      },
-    });
+    let allItems: any = await this.ordersRepository
+      .createQueryBuilder('orders')
+      .leftJoin(User, 'users', 'users.id = orders.userId')
+      .leftJoin(OrderItem, 'order-items', 'order-items.orderId = orders.id')
+      .leftJoin(
+        GraingerItem,
+        'grainger-items',
+        'grainger-items.id = order-items.graingerItemId',
+      )
+      .leftJoin(
+        GraingerAccount,
+        'grainger-account',
+        'grainger-account.id = grainger-items.graingerAccountId',
+      )
+      .where('orders.user.id=:id', { id: user.id })
+      .select(['orders', 'order-items', 'users', 'grainger-items', 'grainger-account'])
+      .getRawMany();
+    // let allItems: any = await this.getAll({
+    //   user: {
+    //     id: user.id,
+    //   },
+    // });
 
     const statusesDict = statuses.reduce(
       (acc, curr) => ({ ...acc, [curr.value]: curr.label }),
       {},
     );
 
-    allItems = allItems.result.map((order) => ({
+    allItems = allItems.map((order) => ({
       ...order,
-      status: statusesDict[order.status],
+      orders_status: statusesDict[order.orders_status],
+      graingerQuantity:
+        order['order-items_amazonQuantity'] *
+        (order[`grainger-items_graingerPackQuantity`] ?? 0),
     }));
 
     const workbook = new Workbook();
     const worksheet = workbook.addWorksheet('Orders');
     worksheet.columns = [
-      { header: 'ID', key: 'id', width: 40 },
-      { header: 'Amazon Oder ID', key: 'amazonOrderId', width: 40 },
-      // { header: 'Amazon Item ID', key: 'amazonItemId', width: 40 },
-      // { header: 'Amazon Quantity', key: 'amazonQuantity', width: 20 },
-      // { header: 'Grainger Ship Date', key: 'graingerShipDate', width: 20 },
-      // {
-      //   header: 'Grainger Tracking Number',
-      //   key: 'graingerTrackingNumber',
-      //   width: 20,
-      // },
-      // { header: 'Grainger Ship Method', key: 'graingerShipMethod', width: 20 },
-      // { header: 'Amazon SKU', key: 'amazonSku', width: 20 },
-      // { header: 'Recipient Name', key: 'recipientName', width: 20 },
-      { header: 'Order Status', key: 'status', width: 20 },
-      // { header: 'Grainger Account', key: 'graingerAccountId', width: 20 },
-      // { header: 'Grainger Web Number', key: 'graingerWebNumber', width: 20 },
-      // { header: 'Grainger Order ID', key: 'graingerOrderId', width: 40 },
-      // { header: 'Order date', key: 'orderDate', width: 20 },
-      { header: 'Note', key: 'note', width: 20 },
+      { header: 'Amazon Order ID', key: 'orders_amazonOrderId', width: 20 },
+      { header: 'Amazon Item ID', key: 'order-items_amazonItemId', width: 20 },
+      {
+        header: 'Amazon Quantity',
+        key: 'order-items_amazonQuantity',
+        width: 20,
+      },
+      { header: 'Grainger Quantity', key: 'graingerQuantity', width: 20 }, // нужно считать
+      { header: 'Login', key: 'users_email', width: 20 }, // нужно считать
+      { header: 'Amazon Account Name', key: 'users_name', width: 20 }, // нужно считать
+      {
+        header: 'Grainger ItemNumber',
+        key: 'grainger-items_graingerItemNumber',
+        width: 20,
+      },
+      {
+        header: 'Grainger PACKQTY',
+        key: 'grainger-items_graingerPackQuantity',
+        width: 20,
+      },
+      {
+        header: 'Grainger Threshold',
+        key: 'grainger-items_graingerThreshold',
+        width: 20,
+      },
+      {
+        header: 'Grainger Ship Date',
+        key: 'order-items_graingerShipDate',
+        width: 20,
+      },
+      {
+        header: 'Grainger Tracking Number',
+        key: 'order-items_graingerTrackingNumber',
+        width: 20,
+      },
+      {
+        header: 'Grainger Ship Method',
+        key: 'order-items_graingerShipMethod',
+        width: 20,
+      },
+      { header: 'Amazon SKU', key: 'order-items_amazonSku', width: 20 },
+      { header: 'Recipient Name', key: 'orders_recipientName', width: 20 },
+      { header: 'Order Status', key: 'orders_status', width: 20 },
+      { header: 'Grainger Account', key: 'grainger-account_email', width: 20 },
+      {
+        header: 'Grainger Web Number',
+        key: 'order-items_graingerWebNumber',
+        width: 20,
+      },
+      {
+        header: 'Grainger Order ID',
+        key: 'order-items_graingerOrderId',
+        width: 20,
+      },
+      { header: 'Order date', key: 'orders_orderDate', width: 20 },
+      { header: 'Note', key: 'order-items_note', width: 20 },
     ] as Array<Column>;
     worksheet.addRows(allItems);
 
