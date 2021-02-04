@@ -1,11 +1,14 @@
 import { Controller, Get } from '@nestjs/common';
-import { fsReadFile } from 'ts-loader/dist/utils';
+import { ConfigService } from './config/config.service';
 
 @Controller()
 export class AppController {
 
+  constructor(private readonly configService: ConfigService) {
+  }
+
   @Get()
   healthCheck() {
-    return `Version: ${JSON.parse(fsReadFile('package.json')).version}`;
+    return `Version: ${this.configService.version}`;
   }
 }

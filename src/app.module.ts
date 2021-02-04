@@ -23,7 +23,6 @@ import { AppController } from './app.controller';
     OrdersModule,
     SearchModule,
     AiModule,
-    ScheduleModule.forRoot(),
     GraingerAccountsModule,
   ],
   controllers: [AppController]

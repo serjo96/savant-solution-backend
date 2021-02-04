@@ -2,6 +2,7 @@ import * as Joi from '@hapi/joi';
 import { Injectable } from '@nestjs/common';
 import * as dotenv from 'dotenv';
 import { existsSync, readFileSync } from 'fs';
+import { fsReadFile } from 'ts-loader/dist/utils';
 
 export interface IEnvConfig {
   [key: string]: string | number;
@@ -41,7 +42,9 @@ export class ConfigService {
       config = dotenv.parse(readFileSync(filePath));
     }
 
-    config = { ...config, ...process.env };
+    const version = JSON.parse(fsReadFile('package.json')).version;
+
+    config = { ...config, ...process.env, version };
     this.envConfig = this.validateInput(config);
   }
 
@@ -69,6 +72,10 @@ export class ConfigService {
 
   get AIURL(): string {
     return this.envConfig.AI_URL as string;
+  }
+
+  get version(): string {
+    return this.envConfig.version as string;
   }
 
   get dbURL(): string {
