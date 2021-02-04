@@ -26,43 +26,55 @@ export class SearchService {
   private readonly logger = new Logger(ElasticsearchService.name);
 
   async createIndex<T>(data: any, index: string) {
-    return await this.elasticsearchService.index<ISearchResult<T>, T>({
-      index,
-      body: data,
-    });
+    try {
+      return await this.elasticsearchService.index<ISearchResult<T>, T>({
+        index,
+        body: data,
+      });
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
-  async update<T>(data: any, index: string) {
+  async update<T>(data: any, index: string): Promise<any> {
     const script = Object.entries(data).reduce((result, [key, value]) => {
       return `${result} ctx._source.${key}='${value}';`;
     }, '');
 
-    return this.elasticsearchService.updateByQuery({
-      index,
-      body: {
-        query: {
-          match: {
-            id: data.id,
+    try {
+      return await this.elasticsearchService.updateByQuery({
+        index,
+        body: {
+          query: {
+            match: {
+              id: data.id,
+            },
+          },
+          script: {
+            inline: script,
           },
         },
-        script: {
-          inline: script,
-        },
-      },
-    });
+      });
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   async remove(entityId: string, index: string) {
-    this.elasticsearchService.deleteByQuery({
-      index,
-      body: {
-        query: {
-          match: {
-            id: entityId,
+    try {
+      return await this.elasticsearchService.deleteByQuery({
+        index,
+        body: {
+          query: {
+            match: {
+              id: entityId,
+            },
           },
         },
-      },
-    });
+      });
+    } catch (error) {
+      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   async search<T>({
@@ -95,7 +107,7 @@ export class SearchService {
       };
     } catch (error) {
       this.logger.error(error);
-      throw new HttpException(error, HttpStatus.OK);
+      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 }
