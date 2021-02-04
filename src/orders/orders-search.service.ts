@@ -9,10 +9,7 @@ export class OrdersSearchService {
   constructor(private readonly searchService: SearchService) {}
   elasticIndex = 'orders';
 
-  async search(
-    query: SortWithPaginationQuery | any,
-    userId?: string,
-  ): Promise<any> {
+  search(query: SortWithPaginationQuery | any, userId?: string): Promise<any> {
     const clause: any = {
       offset: query.offset,
       limit: query.count,
@@ -32,11 +29,19 @@ export class OrdersSearchService {
     return this.searchService.search<Orders>(clause);
   }
 
-  save<Item>(data: Item): any {
-    return this.searchService.createIndex(data, this.elasticIndex);
+  save<Orders>(data: Orders | Array<Orders>): any {
+    let response;
+    if (Array.isArray(data)) {
+      data.forEach((order: Orders) => {
+        response = this.searchService.createIndex(order, this.elasticIndex);
+      });
+    } else {
+      response = this.searchService.createIndex(data, this.elasticIndex);
+    }
+    return response;
   }
 
-  update(data: Partial<Orders>) {
+  update(data: Partial<Orders>): Promise<any> {
     return this.searchService.update<Orders>(data, this.elasticIndex);
   }
 

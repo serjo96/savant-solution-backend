@@ -24,7 +24,6 @@ import { Readable } from 'stream';
 import { Buffer } from 'exceljs';
 import states from 'states-us';
 import { In } from 'typeorm';
-import { BadRequestException } from '../common/exceptions/bad-request';
 
 import { TransformInterceptor } from '../common/interceptors/TransformInterceptor';
 import { Roles } from '../common/decorators/roles';
@@ -51,8 +50,7 @@ export class OrdersController {
     private readonly ordersService: OrdersService,
     private aiService: AiService,
     private readonly ordersSearchService: OrdersSearchService,
-  ) {
-  }
+  ) {}
 
   @Post()
   @UsePipes(new ValidationPipe())
@@ -115,6 +113,8 @@ export class OrdersController {
       this.logger.debug(
         `[Change Order Status] ${readyToProceedOrders.length} orders went successfully to AI`,
       );
+
+      this.ordersSearchService.save(orders);
       return orders;
     } catch ({ message }) {
       const where = {
@@ -123,7 +123,11 @@ export class OrdersController {
           id: user.id,
         },
       };
-      await this.ordersService.updateStatus(where, OrderStatusEnum.MANUAL);
+      const result = await this.ordersService.updateStatus(
+        where,
+        OrderStatusEnum.MANUAL,
+      );
+      await this.ordersSearchService.update(result);
       this.logger.debug(message);
       throw new HttpException(message, HttpStatus.OK);
     }
@@ -207,6 +211,7 @@ export class OrdersController {
       },
     };
     const order = await this.ordersService.updateStatus(where, status);
+    await this.ordersSearchService.update(order);
     if (status === OrderStatusEnum.PROCEED) {
       try {
         const { error } = await this.aiService.addOrdersToAI([order]);
@@ -217,7 +222,11 @@ export class OrdersController {
           `[Change Order Status] Order ${order.id} went successfully to AI`,
         );
       } catch ({ message }) {
-        await this.ordersService.updateStatus(where, OrderStatusEnum.MANUAL);
+        const result = await this.ordersService.updateStatus(
+          where,
+          OrderStatusEnum.MANUAL,
+        );
+        await this.ordersSearchService.update(result);
         this.logger.debug(message);
         throw new HttpException(message, HttpStatus.OK);
       }

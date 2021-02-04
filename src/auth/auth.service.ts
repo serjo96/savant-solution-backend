@@ -4,7 +4,6 @@ import * as bcrypt from 'bcrypt';
 
 import { CreateUserDto } from '@user/dto/create-user.dto';
 import { UsersService } from '@user/users.service';
-import { BadRequestException } from '../common/exceptions/bad-request';
 import { UserClassResponseDto } from './dto/user.dto';
 
 import { IJwtPayload } from './passport/jwt.interface';
