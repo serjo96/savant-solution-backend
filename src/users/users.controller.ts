@@ -19,7 +19,6 @@ import { Request } from 'express';
 
 import { User } from '@user/users.entity';
 
-import { BadRequestException } from '../common/exceptions/bad-request';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { Roles } from '../common/decorators/roles';
 import { RolesGuard } from '../common/guards/roles.guard';

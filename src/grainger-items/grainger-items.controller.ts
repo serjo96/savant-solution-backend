@@ -26,7 +26,6 @@ import { CollectionResponse } from '../common/collection-response';
 import { Request } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Readable } from 'stream';
-import { BadRequestException } from '../common/exceptions/bad-request';
 import { GetItemDto } from './dto/get-item.dto';
 import { CreateItemDto } from './dto/create-item-dto';
 import { EditItemDto } from './dto/edit-item.dto';

@@ -1,6 +1,5 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
-import { BadRequestException } from '../common/exceptions/bad-request';
 
 interface ISearchResult<T> {
   hits: {
