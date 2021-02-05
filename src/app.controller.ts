@@ -11,9 +11,4 @@ export class AppController {
   healthCheck() {
     return `Version: ${this.configService.version}`;
   }
-
-  @Get('hello')
-  testHello() {
-    return 'Hello world';
-  }
 }
