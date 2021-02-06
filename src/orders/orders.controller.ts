@@ -67,7 +67,7 @@ export class OrdersController {
       },
     };
     const response = await this.ordersService.save(orderData);
-    await this.ordersSearchService.save(response);
+    this.ordersSearchService.save(response);
     return response;
   }
 

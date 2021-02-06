@@ -56,7 +56,7 @@ export class GraingerItemsController {
       },
     };
     const response = await this.itemsService.save(itemData);
-    await this.itemsSearchService.save(response);
+    this.itemsSearchService.save(response);
     return response;
   }
 
@@ -70,7 +70,7 @@ export class GraingerItemsController {
     const stream = Readable.from(files.buffer.toString());
     const { user } = req;
     const response = await this.itemsService.uploadFromCsv(stream, user);
-    await this.itemsSearchService.save(response);
+    this.itemsSearchService.save(response);
     return response;
   }
 
@@ -124,7 +124,7 @@ export class GraingerItemsController {
     };
 
     const response = await this.itemsService.update(where, item);
-    await this.itemsSearchService.update(response);
+    this.itemsSearchService.update(response);
     return response;
   }
 
@@ -145,25 +145,7 @@ export class GraingerItemsController {
     };
 
     const result = await this.itemsService.updateStatus(where, status);
-    await this.itemsSearchService.update(result);
+    this.itemsSearchService.update(result);
     return result;
-  }
-
-  @Delete(':id')
-  @UseInterceptors(new TransformInterceptor(GetItemDto))
-  async removeItem(
-    @Req() req: Request,
-    @Param() { id }: { id: string },
-  ): Promise<GetItemDto> {
-    const { user } = req;
-    const where = {
-      id,
-      user: {
-        id: user.id,
-      },
-    };
-    const response = await this.itemsService.delete(where);
-    await this.itemsSearchService.delete(id);
-    return response;
   }
 }
