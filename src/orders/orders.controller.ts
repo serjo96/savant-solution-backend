@@ -146,7 +146,11 @@ export class OrdersController {
         id: user.id,
       },
     };
-    return this.ordersService.getAll(where, query);
+    if(query.search) {
+      return this.ordersSearchService.search(query, user.id);
+    } else {
+      return this.ordersService.getAll(where, query);
+    }
   }
 
   @Post('/download')
@@ -183,7 +187,7 @@ export class OrdersController {
   @Roles('admin')
   @UseGuards(AuthGuard('jwt'))
   async updateOrdersElastic() {
-    const result = await this.ordersService.getAll();
+    const { result } = await this.ordersService.getAll();
     return await this.ordersSearchService.save(result);
   }
 
