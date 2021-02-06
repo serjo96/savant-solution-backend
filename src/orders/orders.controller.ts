@@ -104,6 +104,7 @@ export class OrdersController {
       (order) => order.status === OrderStatusEnum.PROCEED,
     );
     try {
+      this.ordersSearchService.save(orders);
       const { error } = await this.aiService.addOrdersToAI(
         readyToProceedOrders,
       );
@@ -114,7 +115,6 @@ export class OrdersController {
         `[Change Order Status] ${readyToProceedOrders.length} orders went successfully to AI`,
       );
 
-      this.ordersSearchService.save(orders);
       return orders;
     } catch ({ message }) {
       const where = {
@@ -146,7 +146,7 @@ export class OrdersController {
         id: user.id,
       },
     };
-    if(query.search) {
+    if (query.search) {
       return this.ordersSearchService.search(query, user.id);
     } else {
       return this.ordersService.getAll(where, query);
@@ -284,5 +284,4 @@ export class OrdersController {
     await this.ordersSearchService.delete(id);
     return response;
   }
-
 }
