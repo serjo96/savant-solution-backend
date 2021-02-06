@@ -179,6 +179,14 @@ export class OrdersController {
     return states.map(({ name, abbreviation }) => ({ name, abbreviation }));
   }
 
+  @Get('/update-elastic')
+  @Roles('admin')
+  @UseGuards(AuthGuard('jwt'))
+  async updateOrdersElastic() {
+    const result = await this.ordersService.getAll();
+    return await this.ordersSearchService.save(result);
+  }
+
   @Get(':id')
   @UseInterceptors(new TransformInterceptor(GetOrderDto))
   async getOrder(
@@ -272,4 +280,5 @@ export class OrdersController {
     await this.ordersSearchService.delete(id);
     return response;
   }
+
 }

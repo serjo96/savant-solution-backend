@@ -50,8 +50,7 @@ export class OrdersService {
     private readonly aiService: AiService,
     private readonly graingerItemsService: GraingerItemsService,
     private readonly csvService: CsvService,
-  ) {
-  }
+  ) {}
 
   async find(where: any): Promise<Orders[]> {
     return this.ordersRepository.find(where);
@@ -61,7 +60,7 @@ export class OrdersService {
     return this.getOrderIfExist(where);
   }
 
-  async getAll(where, query?: any): Promise<CollectionResponse<GetOrderDto>> {
+  async getAll(where?, query?: any): Promise<CollectionResponse<GetOrderDto>> {
     const clause: any = {
       ...sort(query),
       ...paginator(query),
@@ -105,7 +104,13 @@ export class OrdersService {
         'grainger-account.id = grainger-items.graingerAccountId',
       )
       .where('orders.user.id=:id', { id: user.id })
-      .select(['orders', 'order-items', 'users', 'grainger-items', 'grainger-account'])
+      .select([
+        'orders',
+        'order-items',
+        'users',
+        'grainger-items',
+        'grainger-account',
+      ])
       .getRawMany();
     // let allItems: any = await this.getAll({
     //   user: {
@@ -323,12 +328,12 @@ export class OrdersService {
 
   async save(data: CreateOrderDto): Promise<Orders> {
     await this.validateOrder(data);
+    const ordersItems = data.items.map((item: OrderItem) =>
+      OrderItem.create(item),
+    );
+    const orders = { ...data, items: ordersItems };
 
-    for (let i = 0; i < data.items.length; i++) {
-      data.items[i] = OrderItem.create(data.items[i]);
-    }
-
-    return this.ordersRepository.save(Orders.create(data));
+    return this.ordersRepository.save(Orders.create(orders));
   }
 
   async updateStatus(
