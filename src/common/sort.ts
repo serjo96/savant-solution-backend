@@ -16,6 +16,10 @@ export class SortWithPaginationQuery extends PaginatorQuery {
   sort_by: string;
 
   @IsOptional()
+  @IsString()
+  search: string;
+
+  @IsOptional()
   @IsBoolean()
   @Type(() => Boolean)
   notMapped: boolean;
