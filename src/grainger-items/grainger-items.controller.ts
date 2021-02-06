@@ -104,7 +104,11 @@ export class GraingerItemsController {
     @Query() query: SortWithPaginationQuery,
     @Req() { user }: Request,
   ): Promise<CollectionResponse<GetItemDto>> {
-    return this.itemsService.getAll(user, query);
+    if (query.search) {
+      return this.itemsSearchService.search(query, user.id);
+    } else {
+      return this.itemsService.getAll(user, query);
+    }
   }
 
   @Put(':id')
