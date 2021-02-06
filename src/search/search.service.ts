@@ -28,10 +28,12 @@ export class SearchService {
   async createIndex<T>(data: any, index: string) {
     try {
       return await this.elasticsearchService.index<ISearchResult<T>, T>({
+        id: data.id,
         index,
         body: data,
       });
     } catch (error) {
+      this.logger.debug(error);
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
