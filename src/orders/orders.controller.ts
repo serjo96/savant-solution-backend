@@ -104,6 +104,7 @@ export class OrdersController {
       (order) => order.status === OrderStatusEnum.PROCEED,
     );
     try {
+      this.ordersSearchService.save(orders);
       const { error } = await this.aiService.addOrdersToAI(
         readyToProceedOrders,
       );
@@ -114,7 +115,6 @@ export class OrdersController {
         `[Change Order Status] ${readyToProceedOrders.length} orders went successfully to AI`,
       );
 
-      this.ordersSearchService.save(orders);
       return orders;
     } catch ({ message }) {
       const where = {
@@ -146,7 +146,11 @@ export class OrdersController {
         id: user.id,
       },
     };
-    return this.ordersService.getAll(where, query);
+    if (query.search) {
+      return this.ordersSearchService.search(query, user.id);
+    } else {
+      return this.ordersService.getAll(where, query);
+    }
   }
 
   @Post('/download')
@@ -177,6 +181,14 @@ export class OrdersController {
   // @UseInterceptors(new TransformInterceptor(ResponseOrdersDto))
   getStates(): any {
     return states.map(({ name, abbreviation }) => ({ name, abbreviation }));
+  }
+
+  @Get('/update-elastic')
+  @Roles('admin')
+  @UseGuards(AuthGuard('jwt'))
+  async updateOrdersElastic() {
+    const { result } = await this.ordersService.getAll();
+    return await this.ordersSearchService.save(result);
   }
 
   @Get(':id')
