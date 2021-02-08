@@ -143,7 +143,7 @@ export class OrdersController {
 
     const where = {
       user: {
-        id: user.id,
+        name: user.name,
       },
     };
     if (query.search) {
