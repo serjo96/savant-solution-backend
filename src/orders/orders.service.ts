@@ -81,7 +81,7 @@ export class OrdersService {
 
   async delete(where: any): Promise<any> {
     await this.getOrderIfExist(where);
-    return this.ordersRepository.softDelete(where);
+    return this.ordersRepository.delete(where);
   }
 
   async exportToXlxs(

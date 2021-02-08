@@ -185,7 +185,6 @@ export class OrdersController {
 
   @Get('/update-elastic')
   @Roles('admin')
-  @UseGuards(AuthGuard('jwt'))
   async updateOrdersElastic() {
     const { result } = await this.ordersService.getAll();
     return await this.ordersSearchService.save(result);
