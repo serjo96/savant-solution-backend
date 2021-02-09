@@ -25,6 +25,8 @@ import { CsvCreateOrderDto } from '../orders/dto/csv-create-order.dto';
 import { CsvCreateGraingerItem } from './dto/csv-create-grainger-item';
 import { GraingerAccountsService } from '../grainger-accounts/grainger-accounts.service';
 import csv = require('csvtojson/index');
+import { OrderItem } from '../orders/order-item.entity';
+import { GraingerAccount } from '../grainger-accounts/grainger-account.entity';
 
 @Injectable()
 export class GraingerItemsService {
@@ -110,28 +112,46 @@ export class GraingerItemsService {
     statuses: { label: string; value: ItemStatusEnum }[],
     user: User,
   ) {
-    let allItems: any = await this.getAll(user);
+    let allItems: any = await this.repository
+      .createQueryBuilder('gi')
+      .leftJoin(GraingerAccount, 'ga', 'ga.id = gi.graingerAccountId')
+      .leftJoin(User, 'users', 'users.id = gi.userId')
+      .where('users.name=:name', { name: user.name })
+      .select(['gi', 'ga'])
+      .getRawMany();
 
     const statusesDict = statuses.reduce(
       (acc, curr) => ({ ...acc, [curr.value]: curr.label }),
       {},
     );
 
-    allItems = allItems.result.map((order) => ({
+    allItems = allItems.map((order) => ({
       ...order,
-      status: statusesDict[order.status],
+      ['gi_status']: statusesDict[order['gi_status']],
     }));
 
     const workbook = new Workbook();
     const worksheet = workbook.addWorksheet('Items');
     worksheet.columns = [
-      { header: 'Item Id', key: 'id', width: 40 },
-      { header: 'A-SKU', key: 'amazonSku', width: 20 },
-      { header: 'G-ItemNumber', key: 'graingerItemNumber', width: 20 },
-      { header: 'G-PACKQTY', key: 'graingerPackQuantity', width: 20 },
-      // { header: 'Grainger Account', key: 'graingerAccountId', width: 20 },
-      { header: 'Threshold', key: 'graingerThreshold', width: 20 },
-      { header: 'Status', key: 'status', width: 20 },
+      { header: 'Item Id', key: 'gi_id', width: 40 },
+      { header: 'A-SKU', key: 'gi_amazonSku', width: 20 },
+      {
+        header: 'G-ItemNumber',
+        key: 'gi_graingerItemNumber',
+        width: 20,
+      },
+      {
+        header: 'G-PACKQTY',
+        key: 'gi_graingerPackQuantity',
+        width: 20,
+      },
+      { header: 'Grainger Account', key: 'ga_email', width: 20 },
+      {
+        header: 'Threshold',
+        key: 'gi_graingerThreshold',
+        width: 20,
+      },
+      { header: 'Status', key: 'gi_status', width: 20 },
     ] as Array<Column>;
     worksheet.addRows(allItems);
 
@@ -142,20 +162,6 @@ export class GraingerItemsService {
 
     await workbook.xlsx.write(res);
     return workbook.xlsx.writeBuffer();
-  }
-
-  findAllSku(
-    user: User,
-    query?: SortWithPaginationQuery,
-  ): Promise<GraingerItem[]> {
-    return this.repository
-      .createQueryBuilder('grainger-items')
-      .where('grainger-items.user.id=:id', { id: user.id })
-      .andWhere('grainger-items.amazonSku LIKE :amazonSku', {
-        amazonSku: `%${query.amazonSku}%`,
-      })
-      .select()
-      .getMany();
   }
 
   async getAll(

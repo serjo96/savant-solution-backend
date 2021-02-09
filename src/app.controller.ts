@@ -1,6 +1,5 @@
-import { Controller, Get, Query, Req } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { ConfigService } from './config/config.service';
-import { Request } from 'express';
 import { OrdersService } from './orders/orders.service';
 
 @Controller()
