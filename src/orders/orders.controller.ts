@@ -77,7 +77,7 @@ export class OrdersController {
     @Req() req: Request,
   ): Promise<any> {
     const { user } = req;
-    return await this.ordersSearchService.search(query, user.id);
+    return await this.ordersSearchService.search(query, user.name);
   }
 
   @Get('/search')
@@ -120,7 +120,7 @@ export class OrdersController {
       const where = {
         id: In(readyToProceedOrders.map((order) => order.id)),
         user: {
-          id: user.id,
+          name: user.name,
         },
       };
       const result = await this.ordersService.updateStatus(
@@ -170,7 +170,7 @@ export class OrdersController {
   ): Promise<CollectionResponse<GetOrderDto>> {
     return this.ordersService.getAll({
       user: {
-        id: user.id,
+        name: user.name,
       },
       id: In(orderIds),
     });
@@ -200,7 +200,7 @@ export class OrdersController {
     const where = {
       id,
       user: {
-        id: user.id,
+        name: user.name,
       },
     };
     return await this.ordersService.findOne(where);
@@ -218,7 +218,7 @@ export class OrdersController {
     const where = {
       id,
       user: {
-        id: user.id,
+        name: user.name,
       },
     };
     const order = await this.ordersService.updateStatus(where, status);

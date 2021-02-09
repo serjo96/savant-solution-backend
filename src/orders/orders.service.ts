@@ -88,12 +88,17 @@ export class OrdersService {
       const { sortType, sortDir } = splitSortProps(query.order);
       orders.orderBy(sortType, sortDir);
     }
+
     if (clause.where.status) {
-      orders.where('orders', { status: clause.where.status });
+      orders.where({ status: clause.where.status });
+    }
+
+    if (clause.where.id) {
+      orders.where(clause.where.id);
     }
 
     if (clause.where.graingerItemNumber) {
-      orders.where('orders', {
+      orders.where({
         graingerItemNumber: clause.where.graingerItemNumber,
       });
     }
@@ -134,7 +139,7 @@ export class OrdersService {
         'grainger-account',
         'grainger-account.id = grainger-items.graingerAccountId',
       )
-      .where('orders.user.id=:id', { id: user.id })
+      .where('user.name =:name', { name: user.name })
       .select([
         'orders',
         'order-items',
@@ -346,7 +351,7 @@ export class OrdersService {
     return this.ordersRepository
       .createQueryBuilder('orders')
       .leftJoin(OrderItem, 'order-items', 'order-items.orderId = orders.id')
-      .where('orders.user.id=:id', { id: user.id })
+      .where('user.name =:name', { name: user.name })
       .andWhere('orders.amazonOrderId LIKE :amazonOrderId', {
         amazonOrderId: `%${amazonOrderId}%`,
       })
@@ -371,7 +376,7 @@ export class OrdersService {
     where: {
       id: any;
       user: {
-        id: string;
+        name: string;
       };
     },
     status: OrderStatusEnum,
@@ -569,10 +574,19 @@ export class OrdersService {
   }
 
   private async getOrderIfExist(where: any): Promise<Orders> {
-    const existOrder = await this.ordersRepository.findOne({
-      where,
-      relations: ['items'],
-    });
+    // const existOrder = await this.ordersRepository.findOne({
+    //   where,
+    //   relations: ['items'],
+    // });
+
+    const existOrder = await this.ordersRepository
+      .createQueryBuilder('orders')
+      .leftJoinAndSelect('orders.items', 'items')
+      .leftJoinAndSelect('orders.user', 'user')
+      .where({ id: where.id })
+      .andWhere('user.name =:name', { name: where.user.name })
+      .getOne();
+
     if (!existOrder) {
       throw new HttpException(`Order doesn't exist`, HttpStatus.OK);
     }
