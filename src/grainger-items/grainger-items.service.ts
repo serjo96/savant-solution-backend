@@ -204,12 +204,12 @@ export class GraingerItemsService {
       items.orderBy(sortType, sortDir);
     }
 
-    if (clause.where.status) {
+    if (clause.where.status || clause.where.status === 0) {
       items.where('grainger-items', { status: clause.where.status });
     }
 
     if (clause.where.graingerItemNumber) {
-      items.where('grainger-items', {
+      items.where({
         graingerItemNumber: clause.where.graingerItemNumber,
       });
     }
@@ -219,6 +219,7 @@ export class GraingerItemsService {
     if (!result) {
       throw new NotFoundException();
     }
+
     return {
       result: result.map((order: GraingerItem) =>
         plainToClass(GetItemDto, order),

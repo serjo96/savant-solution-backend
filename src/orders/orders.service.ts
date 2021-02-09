@@ -89,7 +89,7 @@ export class OrdersService {
       orders.orderBy(sortType, sortDir);
     }
 
-    if (clause.where.status) {
+    if (clause.where.status || clause.where.status === 0) {
       orders.where({ status: clause.where.status });
     }
 
