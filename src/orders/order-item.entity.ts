@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne} from 'typeorm';
+import { Column, Entity, ManyToOne } from 'typeorm';
 
 import { BaseEntity } from '../common/base-entity';
 import { Orders } from './orders.entity';
@@ -29,6 +29,19 @@ export class OrderItem extends BaseEntity {
     default: 0,
   })
   amazonQuantity: number;
+
+  @Column({
+    type: 'real',
+    nullable: false,
+    default: 0,
+  })
+  amazonPrice: number;
+
+  @Column({
+    type: 'real',
+    nullable: true,
+  })
+  graingerPrice?: number;
 
   @Column({
     type: 'varchar',

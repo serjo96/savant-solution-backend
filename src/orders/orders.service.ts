@@ -215,7 +215,7 @@ export class OrdersService {
       null,
       'amazonQuantity',
       null,
-      null,
+      'amazonPrice',
       null,
       null,
       null,

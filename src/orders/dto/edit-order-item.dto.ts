@@ -24,6 +24,14 @@ export class EditOrderItemDto {
   @IsNumber()
   amazonQuantity: number;
 
+  @IsNotEmpty()
+  @IsNumber()
+  amazonPrice: number;
+
+  @IsOptional()
+  @IsNumber()
+  graingerPrice?: number;
+
   @IsNumber()
   @Min(0)
   @Max(999)
