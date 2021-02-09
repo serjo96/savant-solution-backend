@@ -31,14 +31,18 @@ export class OrderItem extends BaseEntity {
   amazonQuantity: number;
 
   @Column({
-    type: 'real',
     nullable: false,
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
     default: 0,
   })
   amazonPrice: number;
 
   @Column({
-    type: 'real',
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
     nullable: true,
   })
   graingerPrice?: number;
