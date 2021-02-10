@@ -6,10 +6,11 @@ import { BaseEntity } from '../common/base-entity';
 import { OrderItem } from './order-item.entity';
 
 export enum OrderStatusEnum {
-  MANUAL = 3,
-  PROCEED = 2,
-  SUCCESS = 1,
-  ERROR = 0,
+  WAITFORPROCEED = 0,
+  PROCEED = 1,
+  SUCCESS = 2,
+  ERROR = 3,
+  MANUAL = 4,
 }
 
 @Entity('orders')
@@ -84,13 +85,16 @@ export class Orders extends BaseEntity {
   @Column({
     type: 'enum',
     enum: OrderStatusEnum,
-    default: OrderStatusEnum.PROCEED,
+    default: OrderStatusEnum.WAITFORPROCEED,
   })
   public status: OrderStatusEnum;
 
   @OneToMany(() => OrderItem, (v) => v.order, { cascade: true })
   items: OrderItem[];
 
-  @ManyToOne(() => User, (user) => user.orders, { eager: true, onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.orders, {
+    eager: true,
+    onDelete: 'CASCADE',
+  })
   user: User;
 }

@@ -11,6 +11,10 @@ export class GetGraingerOrder {
   graingerOrders: {
     graingerOrderId: string;
     g_web_number: string;
-    items: string[]; // graingerItemNumber
+    graingerTrackingNumber: string;
+    items: {
+      graingerItemNumber: string;
+      graingerPrice: string;
+    }[];
   }[];
 }
