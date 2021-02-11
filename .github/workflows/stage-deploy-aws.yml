@@ -2,7 +2,7 @@ name: stage-deploy-app-on-s3
 on:
   push:
     branches: 
-      - stage
+      - staging
 
 jobs:
   buildAndTest:
