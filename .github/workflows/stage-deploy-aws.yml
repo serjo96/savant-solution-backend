@@ -1,0 +1,117 @@
+name: stage-deploy-app-on-s3
+on:
+  push:
+    branches: 
+      - stage
+
+jobs:
+  buildAndTest:
+    name: CI Pipeline
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: ['12.x']
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Cache Node.js modules
+        uses: actions/cache@v2
+        with:
+          # npm cache files are stored in `~/.npm` on Linux/macOS
+          path: ~/.npm
+          key: ${{ runner.OS }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.OS }}-node-
+            ${{ runner.OS }}-
+      - name: install
+        run: yarn install
+      - name: lint
+        run: yarn run lint
+#      - name: Run tests
+#        run: yarn run test
+      - name: build
+        run: yarn run build
+
+  deploy:
+    name: CD Pipeline
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8]
+        node-version: ['12.x']
+        appname: ['krayber-main-service']
+        deploy-group: ['staging']
+        s3-bucket: ['aws-codedeploy-krayber']
+        s3-filename: ['staging-krayber-main-service-${{ github.sha }}']
+
+    steps:
+      # Initialize Node.js
+      - uses: actions/checkout@v2
+      - name: Install Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Cache Node.js modules
+        uses: actions/cache@v2
+        with:
+          # npm cache files are stored in `~/.npm` on Linux/macOS
+          path: ~/.npm
+          key: ${{ runner.OS }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.OS }}-node-
+            ${{ runner.OS }}-
+      # Install project dependencies and build
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Run build
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+        run: yarn run build
+
+      - name: Run migration
+        run: yarn run migration:run
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+
+
+      # Install AWS CLI 2
+      - name: Install AWS CLI 2
+        run: |
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip awscliv2.zip
+          sudo ./aws/install
+
+      # Configure AWS credentials
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+
+      # Deploy push to AWS S3
+      - name: AWS Deploy push
+        run: |
+          aws deploy push \
+          --application-name ${{ matrix.appname }} \
+          --description "This is a revision for the ${{ matrix.appname }}-${{ github.sha }}" \
+          --ignore-hidden-files \
+          --s3-location s3://${{ matrix.s3-bucket }}/${{ matrix.s3-filename }}.zip \
+          --source .
+      # Create deployment to CodeDeploy
+      - name: AWS Create Deployment
+        run: |
+          aws deploy create-deployment \
+           --application-name ${{ matrix.appname }} \
+           --deployment-config-name CodeDeployDefault.OneAtATime \
+           --deployment-group-name ${{ matrix.deploy-group }} \
+           --file-exists-behavior OVERWRITE \
+           --s3-location bucket=${{ matrix.s3-bucket }},key=${{ matrix.s3-filename }}.zip,bundleType=zip \
