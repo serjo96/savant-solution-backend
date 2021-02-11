@@ -45,9 +45,9 @@ jobs:
         python-version: [3.8]
         node-version: ['12.x']
         appname: ['krayber-main-service']
-        deploy-group: ['staging']
+        deploy-group: ['production']
         s3-bucket: ['aws-codedeploy-krayber']
-        s3-filename: ['staging-krayber-main-service-${{ github.sha }}']
+        s3-filename: ['production-krayber-main-service-${{ github.sha }}']
 
 #     if: github.ref == 'refs/heads/main'
     steps:
