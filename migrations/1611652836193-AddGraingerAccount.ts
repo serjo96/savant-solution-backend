@@ -5,7 +5,7 @@ export class AddGraingerAccount1611652836193 implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`ALTER TABLE "items" RENAME COLUMN "supplier" TO "graingerAccountId"`);
-        await queryRunner.query(`CREATE TABLE "grainger-account" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "login" character varying NOT NULL, "password" character varying NOT NULL, "name" character varying NOT NULL, CONSTRAINT "UQ_3cdb6254375fd85d41997dbd818" UNIQUE ("login"), CONSTRAINT "PK_c18f29c7774ecf03a2d1dea5334" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "grainger-account" ("id" uuid NOT NULL, "login" character varying NOT NULL, "password" character varying NOT NULL, "name" character varying NOT NULL, CONSTRAINT "UQ_3cdb6254375fd85d41997dbd818" UNIQUE ("login"), CONSTRAINT "PK_c18f29c7774ecf03a2d1dea5334" PRIMARY KEY ("id"))`);
         await queryRunner.query(`ALTER TABLE "items" DROP COLUMN "graingerAccountId"`);
         await queryRunner.query(`ALTER TABLE "items" ADD "graingerAccountId" uuid`);
         await queryRunner.query(`COMMENT ON COLUMN "orders"."createdAt" IS NULL`);

@@ -1,10 +1,10 @@
 import {
-  BaseEntity,
   Column,
   Entity,
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { BaseEntity } from '../common/base-entity';
 import { GraingerItem } from '../grainger-items/grainger-items.entity';
 
 @Entity('grainger-account')
