@@ -104,7 +104,7 @@ export class OrdersController {
       (order) => order.status === OrderStatusEnum.PROCEED,
     );
     try {
-      this.ordersSearchService.save(orders);
+      // this.ordersSearchService.save(orders);
       const { error } = await this.aiService.addOrdersToAI(
         readyToProceedOrders,
       );
@@ -127,7 +127,7 @@ export class OrdersController {
         where,
         OrderStatusEnum.MANUAL,
       );
-      await this.ordersSearchService.update(result);
+      // await this.ordersSearchService.update(result);
       this.logger.debug(message);
       throw new HttpException(message, HttpStatus.OK);
     }
