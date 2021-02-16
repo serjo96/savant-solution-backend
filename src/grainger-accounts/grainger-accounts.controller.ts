@@ -2,13 +2,18 @@ import {
   Body,
   Controller,
   Delete,
-  Get, HttpException, HttpStatus, Logger,
+  Get,
+  HttpException,
+  HttpStatus,
+  Logger,
   Param,
   Post,
   Put,
+  UseGuards,
   UseInterceptors,
   UsePipes,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { GraingerAccountsService } from './grainger-accounts.service';
 import { ValidationPipe } from '../common/Pipes/validation.pipe';
 import { CreateGraingerAccountDto } from './dto/create-grainger-account.dto';
@@ -16,6 +21,7 @@ import { GetGraingerAccountDto } from './dto/get-grainger-account.dto';
 import { TransformInterceptor } from '../common/interceptors/TransformInterceptor';
 import { AiService } from '../ai/ai.service';
 
+@UseGuards(AuthGuard('jwt'))
 @Controller('grainger-accounts')
 export class GraingerAccountsController {
   private readonly logger = new Logger(GraingerAccountsController.name);
@@ -23,8 +29,7 @@ export class GraingerAccountsController {
   constructor(
     private readonly service: GraingerAccountsService,
     private aiService: AiService,
-  ) {
-  }
+  ) {}
 
   @Get()
   @UsePipes(new ValidationPipe())
