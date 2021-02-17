@@ -84,6 +84,12 @@ export class OrderItem extends BaseEntity {
   })
   note?: string;
 
+  @Column({
+    type: 'varchar',
+    nullable: true,
+  })
+  errors?: string;
+
   @ManyToOne(() => GraingerItem, (v) => v.orderItems, { eager: true })
   graingerItem: GraingerItem;
 

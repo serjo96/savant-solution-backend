@@ -41,6 +41,9 @@ export class EditOrderItemDto {
   @IsString()
   graingerTrackingNumber?: string;
   @IsOptional()
+  @IsString()
+  errors?: string;
+  @IsOptional()
   @IsEnum(GraingerShipMethodEnum)
   graingerShipMethod?: GraingerShipMethodEnum;
   @IsOptional()
