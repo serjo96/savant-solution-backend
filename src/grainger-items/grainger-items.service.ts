@@ -8,7 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { plainToClass } from 'class-transformer';
 import { In, Repository } from 'typeorm';
 import { paginator } from '../common/paginator';
-import { SortWithPaginationQuery, sort } from '../common/sort';
+import { SortWithPaginationQuery, sort, splitSortProps } from '../common/sort';
 import { filter } from '../common/filter';
 import { CollectionResponse } from '../common/collection-response';
 import { checkRequiredItemFieldsReducer } from '../reducers/items.reducer';
@@ -173,19 +173,53 @@ export class GraingerItemsService {
       ...paginator(query),
       ...filter(query),
     };
-    const [result, count] = await this.repository.findAndCount({
-      ...clause,
-      where: {
-        ...clause.where,
-        user: {
-          id: user.id,
-        },
-      },
-    });
+    // const [result, count] = await this.repository.findAndCount({
+    //   relations: ["user",],
+    //   ...clause,
+    //   where: {
+    //     ...clause.where,
+    //     user: {
+    //       name: user.name,
+    //     },
+    //   },
+    // });
+
+    const items = this.repository
+      .createQueryBuilder('grainger-items')
+      .leftJoinAndSelect('grainger-items.graingerAccount', 'graingerAccount')
+      .leftJoinAndSelect('grainger-items.orderItems', 'orderItems')
+      .leftJoinAndSelect('grainger-items.user', 'user')
+      .where('user.name =:name', { name: user.name });
+
+    if (clause.take) {
+      items.take(clause.take);
+    }
+
+    if (clause.skip) {
+      items.limit(clause.skip);
+    }
+
+    if (query.order) {
+      const { sortType, sortDir } = splitSortProps(query.order);
+      items.orderBy(sortType, sortDir);
+    }
+
+    if (clause.where.status || clause.where.status === 0) {
+      items.where('grainger-items', { status: clause.where.status });
+    }
+
+    if (clause.where.graingerItemNumber) {
+      items.where({
+        graingerItemNumber: clause.where.graingerItemNumber,
+      });
+    }
+
+    const [result, count] = await items.getManyAndCount();
 
     if (!result) {
       throw new NotFoundException();
     }
+
     return {
       result: result.map((order: GraingerItem) =>
         plainToClass(GetItemDto, order),

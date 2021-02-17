@@ -9,7 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { plainToClass } from 'class-transformer';
 import { In, Repository } from 'typeorm';
 import { paginator } from '../common/paginator';
-import { sort } from '../common/sort';
+import { sort, splitSortProps } from '../common/sort';
 import { EditOrderDto } from './dto/editOrder.dto';
 
 import { CreateOrderDto } from './dto/createOrderDto';
@@ -68,7 +68,43 @@ export class OrdersService {
     };
     clause.where = { ...clause.where, ...where };
     clause.relations = ['items'];
-    const [result, count] = await this.ordersRepository.findAndCount(clause);
+    // const [result, count] = await this.ordersRepository.findAndCount(clause);
+
+    const orders = this.ordersRepository
+      .createQueryBuilder('orders')
+      .leftJoinAndSelect('orders.items', 'items')
+      .leftJoinAndSelect('orders.user', 'user')
+      .where('user.name =:name', { name: clause.where.user.name });
+
+    if (clause.take) {
+      orders.take(clause.take);
+    }
+
+    if (clause.skip) {
+      orders.limit(clause.skip);
+    }
+
+    if (query.order) {
+      const { sortType, sortDir } = splitSortProps(query.order);
+      orders.orderBy(sortType, sortDir);
+    }
+
+    if (clause.where.status || clause.where.status === 0) {
+      orders.where({ status: clause.where.status });
+    }
+
+    if (clause.where.id) {
+      orders.where(clause.where.id);
+    }
+
+    if (clause.where.graingerItemNumber) {
+      orders.where({
+        graingerItemNumber: clause.where.graingerItemNumber,
+      });
+    }
+
+    const [result, count] = await orders.getManyAndCount();
+
     if (!result) {
       throw new NotFoundException();
     }
@@ -103,7 +139,7 @@ export class OrdersService {
         'grainger-account',
         'grainger-account.id = grainger-items.graingerAccountId',
       )
-      .where('orders.user.id=:id', { id: user.id })
+      .where('user.name =:name', { name: user.name })
       .select([
         'orders',
         'order-items',
@@ -349,7 +385,7 @@ export class OrdersService {
     return this.ordersRepository
       .createQueryBuilder('orders')
       .leftJoin(OrderItem, 'order-items', 'order-items.orderId = orders.id')
-      .where('orders.user.id=:id', { id: user.id })
+      .where('user.name =:name', { name: user.name })
       .andWhere('orders.amazonOrderId LIKE :amazonOrderId', {
         amazonOrderId: `%${amazonOrderId}%`,
       })
@@ -374,7 +410,7 @@ export class OrdersService {
     where: {
       id: any;
       user: {
-        id: string;
+        name: string;
       };
     },
     status: OrderStatusEnum,
@@ -579,10 +615,19 @@ export class OrdersService {
   }
 
   private async getOrderIfExist(where: any): Promise<Orders> {
-    const existOrder = await this.ordersRepository.findOne({
-      where,
-      relations: ['items'],
-    });
+    // const existOrder = await this.ordersRepository.findOne({
+    //   where,
+    //   relations: ['items'],
+    // });
+
+    const existOrder = await this.ordersRepository
+      .createQueryBuilder('orders')
+      .leftJoinAndSelect('orders.items', 'items')
+      .leftJoinAndSelect('orders.user', 'user')
+      .where({ id: where.id })
+      .andWhere('user.name =:name', { name: where.user.name })
+      .getOne();
+
     if (!existOrder) {
       throw new HttpException(`Order doesn't exist`, HttpStatus.OK);
     }

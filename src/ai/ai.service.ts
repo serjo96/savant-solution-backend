@@ -1,9 +1,10 @@
-import { HttpService, Injectable } from '@nestjs/common';
-import { Observable, throwError } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { HttpService, Injectable, Logger } from '@nestjs/common';
+import { Interval } from '@nestjs/schedule';
+import { map } from 'rxjs/operators';
 import { ConfigService } from '../config/config.service';
 import { Orders } from '../orders/orders.entity';
 import { GraingerAccount } from '../grainger-accounts/grainger-account.entity';
+import { AiGateway } from './ai.gateway';
 import { GetGraingerOrder } from './dto/get-grainger-order';
 import { ErrorResponse } from '../common/error-response';
 
@@ -28,7 +29,10 @@ export class AiService {
   constructor(
     private readonly http: HttpService,
     private readonly configService: ConfigService,
+    private readonly publicSocketsGateway: AiGateway,
   ) {}
+
+  private logger: Logger = new Logger(AiService.name);
 
   addAccount({ email, id, password }: GraingerAccount): Promise<ErrorResponse> {
     return this.http
@@ -79,5 +83,19 @@ export class AiService {
       .post<any>(`${this.configService.AIURL}/get_orders`, { amazonOrders })
       .pipe(map((response) => response.data))
       .toPromise();
+  }
+
+  @Interval('AiStatus', 1000 * 30) // every 30 seconds
+  async checkAiStatus() {
+    try {
+      const response = await this.http
+        .get(`${this.configService.AIURL}/heart_beat`)
+        .pipe(map((response) => response.data))
+        .toPromise();
+      this.publicSocketsGateway.handleStatusMessage(response);
+    } catch (error) {
+      this.publicSocketsGateway.handleStatusMessage({ status: 'dead' });
+      this.logger.error(error);
+    }
   }
 }

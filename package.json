@@ -36,8 +36,10 @@
     "@nestjs/jwt": "^7.1.0",
     "@nestjs/passport": "^7.1.0",
     "@nestjs/platform-express": "7.5.5",
+    "@nestjs/platform-socket.io": "^7.6.12",
     "@nestjs/schedule": "^0.4.2",
     "@nestjs/typeorm": "7.1.5",
+    "@nestjs/websockets": "^7.6.12",
     "@types/bcrypt": "^3.0.0",
     "@types/passport": "^1.0.4",
     "@typescript-eslint/eslint-plugin": "^3.9.1",
@@ -61,6 +63,7 @@
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.0",
     "rxjs": "6.6.3",
+    "socket.io": "2.4.1",
     "states-us": "^1.0.1",
     "typeorm": "^0.2.25"
   },

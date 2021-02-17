@@ -34,10 +34,15 @@ export class SortWithPaginationQuery extends PaginatorQuery {
   amazonSku: string;
 }
 
-export default interface ISort {
+export interface ISort {
   order: {
     [key: string]: string;
   };
+}
+
+export interface ISortSplit {
+  sortType: string;
+  sortDir: Partial<'ASC' | 'DESC'>;
 }
 
 export const sort = (query: SortWithPaginationQuery): ISort => {
@@ -54,10 +59,18 @@ export const sort = (query: SortWithPaginationQuery): ISort => {
   const { sort_by } = query;
 
   if (sort_by) {
-    const [sortType, sortDir] = sort_by.split('.');
+    const { sortType, sortDir } = splitSortProps(sort_by);
     result.order = {};
     result.order[sortType] = sortDir.toUpperCase();
   }
 
   return result;
+};
+
+export const splitSortProps = (query: string): ISortSplit => {
+  const [sortType, sortDir] = query.split('.');
+  return {
+    sortType,
+    sortDir: sortDir.toUpperCase() as ISortSplit['sortDir'],
+  };
 };
