@@ -1,9 +1,16 @@
 import { Logger } from '@nestjs/common';
-import { WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import {
+  SubscribeMessage,
+  WebSocketGateway,
+  WebSocketServer,
+} from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { JWTService } from '../auth/jwt.service';
 
 @WebSocketGateway()
 export class AiGateway {
+  constructor(private readonly jwtService: JWTService) {}
+
   @WebSocketServer()
   server: Server;
 
@@ -16,14 +23,31 @@ export class AiGateway {
   handleDisconnect(client: Socket) {
     this.logger.log(`Client disconnected: ${client.id}`);
   }
-
-  handleConnection(client: Socket, ...args: any[]) {
-    this.logger.log(`Client connected: ${client.id}`);
+  // TODO: add socket.io adapter with token verification there
+  async handleConnection(client: Socket, ...args: any[]) {
+    try {
+      this.jwtService.verifyToken(client.handshake.query.token);
+      this.logger.log(`Client connected: ${client.id}`);
+    } catch (e) {
+      this.logger.error(
+        `Socket disconnected within handleConnection() in AppGateway: ${e}`,
+      );
+      client.disconnect(true);
+    }
   }
 
-  handleStatusMessage(payload: {status: string}): void {
+  @SubscribeMessage('aiStatus')
+  handleStatusMessage(payload: { status: string }): void {
     this.server.emit('aiStatus', payload);
 
-    this.logger.log(`Send to client message: ${JSON.stringify(payload)}`);
+    this.logger.log(`Send to client aiStatus: ${JSON.stringify(payload)}`);
+  }
+
+  handleWorkerMessage(payload: string): void {
+    this.server.emit('aiWorkerStatus', payload);
+
+    this.logger.log(
+      `Send to client aiWorkerStatus: ${JSON.stringify(payload)}`,
+    );
   }
 }

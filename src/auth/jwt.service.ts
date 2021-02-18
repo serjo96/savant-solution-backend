@@ -11,8 +11,7 @@ export class JWTService {
   constructor(
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
-  ) {
-  }
+  ) {}
 
   createUserToken({ email, roles, id }: UserResponseDto): any {
     const expiresIn = this.configService.jwtConfig.expiresIn;
@@ -23,6 +22,10 @@ export class JWTService {
       expiresIn,
       accessToken,
     };
+  }
+
+  verifyToken(token: string) {
+    return this.jwtService.verify(token);
   }
 
   createToken() {

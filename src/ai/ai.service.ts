@@ -24,6 +24,11 @@ type SendAIOrder = {
   amazonOrderId: string;
 };
 
+export enum WorkerStatus {
+  NOT_WORKING = 0,
+  WORKING = 1,
+}
+
 @Injectable()
 export class AiService {
   constructor(
@@ -36,7 +41,7 @@ export class AiService {
 
   addAccount({ email, id, password }: GraingerAccount): Promise<ErrorResponse> {
     return this.http
-      .post(`${this.configService.AIURL}/users`, {
+      .post(`${this.configService.aiUrl}/users`, {
         users: [{ account_id: id, login: email, password }],
       })
       .pipe(map((response) => response.data))
@@ -64,14 +69,14 @@ export class AiService {
     );
 
     return this.http
-      .post(`${this.configService.AIURL}/orders`, { orders: aiOrders })
+      .post(`${this.configService.aiUrl}/orders`, { orders: aiOrders })
       .pipe(map((response) => response.data))
       .toPromise();
   }
 
   deleteOrdersFromAI(): Promise<ErrorResponse> {
     return this.http
-      .delete(`${this.configService.AIURL}/orders`)
+      .delete(`${this.configService.aiUrl}/orders`)
       .pipe(map((response) => response.data))
       .toPromise();
   }
@@ -80,22 +85,72 @@ export class AiService {
     amazonOrders: string[],
   ): Promise<{ amazonOrders: GetGraingerOrder[] } & ErrorResponse> {
     return this.http
-      .post<any>(`${this.configService.AIURL}/get_orders`, { amazonOrders })
+      .post<any>(`${this.configService.aiUrl}/get_orders`, { amazonOrders })
+      .pipe(map((response) => response.data))
+      .toPromise();
+  }
+
+  async startWorker(): Promise<string> {
+    try {
+      await this.http
+        .get(`${this.configService.aiUrl}/start`)
+        .pipe(map((response) => response.data))
+        .toPromise();
+      return WorkerStatus[1];
+    } catch (error) {
+      this.logger.error(error);
+    }
+  }
+
+  async stopWorker(): Promise<string> {
+    try {
+      await this.http
+        .get(`${this.configService.aiUrl}/stop`)
+        .pipe(map((response) => response.data))
+        .toPromise();
+      return WorkerStatus[0];
+    } catch (error) {
+      this.logger.error(error);
+    }
+  }
+
+  async workerStatus(): Promise<{ worker_status: WorkerStatus }> {
+    return await this.http
+      .get(`${this.configService.aiUrl}/worker_status`)
+      .pipe(map((response) => response.data))
+      .toPromise();
+  }
+
+  async checkAiStatus(): Promise<{ status: string }> {
+    return await this.http
+      .get(`${this.configService.aiUrl}/heart_beat`)
       .pipe(map((response) => response.data))
       .toPromise();
   }
 
   @Interval('AiStatus', 1000 * 30) // every 30 seconds
-  async checkAiStatus() {
+  async aiStatus() {
     try {
-      const response = await this.http
-        .get(`${this.configService.AIURL}/heart_beat`)
-        .pipe(map((response) => response.data))
-        .toPromise();
+      const response = await this.checkAiStatus();
+
       this.publicSocketsGateway.handleStatusMessage(response);
     } catch (error) {
       this.publicSocketsGateway.handleStatusMessage({ status: 'dead' });
       this.logger.error('AI Service Timeout');
+      if (process.env.NODE_ENV === 'production') {
+        this.logger.error(error);
+      }
+    }
+
+    try {
+      const { worker_status } = await this.workerStatus();
+      this.publicSocketsGateway.handleWorkerMessage(
+        WorkerStatus[worker_status],
+      );
+    } catch (error) {
+      if (process.env.NODE_ENV === 'production') {
+        this.logger.error(error);
+      }
     }
   }
 }
