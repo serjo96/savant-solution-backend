@@ -139,7 +139,7 @@ export class OrdersService {
         'grainger-account',
         'grainger-account.id = grainger-items.graingerAccountId',
       )
-      .where('user.name =:name', { name: user.name })
+      .where('users.name =:name', { name: user.name })
       .select([
         'orders',
         'order-items',
