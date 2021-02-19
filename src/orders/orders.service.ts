@@ -84,7 +84,7 @@ export class OrdersService {
       orders.limit(clause.skip);
     }
 
-    if (query.order) {
+    if (query?.order) {
       const { sortType, sortDir } = splitSortProps(query.order);
       orders.orderBy(sortType, sortDir);
     }
