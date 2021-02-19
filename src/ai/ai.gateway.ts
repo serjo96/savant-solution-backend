@@ -7,7 +7,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { JWTService } from '../auth/jwt.service';
 
-@WebSocketGateway()
+@WebSocketGateway(null, { path: '/api/v1/socket' })
 export class AiGateway {
   constructor(private readonly jwtService: JWTService) {}
 
