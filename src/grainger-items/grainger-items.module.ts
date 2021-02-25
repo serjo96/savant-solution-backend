@@ -13,10 +13,15 @@ import { GraingerAccountsModule } from '../grainger-accounts/grainger-accounts.m
     TypeOrmModule.forFeature([GraingerItem]),
     CsvModule,
     GraingerAccountsModule,
-    SearchModule
+    SearchModule,
   ],
   controllers: [GraingerItemsController],
   providers: [GraingerItemsService, GraingerItemsSearchService],
   exports: [GraingerItemsService, GraingerItemsSearchService],
 })
-export class GraingerItemsModule {}
+export class GraingerItemsModule {
+  constructor(private searchService: GraingerItemsSearchService) {}
+  async onModuleInit() {
+    await this.searchService.createIndex();
+  }
+}

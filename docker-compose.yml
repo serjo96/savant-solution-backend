@@ -1,5 +1,7 @@
 version: '3.1'
 
+#note for elastic search may be need 3+ gb memory
+
 services:
 #  api:
 #    env_file:
@@ -19,36 +21,90 @@ services:
 #    networks:
 #      - docker_elk
 
-  elasticsearch:
-    image: elasticsearch:6.5.0
-    ports:
-      - "9200:9200"
-      - "9300:9300"
+  es01:
+    image: elasticsearch:7.4.0
+    container_name: es01
     environment:
-      - cluster.name=docker-cluster
+      - node.name=es01
+      - cluster.name=es-docker-cluster
+      - discovery.seed_hosts=es02,es03
+      - cluster.initial_master_nodes=es01,es02,es03
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     ulimits:
       memlock:
         soft: -1
         hard: -1
+    volumes:
+      - data01:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
     networks:
-      - docker_elk
+      - elastic
+
+  es02:
+    image: elasticsearch:7.4.0
+    container_name: es02
+    environment:
+      - node.name=es02
+      - cluster.name=es-docker-cluster
+      - discovery.seed_hosts=es01,es03
+      - cluster.initial_master_nodes=es01,es02,es03
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - data02:/usr/share/elasticsearch/data
+    networks:
+      - elastic
+
+  es03:
+    image: elasticsearch:7.4.0
+    container_name: es03
+    environment:
+      - node.name=es03
+      - cluster.name=es-docker-cluster
+      - discovery.seed_hosts=es01,es02
+      - cluster.initial_master_nodes=es01,es02,es03
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - data03:/usr/share/elasticsearch/data
+    networks:
+      - elastic
 
 
   kibana:
-    image: kibana:6.5.0
+    container_name: kibana
+    image: docker.elastic.co/kibana/kibana:7.4.0
+    environment:
+      ELASTICSEARCH_URL: http://es01:9200
+      ELASTICSEARCH_HOSTS: '["http://es01:9200","http://es02:9200","http://es03:9200"]'
     ports:
-      - "5601:5601"
-    links:
-      - elasticsearch
-      networks:
-        - docker_elk
+      - 5601:5601
     networks:
-      docker_elk:
-        driver: bridge
+      - elastic
 
+volumes:
+  data01:
+    driver: local
+  data02:
+    driver: local
+  data03:
+    driver: local
+  elasticsearch-data:
+    driver: local
 
+networks:
+  elastic:
+    driver: bridge
 #  postgres:
 #    image: postgres:alpine
 #    env_file:

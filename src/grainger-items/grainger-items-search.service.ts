@@ -9,6 +9,35 @@ export class GraingerItemsSearchService {
   constructor(private readonly searchService: SearchService) {}
   private readonly elasticIndex = 'grainger-item';
 
+  async createIndex() {
+    const indexConfig = {
+      mappings: {
+        properties: {
+          ...this.searchService.baseEntityMapping,
+          amazonSku: { type: 'keyword' },
+          graingerItemNumber: { type: 'keyword' },
+          graingerPackQuantity: { type: 'integer' },
+          graingerThreshold: { type: 'integer' },
+          status: { type: 'short' },
+          graingerAccount: {
+            type: 'nested',
+          },
+          orderItems: {
+            type: 'nested',
+          },
+          user: {
+            type: 'nested',
+          },
+        },
+      },
+    };
+    await this.searchService.createIndex(this.elasticIndex, indexConfig);
+  }
+
+  async deleteEsIndex() {
+    return await this.searchService.deleteIndex(this.elasticIndex);
+  }
+
   async search(
     query: SortWithPaginationQuery | any,
     userId?: string,
@@ -29,12 +58,18 @@ export class GraingerItemsSearchService {
 
   save<GraingerItem>(data: GraingerItem | Array<GraingerItem>): any {
     let response;
+    let convertedData;
     if (Array.isArray(data)) {
-      data.forEach((gItem: GraingerItem) => {
-        response = this.searchService.createIndex(gItem, this.elasticIndex);
-      });
+      convertedData = this.searchService.parseAndPrepareData<
+        Array<GraingerItem>
+      >(this.elasticIndex, data);
+
+      response = this.searchService.save(this.elasticIndex, convertedData);
     } else {
-      response = this.searchService.createIndex(data, this.elasticIndex);
+      convertedData = this.searchService.parseAndPrepareData<
+        Array<GraingerItem>
+      >(this.elasticIndex, [data]);
+      response = this.searchService.save(this.elasticIndex, convertedData);
     }
     return response;
   }

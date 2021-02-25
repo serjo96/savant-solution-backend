@@ -24,4 +24,9 @@ import { CsvModule } from '@shared/csv/csv.module';
   providers: [OrdersService, OrdersSearchService],
   exports: [OrdersService],
 })
-export class OrdersModule {}
+export class OrdersModule {
+  constructor(private searchService: OrdersSearchService) {}
+  async onModuleInit() {
+    await this.searchService.createIndex()
+  }
+}

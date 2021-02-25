@@ -165,7 +165,7 @@ export class GraingerItemsService {
   }
 
   async getAll(
-    user: User,
+    user?: User,
     query?: any,
   ): Promise<CollectionResponse<GetItemDto>> {
     const clause: any = {
@@ -189,7 +189,11 @@ export class GraingerItemsService {
       .leftJoinAndSelect('grainger-items.graingerAccount', 'graingerAccount')
       .leftJoinAndSelect('grainger-items.orderItems', 'orderItems')
       .leftJoinAndSelect('grainger-items.user', 'user')
-      .where('user.name =:name', { name: user.name });
+
+
+    if (user) {
+      items.where('user.name =:name', { name: user.name });
+    }
 
     if (clause.take) {
       items.take(clause.take);
@@ -199,13 +203,13 @@ export class GraingerItemsService {
       items.limit(clause.skip);
     }
 
-    if (query.order) {
+    if (query && query.order) {
       const { sortType, sortDir } = splitSortProps(query.order);
       items.orderBy(sortType, sortDir);
     }
 
     if (clause.where.status || clause.where.status === 0) {
-      items.where('grainger-items', { status: clause.where.status });
+      items.andWhere('grainger-items', { status: clause.where.status });
     }
 
     if (clause.where.graingerItemNumber) {
