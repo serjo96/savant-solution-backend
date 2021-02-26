@@ -34,7 +34,6 @@ export class AiService {
   constructor(
     private readonly http: HttpService,
     private readonly configService: ConfigService,
-    private readonly publicSocketsGateway: AiGateway,
   ) {}
 
   private logger: Logger = new Logger(AiService.name);
@@ -128,25 +127,14 @@ export class AiService {
       .toPromise();
   }
 
-  @Interval('AiStatus', 1000 * 30) // every 30 seconds
   async aiStatus() {
     try {
-      const response = await this.checkAiStatus();
+      const [{ status }, { worker_status }] = await Promise.all([
+        this.checkAiStatus(),
+        this.workerStatus(),
+      ]);
 
-      this.publicSocketsGateway.handleStatusMessage(response);
-    } catch (error) {
-      this.publicSocketsGateway.handleStatusMessage({ status: 'dead' });
-      this.logger.error('AI Service Timeout');
-      if (process.env.NODE_ENV === 'production') {
-        this.logger.error(error);
-      }
-    }
-
-    try {
-      const { worker_status } = await this.workerStatus();
-      this.publicSocketsGateway.handleWorkerMessage(
-        WorkerStatus[worker_status],
-      );
+      return { aiStatus: status, workerStatus: WorkerStatus[worker_status] };
     } catch (error) {
       if (process.env.NODE_ENV === 'production') {
         this.logger.error(error);

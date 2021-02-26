@@ -73,17 +73,14 @@ export class OrdersService {
     const orders = this.ordersRepository
       .createQueryBuilder('orders')
       .leftJoinAndSelect('orders.items', 'items')
-      .leftJoinAndSelect('orders.user', 'user');
+      .leftJoinAndSelect('orders.user', 'user')
+      .where('user.name =:name', { name: clause.where.user.name });
 
-    if (clause.where.user && clause.where.user.name) {
-      orders.where('user.name =:name', { name: clause.where.user.name });
-    }
-
-    if (clause.take) {
+    if (clause?.take) {
       orders.take(clause.take);
     }
 
-    if (clause.skip) {
+    if (clause?.skip) {
       orders.limit(clause.skip);
     }
 
@@ -92,21 +89,19 @@ export class OrdersService {
       orders.orderBy(sortType, sortDir);
     }
 
-    if (clause.where.status || clause.where.status === 0) {
-      const status = clause.where.status;
-      orders.andWhere({ ...status });
+    if (clause?.where.status || clause.where.status === 0) {
+      orders.where({ status: clause.where.status });
     }
 
-    if (clause.where.id) {
-      orders.andWhere(clause.where.id);
+    if (clause?.where.id) {
+      orders.where({ id: clause.where.id });
     }
 
-    if (clause.where.graingerItemNumber) {
-      const graingerItemNumber = clause.where.graingerItemNumber;
-      orders.andWhere({
-        ...graingerItemNumber,
-      });
-    }
+    // if (clause?.where.graingerItemNumber) {
+    //   orders.where({
+    //     graingerItemNumber: clause.where.graingerItemNumber,
+    //   });
+    // }
 
     const [result, count] = await orders.getManyAndCount();
 
@@ -371,6 +366,7 @@ export class OrdersService {
     const orderItemsDto: CsvCreateOrderDto[] = await this.csvService.uploadFromCsv<CsvCreateOrderDto>(
       stream,
       headers,
+      '\t',
     );
     if (
       orderItemsDto.some(

@@ -51,6 +51,17 @@ export class GraingerItemsService {
   }
 
   async uploadFromCsv(stream: Readable, user: User): Promise<GraingerItem[]> {
+    // const headers = [
+    //   null,
+    //   'amazonSku',
+    //   'graingerItemNumber',
+    //   'graingerPackQuantity',
+    //   'graingerLogin',
+    //   null,
+    //   null,
+    //   'graingerThreshold',
+    //   'status',
+    // ];
     const headers = [
       null,
       'amazonSku',
@@ -66,6 +77,7 @@ export class GraingerItemsService {
     const csvItems: CsvCreateGraingerItem[] = await this.csvService.uploadFromCsv<CsvCreateGraingerItem>(
       stream,
       headers,
+      ',',
     );
     if (
       csvItems.some(
@@ -145,13 +157,23 @@ export class GraingerItemsService {
         key: 'gi_graingerPackQuantity',
         width: 20,
       },
-      { header: 'Grainger Account', key: 'ga_email', width: 20 },
+      {
+        header: 'Supplier',
+        // key: 'gi_graingerPackQuantity',
+        width: 20,
+      },
+      {
+        header: 'Alt Supplier',
+        // key: 'gi_graingerPackQuantity',
+        width: 20,
+      },
       {
         header: 'Threshold',
         key: 'gi_graingerThreshold',
         width: 20,
       },
       { header: 'Status', key: 'gi_status', width: 20 },
+      { header: 'Grainger Account', key: 'ga_email', width: 20 },
     ] as Array<Column>;
     worksheet.addRows(allItems);
 
@@ -188,8 +210,7 @@ export class GraingerItemsService {
       .createQueryBuilder('grainger-items')
       .leftJoinAndSelect('grainger-items.graingerAccount', 'graingerAccount')
       .leftJoinAndSelect('grainger-items.orderItems', 'orderItems')
-      .leftJoinAndSelect('grainger-items.user', 'user')
-
+      .leftJoinAndSelect('grainger-items.user', 'user');
 
     if (user) {
       items.where('user.name =:name', { name: user.name });
