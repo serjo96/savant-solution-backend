@@ -37,8 +37,8 @@ $ docker-compose -f docker-compose-dev.yml up -d
 
 ```bash
 #node
-
 $ pm2 startOrRestart ecosystem.config.js --only kryber-backend
 
+#elastic-search
 $ docker-compose -f docker-compose-prod.yml up -d
 ```
