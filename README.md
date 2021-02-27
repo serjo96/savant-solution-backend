@@ -30,9 +30,15 @@ $ npm install
 $ npm run start
 
 # elastic-search + kibana
-docker-compose -f docker-compose-dev.yml up -d
+$ docker-compose -f docker-compose-dev.yml up -d
 ```
 
-## Production manual start (backend only)
+## Production manual start
 
-`pm2 startOrRestart ecosystem.config.js --only kryber-backend`
+```bash
+#node
+
+$ pm2 startOrRestart ecosystem.config.js --only kryber-backend
+
+$ docker-compose -f docker-compose-prod.yml up -d
+```
