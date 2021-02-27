@@ -177,11 +177,10 @@ export class SearchService {
     }
   }
   parseAndPrepareData<T>(index: string, data: Array<any>): Array<any> {
-    console.log(Array.isArray(data));
-    console.log(typeof data);
-    return data.flatMap((element, indx: number) => [
-      { index: { _index: index, _id: element.id || indx } },
-      element,
-    ]);
+    return data.reduce(
+      (acc, element) =>
+        acc.concat({ index: { _index: index, _id: element.id } }, element),
+      [],
+    );
   }
 }
