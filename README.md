@@ -1,11 +1,21 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo_text.svg" width="320" alt="Nest Logo" /></a>
-</p>
-
-
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Project based on nest.js framework + elastic-search + kibana and docker.
+
+## System requirements
+
+```
+node.js 10.14.0 >=
+Docker
+
+# elastic-search dev
+docker limit <= 2 gb memory
+
+# elastic-search prod
+docker limit 3 - 4.5 gb memory
+
+```
+
 
 ## Installation
 
@@ -13,28 +23,16 @@
 $ npm install
 ```
 
-## Running the app
+## Running the app for development
 
 ```bash
-# development
+# development nest.js
 $ npm run start
 
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+# elastic-search + kibana
+docker-compose -f docker-compose-dev.yml up -d
 ```
 
-## Test
+## Production manual start (backend only)
 
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
+`pm2 startOrRestart ecosystem.config.js --only kryber-backend`
