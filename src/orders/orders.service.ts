@@ -73,10 +73,13 @@ export class OrdersService {
     const orders = this.ordersRepository
       .createQueryBuilder('orders')
       .leftJoinAndSelect('orders.items', 'items')
-      .leftJoinAndSelect('orders.user', 'user')
-      .where('user.name =:name', { name: clause.where.user.name });
+      .leftJoinAndSelect('orders.user', 'user');
 
-    if (clause?.take) {
+    if (clause.where.user && clause.where.user.name) {
+      orders.where('user.name =:name', { name: clause.where.user.name });
+    }
+
+    if (clause.take) {
       orders.take(clause.take);
     }
 
@@ -89,12 +92,13 @@ export class OrdersService {
       orders.orderBy(sortType, sortDir);
     }
 
-    if (clause?.where.status || clause.where.status === 0) {
-      orders.where({ status: clause.where.status });
+    if (clause.where.status || clause.where.status === 0) {
+      const status = clause.where.status;
+      orders.andWhere({ ...status });
     }
 
-    if (clause?.where.id) {
-      orders.where({ id: clause.where.id });
+    if (clause.where.id) {
+      orders.andWhere(clause.where.id);
     }
 
     // if (clause?.where.graingerItemNumber) {

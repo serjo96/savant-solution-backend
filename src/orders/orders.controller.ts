@@ -104,7 +104,9 @@ export class OrdersController {
       stream,
       user,
     );
-    await this.ordersSearchService.save(orders);
+    if (success) {
+      await this.ordersSearchService.save(success);
+    }
 
     this.sendOrdersToAI(orders);
 
