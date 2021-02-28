@@ -104,7 +104,8 @@ export class OrdersController {
       stream,
       user,
     );
-    if (success) {
+
+    if (success && success.length) {
       await this.ordersSearchService.save(success);
     }
 
