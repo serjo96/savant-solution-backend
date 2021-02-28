@@ -24,7 +24,7 @@ export class AiGateway {
     this.logger.log(`Client disconnected: ${client.id}`);
   }
   // TODO: add socket.io adapter with token verification there
-  handleConnection(client: Socket, ...args: any[]) {
+  async handleConnection(client: Socket) {
     try {
       this.jwtService.verifyToken(client.handshake.query.token);
       this.logger.log(`Client connected: ${client.id}`);

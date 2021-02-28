@@ -93,8 +93,8 @@ export class OrdersService {
     }
 
     if (clause.where.status || clause.where.status === 0) {
-      const status = clause.where.status;
-      orders.andWhere({ ...status });
+      const status = <any>{ status: clause.where.status };
+      orders.andWhere(status);
     }
 
     if (clause.where.id) {
@@ -107,7 +107,12 @@ export class OrdersService {
     //   });
     // }
 
-    const [result, count] = await orders.getManyAndCount();
+    let result, count;
+    try {
+      [result, count] = await orders.getManyAndCount();
+    } catch (e) {
+      this.logger.debug(e);
+    }
 
     if (!result) {
       throw new NotFoundException();

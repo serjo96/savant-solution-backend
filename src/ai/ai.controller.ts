@@ -18,9 +18,4 @@ export class AiController {
   async stopAiWorker(): Promise<string> {
     return await this.aiService.stopWorker();
   }
-
-  @Get('/status')
-  getStatus(): Promise<{ aiStatus: string; workerStatus: string }> {
-    return this.aiService.aiStatus();
-  }
 }
