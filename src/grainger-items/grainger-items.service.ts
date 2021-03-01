@@ -51,7 +51,7 @@ export class GraingerItemsService {
   }
 
   async uploadFromCsv(stream: Readable, user: User): Promise<GraingerItem[]> {
-    let csvItems = await this.convertCsvToDto(stream);
+    const csvItems = await this.convertCsvToDto(stream);
 
     const uniqAmazonSkus = this.getUniqFields(csvItems, 'amazonSku');
 
@@ -60,19 +60,11 @@ export class GraingerItemsService {
       where: { amazonSku: In(uniqAmazonSkus) },
     });
 
-    const existGraingerItemIds = existGraingerItems.map(
-      (orderItem) => orderItem.amazonSku,
-    );
-
-    csvItems = csvItems.filter(
-      (el) => !existGraingerItemIds.includes(el.amazonSku),
-    );
-
     const graingerAccounts = await this.graingerAccountService.getAll({
       where: { email: In(this.getUniqFields(csvItems, 'graingerLogin')) },
     });
 
-    const items = csvItems.map((item) =>
+    let items: GraingerItem[] = csvItems.map((item) =>
       GraingerItem.create({
         ...item,
         status: ItemStatusEnum[item.status.toUpperCase()],
@@ -84,6 +76,18 @@ export class GraingerItemsService {
         user,
       }),
     );
+
+    // Перезаписываем если уже существуют
+    items = items.map((item) => {
+      const existItem = existGraingerItems.find(
+        (i) => i.amazonSku === item.amazonSku,
+      );
+      if (existItem) {
+        return { ...existItem, ...item } as GraingerItem;
+      } else {
+        return item;
+      }
+    });
 
     // Если Item имеет не все поля, ставим статус InActive
     items.forEach((itemForCheck: GraingerItem) => {
