@@ -51,17 +51,54 @@ export class GraingerItemsService {
   }
 
   async uploadFromCsv(stream: Readable, user: User): Promise<GraingerItem[]> {
-    // const headers = [
-    //   null,
-    //   'amazonSku',
-    //   'graingerItemNumber',
-    //   'graingerPackQuantity',
-    //   'graingerLogin',
-    //   null,
-    //   null,
-    //   'graingerThreshold',
-    //   'status',
-    // ];
+    let csvItems = await this.convertCsvToDto(stream);
+
+    const uniqAmazonSkus = this.getUniqFields(csvItems, 'amazonSku');
+
+    // Находим уже существующие amazonItemId, чтобы их не трогать и в конце написать "Такие уже есть"
+    const existGraingerItems: GraingerItem[] = await this.repository.find({
+      where: { amazonSku: In(uniqAmazonSkus) },
+    });
+
+    const existGraingerItemIds = existGraingerItems.map(
+      (orderItem) => orderItem.amazonSku,
+    );
+
+    csvItems = csvItems.filter(
+      (el) => !existGraingerItemIds.includes(el.amazonSku),
+    );
+
+    const graingerAccounts = await this.graingerAccountService.getAll({
+      where: { email: In(this.getUniqFields(csvItems, 'graingerLogin')) },
+    });
+
+    const items = csvItems.map((item) =>
+      GraingerItem.create({
+        ...item,
+        status: ItemStatusEnum[item.status.toUpperCase()],
+        graingerPackQuantity: +item.graingerPackQuantity,
+        graingerThreshold: +item.graingerThreshold,
+        graingerAccount: graingerAccounts.find(
+          (i) => i.email === item.graingerLogin,
+        ),
+        user,
+      }),
+    );
+
+    // Если Item имеет не все поля, ставим статус InActive
+    items.forEach((itemForCheck: GraingerItem) => {
+      const { errorMessage } = checkRequiredItemFieldsReducer(itemForCheck);
+      if (errorMessage) {
+        itemForCheck.status = ItemStatusEnum.INACTIVE;
+      }
+    });
+
+    return this.repository.save(items);
+  }
+
+  private async convertCsvToDto(
+    stream: Readable,
+  ): Promise<CsvCreateGraingerItem[]> {
     const headers = [
       null,
       'amazonSku',
@@ -91,32 +128,7 @@ export class GraingerItemsService {
       throw new HttpException(`Invalid CSV file`, HttpStatus.OK);
     }
 
-    const graingerAccounts = await this.graingerAccountService.getAll({
-      where: { email: In(this.getUniqFields(csvItems, 'graingerLogin')) },
-    });
-
-    const items = csvItems.map((item) =>
-      GraingerItem.create({
-        ...item,
-        status: ItemStatusEnum[item.status.toUpperCase()],
-        graingerPackQuantity: +item.graingerPackQuantity,
-        graingerThreshold: +item.graingerThreshold,
-        graingerAccount: graingerAccounts.find(
-          (i) => i.email === item.graingerLogin,
-        ),
-        user,
-      }),
-    );
-
-    // Если Item имеет не все поля, ставим статус InActive
-    items.forEach((itemForCheck: GraingerItem) => {
-      const { errorMessage } = checkRequiredItemFieldsReducer(itemForCheck);
-      if (errorMessage) {
-        itemForCheck.status = ItemStatusEnum.INACTIVE;
-      }
-    });
-
-    return this.repository.save(items);
+    return csvItems;
   }
 
   async exportToXlxs(
