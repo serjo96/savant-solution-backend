@@ -1,6 +1,12 @@
-import { HttpService, Injectable, Logger } from '@nestjs/common';
+import {
+  HttpException,
+  HttpService,
+  HttpStatus,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
-import { map } from 'rxjs/operators';
+import { map, timeout } from 'rxjs/operators';
 import { ConfigService } from '../config/config.service';
 import { Orders } from '../orders/orders.entity';
 import { GraingerAccount } from '../grainger-accounts/grainger-account.entity';
@@ -34,7 +40,6 @@ export class AiService {
   constructor(
     private readonly http: HttpService,
     private readonly configService: ConfigService,
-    private readonly publicSocketsGateway: AiGateway,
   ) {}
 
   private logger: Logger = new Logger(AiService.name);
@@ -114,43 +119,39 @@ export class AiService {
     }
   }
 
-  async workerStatus(): Promise<{ worker_status: WorkerStatus }> {
-    return await this.http
+  workerStatus(): Promise<{ worker_status: WorkerStatus }> {
+    return this.http
       .get(`${this.configService.aiUrl}/worker_status`)
-      .pipe(map((response) => response.data))
+      .pipe(
+        timeout(2500),
+        map((response) => response.data),
+      )
       .toPromise();
   }
 
-  async checkAiStatus(): Promise<{ status: string }> {
-    return await this.http
+  checkAiStatus(): Promise<{ status: string }> {
+    return this.http
       .get(`${this.configService.aiUrl}/heart_beat`)
-      .pipe(map((response) => response.data))
+      .pipe(
+        timeout(2500),
+        map((response) => response.data),
+      )
       .toPromise();
   }
 
-  @Interval('AiStatus', 1000 * 30) // every 30 seconds
   async aiStatus() {
     try {
-      const response = await this.checkAiStatus();
+      const [{ status }, { worker_status }] = await Promise.all([
+        this.checkAiStatus(),
+        this.workerStatus(),
+      ]);
 
-      this.publicSocketsGateway.handleStatusMessage(response);
+      return { aiStatus: status, workerStatus: WorkerStatus[worker_status] };
     } catch (error) {
-      this.publicSocketsGateway.handleStatusMessage({ status: 'dead' });
-      this.logger.error('AI Service Timeout');
-      if (process.env.NODE_ENV === 'production') {
-        this.logger.error(error);
-      }
-    }
-
-    try {
-      const { worker_status } = await this.workerStatus();
-      this.publicSocketsGateway.handleWorkerMessage(
-        WorkerStatus[worker_status],
-      );
-    } catch (error) {
-      if (process.env.NODE_ENV === 'production') {
-        this.logger.error(error);
-      }
+      this.logger.error(error);
+      throw new HttpException(error, HttpStatus.OK);
+      // if (process.env.NODE_ENV === 'production') {
+      // }
     }
   }
 }
