@@ -27,6 +27,7 @@ import { AppController } from './app.controller';
     GraingerItemsModule,
     OrdersModule,
     SearchModule,
+    AiModule,
     GraingerAccountsModule,
   ],
   controllers: [AppController]
