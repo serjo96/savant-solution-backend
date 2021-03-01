@@ -97,9 +97,9 @@ export class OrdersService {
       orders.andWhere(status);
     }
 
-    if (clause.where.id) {
-      orders.andWhere(clause.where.id);
-    }
+    // if (clause.where.id) {
+    //   orders.andWhere(clause.where.id);
+    // }
 
     // if (clause?.where.graingerItemNumber) {
     //   orders.where({
