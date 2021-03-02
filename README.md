@@ -4,17 +4,17 @@ Project based on nest.js framework + elastic-search + kibana and docker.
 
 ## System requirements
 
-```
-node.js 10.14.0 >=
-Docker
 
-# elastic-search dev
-docker limit <= 2 gb memory
+* node.js 10.14.0 >=
+* Docker
 
-# elastic-search prod
-docker limit 3 - 4.5 gb memory
+**elastic-search dev**
+* docker limit <= 2 gb memory
 
-```
+**elastic-search prod**
+* docker limit 3 - 4.5 gb memory
+
+
 
 
 ## Installation
