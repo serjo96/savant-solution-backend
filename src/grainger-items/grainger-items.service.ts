@@ -336,7 +336,21 @@ export class GraingerItemsService {
     return this.repository.save(existItem);
   }
 
-  private getUniqFields = (array: any[], field?: string) => {
-    return [...new Set(array.map((item) => (field ? item[field] : item)))];
+  private getUniqFields = (
+    array: any[],
+    field?: string,
+    toLowerCase?: boolean,
+  ) => {
+    return [
+      ...new Set(
+        array.map((item) =>
+          field
+            ? toLowerCase
+              ? item[field].toLowerCase()
+              : item[field]
+            : item,
+        ),
+      ),
+    ];
   };
 }
