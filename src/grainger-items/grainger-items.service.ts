@@ -61,7 +61,7 @@ export class GraingerItemsService {
     });
 
     const graingerAccounts = await this.graingerAccountService.getAll({
-      where: { email: In(this.getUniqFields(csvItems, 'graingerLogin')) },
+      where: { email: In(this.getUniqFields(csvItems, 'graingerLogin', true)) },
     });
 
     let items: GraingerItem[] = csvItems.map((item) =>
@@ -71,7 +71,7 @@ export class GraingerItemsService {
         graingerPackQuantity: +item.graingerPackQuantity,
         graingerThreshold: +item.graingerThreshold,
         graingerAccount: graingerAccounts.find(
-          (i) => i.email === item.graingerLogin,
+          (i) => i.email.toLowerCase() === item.graingerLogin.toLowerCase(),
         ),
         user,
       }),
