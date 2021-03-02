@@ -91,7 +91,10 @@ export class AiService {
   ): Promise<{ amazonOrders: GetGraingerOrder[] } & ErrorResponse> {
     return this.http
       .post<any>(`${this.configService.aiUrl}/get_orders`, { amazonOrders })
-      .pipe(map((response) => response.data))
+      .pipe(
+        timeout(2500),
+        map((response) => response.data),
+      )
       .toPromise();
   }
 

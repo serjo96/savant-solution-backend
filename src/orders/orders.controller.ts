@@ -115,8 +115,10 @@ export class OrdersController {
   }
 
   private async sendOrdersToAI(orders: Orders[]) {
-    const readyToProceedOrders = orders.filter(
-      (order) => order.status === OrderStatusEnum.PROCEED,
+    const readyToProceedOrders = orders.filter((order) =>
+      [OrderStatusEnum.WAITFORPROCEED, OrderStatusEnum.PROCEED].includes(
+        order.status,
+      ),
     );
     try {
       const { error } = await this.aiService.addOrdersToAI(

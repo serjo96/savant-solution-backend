@@ -468,82 +468,82 @@ export class OrdersService {
   /**
    * Получает все заказы со статусом Proceed, запрашивает у AI статус по ним
    */
-  // @Interval(10000)
-  // async updateOrderStatusesFromAI() {
-  //   const orders = await this.ordersRepository.find({
-  //     relations: ['items'],
-  //     where: {
-  //       status: In([OrderStatusEnum.WAITFORPROCEED, OrderStatusEnum.PROCEED]),
-  //     },
-  //   });
-  //   if (!orders.length) {
-  //     return;
-  //   }
-  //   try {
-  //     const {
-  //       amazonOrders,
-  //       error,
-  //     } = await this.aiService.getOrderStatusesFromAI(
-  //       orders.map((order) => order.amazonOrderId),
-  //     );
-  //     if (error) {
-  //       throw new HttpException(error.message, HttpStatus.OK);
-  //     }
-  //     amazonOrders.forEach((graingerOrder) => {
-  //       const existOrder = orders.find(
-  //         (order) => order.amazonOrderId === graingerOrder.amazonOrderId,
-  //       );
-  //
-  //       if (!existOrder) {
-  //         return;
-  //       }
-  //       existOrder.status = (graingerOrder.status as number) as OrderStatusEnum;
-  //       if (graingerOrder.status === GraingerStatusEnum.Success) {
-  //         existOrder.orderDate = new Date();
-  //       }
-  //
-  //       graingerOrder.graingerOrders.forEach((graingerOrder) => {
-  //         graingerOrder.items.forEach((graingerItem) => {
-  //           const existItem = existOrder.items.find(
-  //             (item) =>
-  //               item.graingerItem?.graingerItemNumber ===
-  //               graingerItem.graingerItemNumber,
-  //           );
-  //           if (!existItem) {
-  //             return;
-  //           }
-  //           existItem.graingerTrackingNumber =
-  //             graingerOrder.graingerTrackingNumber;
-  //           existItem.graingerWebNumber = graingerOrder.g_web_number;
-  //           existItem.graingerOrderId = graingerOrder.graingerOrderId;
-  //
-  //           existOrder.items = [...existOrder.items, existItem];
-  //         });
-  //       });
-  //     });
-  //
-  //     await this.ordersRepository.save(orders);
-  //
-  //     const successOrdersCount = amazonOrders.filter(
-  //       (order) => order.status === GraingerStatusEnum.Success,
-  //     ).length;
-  //     const waitCount = amazonOrders.filter((order) =>
-  //       [GraingerStatusEnum.WaitForProceed].includes(order.status),
-  //     ).length;
-  //     const pendingCount = amazonOrders.filter((order) =>
-  //       [GraingerStatusEnum.Proceed].includes(order.status),
-  //     ).length;
-  //     const errorOrdersCount = amazonOrders.filter(
-  //       (order) => order.status === GraingerStatusEnum.Error,
-  //     ).length;
-  //
-  //     this.logger.debug(
-  //       `[Check Order AI Status] Success: ${successOrdersCount}, Wait: ${waitCount}, Pending: ${pendingCount}, Error: ${errorOrdersCount}`,
-  //     );
-  //   } catch (e) {
-  //     this.logger.error('AI Service Timeout');
-  //   }
-  // }
+  @Interval(10000)
+  async updateOrderStatusesFromAI() {
+    const orders = await this.ordersRepository.find({
+      relations: ['items'],
+      where: {
+        status: In([OrderStatusEnum.WAITFORPROCEED, OrderStatusEnum.PROCEED]),
+      },
+    });
+    if (!orders.length) {
+      return;
+    }
+    try {
+      const {
+        amazonOrders,
+        error,
+      } = await this.aiService.getOrderStatusesFromAI(
+        orders.map((order) => order.amazonOrderId),
+      );
+      if (error) {
+        throw new HttpException(error.message, HttpStatus.OK);
+      }
+      amazonOrders.forEach((graingerOrder) => {
+        const existOrder = orders.find(
+          (order) => order.amazonOrderId === graingerOrder.amazonOrderId,
+        );
+
+        if (!existOrder) {
+          return;
+        }
+        existOrder.status = (graingerOrder.status as number) as OrderStatusEnum;
+        if (graingerOrder.status === GraingerStatusEnum.Success) {
+          existOrder.orderDate = new Date();
+        }
+
+        graingerOrder.graingerOrders.forEach((graingerOrder) => {
+          graingerOrder.items.forEach((graingerItem) => {
+            const existItem = existOrder.items.find(
+              (item) =>
+                item.graingerItem?.graingerItemNumber ===
+                graingerItem.graingerItemNumber,
+            );
+            if (!existItem) {
+              return;
+            }
+            existItem.graingerTrackingNumber =
+              graingerOrder.graingerTrackingNumber;
+            existItem.graingerWebNumber = graingerOrder.g_web_number;
+            existItem.graingerOrderId = graingerOrder.graingerOrderId;
+
+            existOrder.items = [...existOrder.items, existItem];
+          });
+        });
+      });
+
+      await this.ordersRepository.save(orders);
+
+      const successOrdersCount = amazonOrders.filter(
+        (order) => order.status === GraingerStatusEnum.Success,
+      ).length;
+      const waitCount = amazonOrders.filter((order) =>
+        [GraingerStatusEnum.WaitForProceed].includes(order.status),
+      ).length;
+      const pendingCount = amazonOrders.filter((order) =>
+        [GraingerStatusEnum.Proceed].includes(order.status),
+      ).length;
+      const errorOrdersCount = amazonOrders.filter(
+        (order) => order.status === GraingerStatusEnum.Error,
+      ).length;
+
+      this.logger.debug(
+        `[Check Order AI Status] Success: ${successOrdersCount}, Wait: ${waitCount}, Pending: ${pendingCount}, Error: ${errorOrdersCount}`,
+      );
+    } catch (e) {
+      this.logger.error('AI Service Timeout');
+    }
+  }
 
   async update(
     where: {
