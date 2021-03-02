@@ -41,6 +41,8 @@
     "@nestjs/throttler": "^1.1.1",
     "@nestjs/typeorm": "7.1.5",
     "@nestjs/websockets": "^7.6.12",
+    "@ntegral/nestjs-sentry": "^2.0.5",
+    "@sentry/node": "^6.2.1",
     "@typescript-eslint/eslint-plugin": "^3.9.1",
     "@typescript-eslint/parser": "4.9.0",
     "babel-eslint": "^10.1.0",

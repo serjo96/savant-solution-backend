@@ -1,7 +1,7 @@
 name: deploy-app-on-s3
 on:
   push:
-    branches: 
+    branches:
       - main
     tags:
       - v*
@@ -75,6 +75,7 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+          AI_URL: ${{ secrets.AI_URL_PROD }}
         run: yarn run build
 
       - name: Run migration
@@ -82,6 +83,7 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+          AI_URL: ${{ secrets.AI_URL_PROD }}
 
 
       # Install AWS CLI 2

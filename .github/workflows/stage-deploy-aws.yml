@@ -73,6 +73,7 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_STAGIN_URL }}
           JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+          AI_URL: ${{ secrets.AI_URL_STAGE }}
         run: yarn run build
 
       - name: Run migration
@@ -80,6 +81,7 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_STAGIN_URL }}
           JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+          AI_URL: ${{ secrets.AI_URL_STAGE }}
 
 
       # Install AWS CLI 2

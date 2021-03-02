@@ -73,6 +73,9 @@ export class ConfigService {
   get aiUrl(): string {
     return this.envConfig.AI_URL as string;
   }
+  get sentryDns(): string {
+    return this.envConfig.SENTRY_DNS as string;
+  }
 
   get version(): string {
     return this.envConfig.version as string;
