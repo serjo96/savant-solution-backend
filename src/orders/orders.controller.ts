@@ -242,7 +242,9 @@ export class OrdersController {
     };
     const order = await this.ordersService.updateStatus(where, status);
     await this.ordersSearchService.update(order);
-    if (status === OrderStatusEnum.PROCEED) {
+    if (
+      [OrderStatusEnum.WAITFORPROCEED, OrderStatusEnum.PROCEED].includes(status)
+    ) {
       try {
         const { error } = await this.aiService.addOrdersToAI([order]);
         if (error) {
