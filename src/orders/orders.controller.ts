@@ -35,10 +35,11 @@ import { GetOrderDto } from './dto/get-order.dto';
 import { ChangeOrderStatusDto } from './dto/change-order-status.dto';
 
 import { CollectionResponse } from '../common/collection-response';
-import { OrderStatusEnum } from './orders.entity';
+import { OrderStatusEnum, Orders } from './orders.entity';
 import { OrdersSearchService } from './orders-search.service';
 import { OrdersService } from './orders.service';
 import { AiService } from '../ai/ai.service';
+import { GetOrderItemDto } from './dto/get-order-item.dto';
 
 @UseGuards(AuthGuard('jwt'))
 @Roles('user', 'admin')
@@ -77,7 +78,7 @@ export class OrdersController {
     @Req() req: Request,
   ): Promise<any> {
     const { user } = req;
-    return await this.ordersSearchService.search(query, user.id);
+    return await this.ordersSearchService.search(query, user.name);
   }
 
   @Get('/search')
@@ -96,15 +97,30 @@ export class OrdersController {
   async uploadOrders(
     @Req() req: Request,
     @UploadedFile() files,
-  ): Promise<GetOrderDto[]> {
+  ): Promise<{ success: GetOrderItemDto[]; errors: GetOrderItemDto[] }> {
     const stream = Readable.from(files.buffer.toString());
     const { user } = req;
-    const orders = await this.ordersService.uploadFromCsv(stream, user);
-    const readyToProceedOrders = orders.filter(
-      (order) => order.status === OrderStatusEnum.PROCEED,
+    const { orders, success, errors } = await this.ordersService.uploadFromCsv(
+      stream,
+      user,
+    );
+
+    if (success && success.length) {
+      await this.ordersSearchService.save(success);
+    }
+
+    this.sendOrdersToAI(orders);
+
+    return { success, errors };
+  }
+
+  private async sendOrdersToAI(orders: Orders[]) {
+    const readyToProceedOrders = orders.filter((order) =>
+      [OrderStatusEnum.WAITFORPROCEED, OrderStatusEnum.PROCEED].includes(
+        order.status,
+      ),
     );
     try {
-      // this.ordersSearchService.save(orders);
       const { error } = await this.aiService.addOrdersToAI(
         readyToProceedOrders,
       );
@@ -114,23 +130,26 @@ export class OrdersController {
       this.logger.debug(
         `[Change Order Status] ${readyToProceedOrders.length} orders went successfully to AI`,
       );
-
-      return orders;
     } catch ({ message }) {
-      const where = {
-        id: In(readyToProceedOrders.map((order) => order.id)),
-        user: {
-          id: user.id,
-        },
-      };
-      const result = await this.ordersService.updateStatus(
-        where,
-        OrderStatusEnum.MANUAL,
-      );
-      // await this.ordersSearchService.update(result);
+      // const where = {
+      //   id: In(readyToProceedOrders.map((order) => order.id)),
+      //   user: {
+      //     id: user.id,
+      //   },
+      // };
+      // const result = await this.ordersService.updateStatus(
+      //   where,
+      //   OrderStatusEnum.MANUAL,
+      // );
       this.logger.debug(message);
       throw new HttpException(message, HttpStatus.OK);
     }
+  }
+
+  @Delete('/remove-elastic-index')
+  @Roles('admin')
+  async removeEsIndex() {
+    return await this.ordersSearchService.deleteEsIndex();
   }
 
   @Get()
@@ -143,7 +162,7 @@ export class OrdersController {
 
     const where = {
       user: {
-        id: user.id,
+        name: user.name,
       },
     };
     if (query.search) {
@@ -170,7 +189,7 @@ export class OrdersController {
   ): Promise<CollectionResponse<GetOrderDto>> {
     return this.ordersService.getAll({
       user: {
-        id: user.id,
+        name: user.name,
       },
       id: In(orderIds),
     });
@@ -200,7 +219,7 @@ export class OrdersController {
     const where = {
       id,
       user: {
-        id: user.id,
+        name: user.name,
       },
     };
     return await this.ordersService.findOne(where);
@@ -218,12 +237,14 @@ export class OrdersController {
     const where = {
       id,
       user: {
-        id: user.id,
+        name: user.name,
       },
     };
     const order = await this.ordersService.updateStatus(where, status);
     await this.ordersSearchService.update(order);
-    if (status === OrderStatusEnum.PROCEED) {
+    if (
+      [OrderStatusEnum.WAITFORPROCEED, OrderStatusEnum.PROCEED].includes(status)
+    ) {
       try {
         const { error } = await this.aiService.addOrdersToAI([order]);
         if (error) {

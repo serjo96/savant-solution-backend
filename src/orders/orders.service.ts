@@ -9,7 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { plainToClass } from 'class-transformer';
 import { In, Repository } from 'typeorm';
 import { paginator } from '../common/paginator';
-import { sort } from '../common/sort';
+import { sort, splitSortProps } from '../common/sort';
 import { EditOrderDto } from './dto/editOrder.dto';
 
 import { CreateOrderDto } from './dto/createOrderDto';
@@ -68,7 +68,52 @@ export class OrdersService {
     };
     clause.where = { ...clause.where, ...where };
     clause.relations = ['items'];
-    const [result, count] = await this.ordersRepository.findAndCount(clause);
+    // const [result, count] = await this.ordersRepository.findAndCount(clause);
+
+    const orders = this.ordersRepository
+      .createQueryBuilder('orders')
+      .leftJoinAndSelect('orders.items', 'items')
+      .leftJoinAndSelect('orders.user', 'user');
+
+    if (clause.where.user && clause.where.user.name) {
+      orders.where('user.name =:name', { name: clause.where.user.name });
+    }
+
+    if (clause.take) {
+      orders.take(clause.take);
+    }
+
+    if (clause?.skip) {
+      orders.limit(clause.skip);
+    }
+
+    if (query?.order) {
+      const { sortType, sortDir } = splitSortProps(query.order);
+      orders.orderBy(sortType, sortDir);
+    }
+
+    if (clause.where.status || clause.where.status === 0) {
+      const status = <any>{ status: clause.where.status };
+      orders.andWhere(status);
+    }
+
+    // if (clause.where.id) {
+    //   orders.andWhere(clause.where.id);
+    // }
+
+    // if (clause?.where.graingerItemNumber) {
+    //   orders.where({
+    //     graingerItemNumber: clause.where.graingerItemNumber,
+    //   });
+    // }
+
+    let result, count;
+    try {
+      [result, count] = await orders.getManyAndCount();
+    } catch (e) {
+      this.logger.debug(e);
+    }
+
     if (!result) {
       throw new NotFoundException();
     }
@@ -103,7 +148,7 @@ export class OrdersService {
         'grainger-account',
         'grainger-account.id = grainger-items.graingerAccountId',
       )
-      .where('orders.user.id=:id', { id: user.id })
+      .where('users.name =:name', { name: user.name })
       .select([
         'orders',
         'order-items',
@@ -202,49 +247,28 @@ export class OrdersService {
     return workbook.xlsx.writeBuffer();
   }
 
-  async uploadFromCsv(stream: Readable, user) {
-    const headers = [
-      'amazonOrderId',
-      'amazonItemId',
-      'createdAt',
-      null,
-      null,
-      null,
-      null,
-      null,
-      'recipientName',
-      null,
-      'amazonSku',
-      null,
-      'amazonQuantity',
-      null,
-      null, //  'amazonPrice',
-      null,
-      'recipientName',
-      'shipAddress',
-      null,
-      null,
-      'shipCity',
-      'shipState',
-      'shipPostalCode',
-    ];
+  async uploadFromCsv(
+    stream: Readable,
+    user,
+  ): Promise<{ success: OrderItem[]; errors: OrderItem[]; orders: Orders[] }> {
+    let orderItemsDto = await this.convertCsvToDto(stream);
 
-    // Прочитаем CSV и проверим что в ней есть все необходимые поля
-    const orderItemsDto: CsvCreateOrderDto[] = await this.csvService.uploadFromCsv<CsvCreateOrderDto>(
-      stream,
-      headers,
-    );
-    if (
-      orderItemsDto.some(
-        (orderItem) => !this.csvService.isValidCSVRow(orderItem, headers),
-      )
-    ) {
-      throw new HttpException(`Invalid CSV file`, HttpStatus.OK);
-    }
-
-    // Проверка что таких amazonItemId еще не существует
     const uniqAmazonItemIds = this.getUniqFields(orderItemsDto, 'amazonItemId');
-    await this.checkIfOrderItemsExist(uniqAmazonItemIds);
+
+    // Находим уже существующие amazonItemId, чтобы их не трогать и в конце написать "Такие уже есть"
+    const existOrderItems: OrderItem[] = await this.orderItemsRepository.find({
+      where: { amazonItemId: In(uniqAmazonItemIds) },
+      relations: ['order'],
+    });
+
+    const existAmazonItemIds = existOrderItems.map(
+      (orderItem) => orderItem.amazonItemId,
+    );
+
+    orderItemsDto = orderItemsDto.filter(
+      (el) => !existAmazonItemIds.includes(el.amazonItemId),
+    );
+    // await this.checkIfOrderItemsExist(uniqAmazonItemIds);
 
     // Подгрузим уникальные заказы чтобы не создавать их повторно
     const uniqAmazonOrderIds = this.getUniqFields(
@@ -305,7 +329,63 @@ export class OrdersService {
       .filter((order) => order.shipState?.length <= 2)
       .forEach(checkIncorrectOrderStateReducer);
 
-    return this.ordersRepository.save(orders);
+    const savedOrders = await this.ordersRepository.save(orders);
+
+    const success = savedOrders
+      .reduce((acc, curr) => acc.concat(curr.items), [])
+      .filter((orderItem) => !existOrderItems.includes(orderItem));
+
+    existOrderItems.forEach((orderItem) => {
+      orderItem.errors = `Order Items already exist`;
+    });
+
+    return { success, errors: existOrderItems, orders: savedOrders };
+  }
+
+  private async convertCsvToDto(
+    stream: Readable,
+  ): Promise<CsvCreateOrderDto[]> {
+    const headers = [
+      'amazonOrderId',
+      'amazonItemId',
+      'createdAt',
+      null,
+      null,
+      null,
+      null,
+      null,
+      'recipientName',
+      null,
+      'amazonSku',
+      null,
+      'amazonQuantity',
+      null,
+      null, //  'amazonPrice',
+      null,
+      'recipientName',
+      'shipAddress',
+      null,
+      null,
+      'shipCity',
+      'shipState',
+      'shipPostalCode',
+    ];
+
+    // Прочитаем CSV и проверим что в ней есть все необходимые поля
+    const orderItemsDto: CsvCreateOrderDto[] = await this.csvService.uploadFromCsv<CsvCreateOrderDto>(
+      stream,
+      headers,
+      '\t',
+    );
+    if (
+      orderItemsDto.some(
+        (orderItem) => !this.csvService.isValidCSVRow(orderItem, headers),
+      )
+    ) {
+      throw new HttpException(`Invalid CSV file`, HttpStatus.OK);
+    }
+
+    return orderItemsDto;
   }
 
   async findByField(
@@ -315,7 +395,7 @@ export class OrdersService {
     return this.ordersRepository
       .createQueryBuilder('orders')
       .leftJoin(OrderItem, 'order-items', 'order-items.orderId = orders.id')
-      .where('orders.user.id=:id', { id: user.id })
+      .where('user.name =:name', { name: user.name })
       .andWhere('orders.amazonOrderId LIKE :amazonOrderId', {
         amazonOrderId: `%${amazonOrderId}%`,
       })
@@ -340,7 +420,7 @@ export class OrdersService {
     where: {
       id: any;
       user: {
-        id: string;
+        name: string;
       };
     },
     status: OrderStatusEnum,
@@ -399,63 +479,70 @@ export class OrdersService {
     if (!orders.length) {
       return;
     }
-    const { amazonOrders, error } = await this.aiService.getOrderStatusesFromAI(
-      orders.map((order) => order.amazonOrderId),
-    );
-    if (error) {
-      throw new HttpException(error.message, HttpStatus.OK);
-    }
-    amazonOrders.forEach((graingerOrder) => {
-      const existOrder = orders.find(
-        (order) => order.amazonOrderId === graingerOrder.amazonOrderId,
+    try {
+      const {
+        amazonOrders,
+        error,
+      } = await this.aiService.getOrderStatusesFromAI(
+        orders.map((order) => order.amazonOrderId),
       );
-
-      if (!existOrder) {
-        return;
+      if (error) {
+        throw new HttpException(error.message, HttpStatus.OK);
       }
-      existOrder.status = (graingerOrder.status as number) as OrderStatusEnum;
-      if (graingerOrder.status === GraingerStatusEnum.Success) {
-        existOrder.orderDate = new Date();
-      }
+      amazonOrders.forEach((graingerOrder) => {
+        const existOrder = orders.find(
+          (order) => order.amazonOrderId === graingerOrder.amazonOrderId,
+        );
 
-      graingerOrder.graingerOrders.forEach((graingerOrder) => {
-        graingerOrder.items.forEach((graingerItem) => {
-          const existItem = existOrder.items.find(
-            (item) =>
-              item.graingerItem?.graingerItemNumber ===
-              graingerItem.graingerItemNumber,
-          );
-          if (!existItem) {
-            return;
-          }
-          existItem.graingerTrackingNumber =
-            graingerOrder.graingerTrackingNumber;
-          existItem.graingerWebNumber = graingerOrder.g_web_number;
-          existItem.graingerOrderId = graingerOrder.graingerOrderId;
+        if (!existOrder) {
+          return;
+        }
+        existOrder.status = (graingerOrder.status as number) as OrderStatusEnum;
+        if (graingerOrder.status === GraingerStatusEnum.Success) {
+          existOrder.orderDate = new Date();
+        }
 
-          existOrder.items = [...existOrder.items, existItem];
+        graingerOrder.graingerOrders.forEach((graingerOrder) => {
+          graingerOrder.items.forEach((graingerItem) => {
+            const existItem = existOrder.items.find(
+              (item) =>
+                item.graingerItem?.graingerItemNumber ===
+                graingerItem.graingerItemNumber,
+            );
+            if (!existItem) {
+              return;
+            }
+            existItem.graingerTrackingNumber =
+              graingerOrder.graingerTrackingNumber;
+            existItem.graingerWebNumber = graingerOrder.g_web_number;
+            existItem.graingerOrderId = graingerOrder.graingerOrderId;
+
+            existOrder.items = [...existOrder.items, existItem];
+          });
         });
       });
-    });
 
-    await this.ordersRepository.save(orders);
+      await this.ordersRepository.save(orders);
 
-    const successOrdersCount = amazonOrders.filter(
-      (order) => order.status === GraingerStatusEnum.Success,
-    ).length;
-    const waitCount = amazonOrders.filter((order) =>
-      [GraingerStatusEnum.WaitForProceed].includes(order.status),
-    ).length;
-    const pendingCount = amazonOrders.filter((order) =>
-      [GraingerStatusEnum.Proceed].includes(order.status),
-    ).length;
-    const errorOrdersCount = amazonOrders.filter(
-      (order) => order.status === GraingerStatusEnum.Error,
-    ).length;
+      const successOrdersCount = amazonOrders.filter(
+        (order) => order.status === GraingerStatusEnum.Success,
+      ).length;
+      const waitCount = amazonOrders.filter((order) =>
+        [GraingerStatusEnum.WaitForProceed].includes(order.status),
+      ).length;
+      const pendingCount = amazonOrders.filter((order) =>
+        [GraingerStatusEnum.Proceed].includes(order.status),
+      ).length;
+      const errorOrdersCount = amazonOrders.filter(
+        (order) => order.status === GraingerStatusEnum.Error,
+      ).length;
 
-    this.logger.debug(
-      `[Check Order AI Status] Success: ${successOrdersCount}, Wait: ${waitCount}, Pending: ${pendingCount}, Error: ${errorOrdersCount}`,
-    );
+      this.logger.debug(
+        `[Check Order AI Status] Success: ${successOrdersCount}, Wait: ${waitCount}, Pending: ${pendingCount}, Error: ${errorOrdersCount}`,
+      );
+    } catch (e) {
+      this.logger.error('AI Service Timeout');
+    }
   }
 
   async update(
@@ -538,10 +625,19 @@ export class OrdersService {
   }
 
   private async getOrderIfExist(where: any): Promise<Orders> {
-    const existOrder = await this.ordersRepository.findOne({
-      where,
-      relations: ['items'],
-    });
+    // const existOrder = await this.ordersRepository.findOne({
+    //   where,
+    //   relations: ['items'],
+    // });
+
+    const existOrder = await this.ordersRepository
+      .createQueryBuilder('orders')
+      .leftJoinAndSelect('orders.items', 'items')
+      .leftJoinAndSelect('orders.user', 'user')
+      .where({ id: where.id })
+      .andWhere('user.name =:name', { name: where.user.name })
+      .getOne();
+
     if (!existOrder) {
       throw new HttpException(`Order doesn't exist`, HttpStatus.OK);
     }

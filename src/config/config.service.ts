@@ -70,8 +70,11 @@ export class ConfigService {
     return validatedEnvConfig;
   }
 
-  get AIURL(): string {
+  get aiUrl(): string {
     return this.envConfig.AI_URL as string;
+  }
+  get sentryDns(): string {
+    return this.envConfig.SENTRY_DNS as string;
   }
 
   get version(): string {

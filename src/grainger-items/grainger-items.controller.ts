@@ -7,7 +7,8 @@ import {
   Post,
   Put,
   Query,
-  Req, Res,
+  Req,
+  Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -70,7 +71,9 @@ export class GraingerItemsController {
     const stream = Readable.from(files.buffer.toString());
     const { user } = req;
     const response = await this.itemsService.uploadFromCsv(stream, user);
-    // this.itemsSearchService.save(response);
+    if (response && response.length) {
+      await this.itemsSearchService.save(response);
+    }
     return response;
   }
 
@@ -90,6 +93,19 @@ export class GraingerItemsController {
     @Req() { user }: Request,
   ): Promise<GetItemDto[]> {
     return this.itemsSearchService.search(query, user.id);
+  }
+
+  @Get('/update-elastic')
+  @Roles('admin')
+  async updateOrdersElastic() {
+    const { result } = await this.itemsService.getAll();
+    return await this.itemsSearchService.save(result);
+  }
+
+  @Delete('/remove-elastic-index')
+  @Roles('admin')
+  async removeEsIndex() {
+    return await this.itemsSearchService.deleteEsIndex();
   }
 
   @Get(':id')

@@ -8,7 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { plainToClass } from 'class-transformer';
 import { In, Repository } from 'typeorm';
 import { paginator } from '../common/paginator';
-import { SortWithPaginationQuery, sort } from '../common/sort';
+import { SortWithPaginationQuery, sort, splitSortProps } from '../common/sort';
 import { filter } from '../common/filter';
 import { CollectionResponse } from '../common/collection-response';
 import { checkRequiredItemFieldsReducer } from '../reducers/items.reducer';
@@ -51,6 +51,58 @@ export class GraingerItemsService {
   }
 
   async uploadFromCsv(stream: Readable, user: User): Promise<GraingerItem[]> {
+    const csvItems = await this.convertCsvToDto(stream);
+
+    const uniqAmazonSkus = this.getUniqFields(csvItems, 'amazonSku');
+
+    // Находим уже существующие amazonItemId, чтобы их не трогать и в конце написать "Такие уже есть"
+    const existGraingerItems: GraingerItem[] = await this.repository.find({
+      where: { amazonSku: In(uniqAmazonSkus) },
+    });
+
+    const graingerAccounts = await this.graingerAccountService.getAll({
+      where: { email: In(this.getUniqFields(csvItems, 'graingerLogin', true)) },
+    });
+
+    let items: GraingerItem[] = csvItems.map((item) =>
+      GraingerItem.create({
+        ...item,
+        status: ItemStatusEnum[item.status.toUpperCase()],
+        graingerPackQuantity: +item.graingerPackQuantity,
+        graingerThreshold: +item.graingerThreshold,
+        graingerAccount: graingerAccounts.find(
+          (i) => i.email.toLowerCase() === item.graingerLogin.toLowerCase(),
+        ),
+        user,
+      }),
+    );
+
+    // Перезаписываем если уже существуют
+    items = items.map((item) => {
+      const existItem = existGraingerItems.find(
+        (i) => i.amazonSku === item.amazonSku,
+      );
+      if (existItem) {
+        return { ...existItem, ...item } as GraingerItem;
+      } else {
+        return item;
+      }
+    });
+
+    // Если Item имеет не все поля, ставим статус InActive
+    items.forEach((itemForCheck: GraingerItem) => {
+      const { errorMessage } = checkRequiredItemFieldsReducer(itemForCheck);
+      if (errorMessage) {
+        itemForCheck.status = ItemStatusEnum.INACTIVE;
+      }
+    });
+
+    return this.repository.save(items);
+  }
+
+  private async convertCsvToDto(
+    stream: Readable,
+  ): Promise<CsvCreateGraingerItem[]> {
     const headers = [
       null,
       'amazonSku',
@@ -66,6 +118,7 @@ export class GraingerItemsService {
     const csvItems: CsvCreateGraingerItem[] = await this.csvService.uploadFromCsv<CsvCreateGraingerItem>(
       stream,
       headers,
+      ',',
     );
     if (
       csvItems.some(
@@ -79,32 +132,7 @@ export class GraingerItemsService {
       throw new HttpException(`Invalid CSV file`, HttpStatus.OK);
     }
 
-    const graingerAccounts = await this.graingerAccountService.getAll({
-      where: { email: In(this.getUniqFields(csvItems, 'graingerLogin')) },
-    });
-
-    const items = csvItems.map((item) =>
-      GraingerItem.create({
-        ...item,
-        status: ItemStatusEnum[item.status.toUpperCase()],
-        graingerPackQuantity: +item.graingerPackQuantity,
-        graingerThreshold: +item.graingerThreshold,
-        graingerAccount: graingerAccounts.find(
-          (i) => i.email === item.graingerLogin,
-        ),
-        user,
-      }),
-    );
-
-    // Если Item имеет не все поля, ставим статус InActive
-    items.forEach((itemForCheck: GraingerItem) => {
-      const { errorMessage } = checkRequiredItemFieldsReducer(itemForCheck);
-      if (errorMessage) {
-        itemForCheck.status = ItemStatusEnum.INACTIVE;
-      }
-    });
-
-    return this.repository.save(items);
+    return csvItems;
   }
 
   async exportToXlxs(
@@ -145,13 +173,23 @@ export class GraingerItemsService {
         key: 'gi_graingerPackQuantity',
         width: 20,
       },
-      { header: 'Grainger Account', key: 'ga_email', width: 20 },
+      {
+        header: 'Supplier',
+        // key: 'gi_graingerPackQuantity',
+        width: 20,
+      },
+      {
+        header: 'Alt Supplier',
+        // key: 'gi_graingerPackQuantity',
+        width: 20,
+      },
       {
         header: 'Threshold',
         key: 'gi_graingerThreshold',
         width: 20,
       },
       { header: 'Status', key: 'gi_status', width: 20 },
+      { header: 'Grainger Account', key: 'ga_email', width: 20 },
     ] as Array<Column>;
     worksheet.addRows(allItems);
 
@@ -165,7 +203,7 @@ export class GraingerItemsService {
   }
 
   async getAll(
-    user: User,
+    user?: User,
     query?: any,
   ): Promise<CollectionResponse<GetItemDto>> {
     const clause: any = {
@@ -173,19 +211,56 @@ export class GraingerItemsService {
       ...paginator(query),
       ...filter(query),
     };
-    const [result, count] = await this.repository.findAndCount({
-      ...clause,
-      where: {
-        ...clause.where,
-        user: {
-          id: user.id,
-        },
-      },
-    });
+    // const [result, count] = await this.repository.findAndCount({
+    //   relations: ["user",],
+    //   ...clause,
+    //   where: {
+    //     ...clause.where,
+    //     user: {
+    //       name: user.name,
+    //     },
+    //   },
+    // });
+
+    const items = this.repository
+      .createQueryBuilder('grainger-items')
+      .leftJoinAndSelect('grainger-items.graingerAccount', 'graingerAccount')
+      .leftJoinAndSelect('grainger-items.orderItems', 'orderItems')
+      .leftJoinAndSelect('grainger-items.user', 'user');
+
+    if (user) {
+      items.where('user.name =:name', { name: user.name });
+    }
+
+    if (clause.take) {
+      items.take(clause.take);
+    }
+
+    if (clause.skip) {
+      items.limit(clause.skip);
+    }
+
+    if (query && query.order) {
+      const { sortType, sortDir } = splitSortProps(query.order);
+      items.orderBy(sortType, sortDir);
+    }
+
+    if (clause.where.status || clause.where.status === 0) {
+      items.andWhere('grainger-items', { status: clause.where.status });
+    }
+
+    if (clause.where.graingerItemNumber) {
+      items.where({
+        graingerItemNumber: clause.where.graingerItemNumber,
+      });
+    }
+
+    const [result, count] = await items.getManyAndCount();
 
     if (!result) {
       throw new NotFoundException();
     }
+
     return {
       result: result.map((order: GraingerItem) =>
         plainToClass(GetItemDto, order),
@@ -261,7 +336,21 @@ export class GraingerItemsService {
     return this.repository.save(existItem);
   }
 
-  private getUniqFields = (array: any[], field?: string) => {
-    return [...new Set(array.map((item) => (field ? item[field] : item)))];
+  private getUniqFields = (
+    array: any[],
+    field?: string,
+    toLowerCase?: boolean,
+  ) => {
+    return [
+      ...new Set(
+        array.map((item) =>
+          field
+            ? toLowerCase
+              ? item[field].toLowerCase()
+              : item[field]
+            : item,
+        ),
+      ),
+    ];
   };
 }

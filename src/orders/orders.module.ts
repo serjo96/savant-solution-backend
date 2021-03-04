@@ -18,10 +18,14 @@ import { CsvModule } from '@shared/csv/csv.module';
     AiModule,
     CsvModule,
     GraingerItemsModule,
-    AiModule,
   ],
   controllers: [OrdersController],
   providers: [OrdersService, OrdersSearchService],
   exports: [OrdersService],
 })
-export class OrdersModule {}
+export class OrdersModule {
+  constructor(private searchService: OrdersSearchService) {}
+  async onModuleInit() {
+    await this.searchService.createIndex();
+  }
+}

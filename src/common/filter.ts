@@ -1,4 +1,4 @@
-import ISort, { SortWithPaginationQuery } from './sort';
+import { ISort, SortWithPaginationQuery } from './sort';
 import { IsNull, Not } from 'typeorm';
 
 export const filter = (query: SortWithPaginationQuery): ISort => {
