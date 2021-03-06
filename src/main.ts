@@ -1,5 +1,4 @@
 import { NestFactory } from '@nestjs/core';
-import { SentryService } from '@ntegral/nestjs-sentry';
 
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
