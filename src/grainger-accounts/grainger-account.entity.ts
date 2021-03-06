@@ -1,17 +1,9 @@
-import {
-  Column,
-  Entity,
-  OneToMany,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import { Column, Entity, OneToMany } from 'typeorm';
 import { BaseEntity } from '../common/base-entity';
 import { GraingerItem } from '../grainger-items/grainger-items.entity';
 
 @Entity('grainger-account')
 export class GraingerAccount extends BaseEntity {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
   @Column({
     type: 'varchar',
     nullable: false,
