@@ -30,6 +30,7 @@ import { AppController } from './app.controller';
       useFactory: async (cfg: ConfigService) => ({
         dsn: cfg.sentryDns,
         debug: true,
+        enabled: Boolean(cfg.sentryDns),
         environment: cfg.nodeEnv,
         tracesSampleRate: 1.0,
         release: cfg.version,
@@ -45,6 +46,6 @@ import { AppController } from './app.controller';
     AiModule,
     GraingerAccountsModule,
   ],
-  controllers: [AppController]
+  controllers: [AppController],
 })
 export class AppModule {}
