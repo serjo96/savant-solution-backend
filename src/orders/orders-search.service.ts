@@ -14,14 +14,15 @@ export class OrdersSearchService {
       mappings: {
         properties: {
           ...this.searchService.baseEntityMapping,
+          id: { type: 'keyword' },
           recipientName: { type: 'keyword' },
           note: { type: 'text' },
           orderDate: { type: 'date' },
           shipDate: { type: 'date' },
           carrierCode: { type: 'text' },
           carrierName: { type: 'text' },
-          amazonOrderId: { type: 'text' },
-          shipAddress: { type: 'text' },
+          amazonOrderId: { type: 'keyword' },
+          shipAddress: { type: 'keyword' },
           shipCity: { type: 'text' },
           shipState: { type: 'text' },
           shipPostalCode: { type: 'text' },
@@ -30,15 +31,14 @@ export class OrdersSearchService {
             type: 'nested',
             properties: {
               ...this.searchService.baseEntityMapping,
-              id: { type: 'keyword' },
-              amazonItemId: { type: 'text' },
-              amazonSku: { type: 'text' },
+              amazonItemId: { type: 'keyword' },
+              amazonSku: { type: 'keyword' },
               amazonQuantity: { type: 'integer' },
               amazonPrice: { type: 'integer' },
               graingerPrice: { type: 'integer' },
               graingerTrackingNumber: { type: 'keyword' },
               graingerShipMethod: { type: 'short' },
-              graingerOrderId: { type: 'text' },
+              graingerOrderId: { type: 'keyword' },
               graingerShipDate: { type: 'date' },
               graingerWebNumber: { type: 'keyword' },
               note: { type: 'text' },
@@ -68,10 +68,13 @@ export class OrdersSearchService {
       matchFields: {
         query: query.search,
         fields: [
-          'recipientName',
           'id',
-          'items.id',
+          'recipientName',
+          'amazonOrderId.keyword',
+          'items.amazonItemId',
+          'items.amazonSku.keyword',
           'items.graingerTrackingNumber',
+          'items.graingerOrderId',
           'items.graingerWebNumber',
         ],
       },
@@ -80,23 +83,20 @@ export class OrdersSearchService {
   }
 
   save<Orders>(data: Orders | Array<Orders>): any {
-    let response;
     let convertedData;
     if (Array.isArray(data)) {
       convertedData = this.searchService.parseAndPrepareData<Array<Orders>>(
         this.elasticIndex,
         data,
       );
-
-      response = this.searchService.save(this.elasticIndex, convertedData);
     } else {
       convertedData = this.searchService.parseAndPrepareData<Array<Orders>>(
         this.elasticIndex,
         [data],
       );
-      response = this.searchService.save(this.elasticIndex, convertedData);
     }
-    return response;
+    console.log(data[0])
+    return this.searchService.save(this.elasticIndex, convertedData);
   }
 
   update(data: Partial<Orders>): Promise<any> {
