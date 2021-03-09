@@ -15,6 +15,8 @@ import { SearchModule } from './search/search.module';
 import { AiModule } from './ai/ai.module';
 import { GraingerAccountsModule } from './grainger-accounts/grainger-accounts.module';
 import { AppController } from './app.controller';
+import { OrdersService } from './orders/orders.service';
+import { OrdersSearchService } from './orders/orders-search.service';
 
 @Module({
   imports: [
@@ -46,6 +48,7 @@ import { AppController } from './app.controller';
     AiModule,
     GraingerAccountsModule,
   ],
+  providers: [OrdersSearchService],
   controllers: [AppController],
 })
 export class AppModule {}
