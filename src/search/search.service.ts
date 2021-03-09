@@ -29,6 +29,7 @@ interface ISearchParams {
 @Injectable()
 export class SearchService {
   constructor(private readonly esService: ElasticsearchService) {}
+
   private readonly logger = new Logger(ElasticsearchService.name);
 
   get baseEntityMapping() {
@@ -128,14 +129,18 @@ export class SearchService {
     }
   }
 
-  async remove(entityId: string, index: string) {
+  async remove(entityId: string | string[], index: string) {
     try {
       return await this.esService.deleteByQuery({
         index,
         body: {
           query: {
-            match: {
-              id: entityId,
+            bool: {
+              filter: {
+                terms: {
+                  id: entityId,
+                },
+              },
             },
           },
         },
@@ -176,6 +181,7 @@ export class SearchService {
       throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
+
   parseAndPrepareData<T>(index: string, data: Array<any>): Array<any> {
     return data.reduce(
       (acc, element) =>

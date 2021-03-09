@@ -304,4 +304,43 @@ export class OrdersController {
     await this.ordersSearchService.delete(id);
     return response;
   }
+
+  @Post('/delete-orders')
+  async removeOrders(
+    @Body() { orderIds }: { orderIds: string[] },
+    @Req() { user }: Request,
+  ): Promise<any> {
+    const { result } = await this.ordersService.getAll({
+      user: {
+        name: user.name,
+      },
+      id: In(orderIds),
+    });
+
+    await this.ordersService.delete({
+      id: In(orderIds),
+    });
+
+    try {
+      const { error } = await this.aiService.deleteOrdersFromAI(
+        result.map((order) => order.amazonOrderId),
+      );
+      if (error) {
+        throw new Error(`[AI Service] ${error.message}`);
+      }
+
+      this.logger.debug(
+        `[Delete Orders] ${result.length} orders deleted successfully from AI`,
+      );
+
+      await this.ordersSearchService.delete(orderIds);
+
+      this.logger.debug(
+        `[Delete Orders] ${result.length} orders deleted successfully from Elastic`,
+      );
+    } catch ({ message }) {
+      this.logger.debug(message);
+      throw new HttpException(message, HttpStatus.OK);
+    }
+  }
 }

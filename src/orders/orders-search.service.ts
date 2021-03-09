@@ -95,7 +95,6 @@ export class OrdersSearchService {
         [data],
       );
     }
-    console.log(data[0])
     return this.searchService.save(this.elasticIndex, convertedData);
   }
 
@@ -103,7 +102,7 @@ export class OrdersSearchService {
     return this.searchService.update<Orders>(data, this.elasticIndex);
   }
 
-  delete(id: string) {
-    return this.searchService.remove(id, this.elasticIndex);
+  delete(ids: string | string[]) {
+    return this.searchService.remove(ids, this.elasticIndex);
   }
 }

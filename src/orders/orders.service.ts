@@ -107,12 +107,12 @@ export class OrdersService {
     // Для фронта, не трогай плз
     if (query?.sort_by) {
       const { sortType, sortDir } = splitSortProps(query.sort_by);
-      orders.orderBy(sortType, sortDir);
+      orders.orderBy(`orders.${sortType}`, sortDir);
     }
 
     if (query?.order) {
       const { sortType, sortDir } = splitSortProps(query.order);
-      orders.orderBy(sortType, sortDir);
+      orders.orderBy(`orders.${sortType}`, sortDir);
     }
 
     let result, count;
@@ -136,7 +136,6 @@ export class OrdersService {
   }
 
   async delete(where: any): Promise<any> {
-    await this.getOrderIfExist(where);
     return this.ordersRepository.delete(where);
   }
 
