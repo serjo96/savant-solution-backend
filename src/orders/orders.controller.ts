@@ -105,8 +105,8 @@ export class OrdersController {
       user,
     );
 
-    if (success && success.length) {
-      await this.ordersSearchService.save(success);
+    if (orders && orders.length) {
+      await this.ordersSearchService.save(orders);
     }
 
     this.sendOrdersToAI(orders);
