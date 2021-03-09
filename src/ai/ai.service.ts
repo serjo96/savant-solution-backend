@@ -81,7 +81,7 @@ export class AiService {
 
   deleteOrdersFromAI(amazonOrders: string[]): Promise<ErrorResponse> {
     return this.http
-      .delete(`${this.configService.aiUrl}/orders`, { data: amazonOrders })
+      .delete(`${this.configService.aiUrl}/orders`, { data: { amazonOrders } })
       .pipe(map((response) => response.data))
       .toPromise();
   }
