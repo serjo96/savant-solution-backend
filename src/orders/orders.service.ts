@@ -73,7 +73,9 @@ export class OrdersService {
     const orders = this.ordersRepository
       .createQueryBuilder('orders')
       .leftJoinAndSelect('orders.items', 'items')
-      .leftJoinAndSelect('orders.user', 'user');
+      .leftJoinAndSelect('items.graingerItem', 'graingerItem')
+      .leftJoinAndSelect('graingerItem.graingerAccount', 'grainger-account')
+      .leftJoinAndSelect('graingerItem.user', 'user');
 
     if (clause.where.user && clause.where.user.name) {
       orders.where('user.name =:name', { name: clause.where.user.name });
@@ -481,7 +483,7 @@ export class OrdersService {
     }
     try {
       const {
-        amazonOrders,
+        amazonOrdersFromAI,
         error,
       } = await this.aiService.getOrderStatusesFromAI(
         orders.map((order) => order.amazonOrderId),
@@ -489,33 +491,34 @@ export class OrdersService {
       if (error) {
         throw new HttpException(error.message, HttpStatus.OK);
       }
-      amazonOrders.forEach((graingerOrder) => {
+      amazonOrdersFromAI.forEach((amazonOrderFromAI) => {
         const existOrder = orders.find(
-          (order) => order.amazonOrderId === graingerOrder.amazonOrderId,
+          (order) => order.amazonOrderId === amazonOrderFromAI.amazonOrderId,
         );
 
         if (!existOrder) {
           return;
         }
-        existOrder.status = (graingerOrder.status as number) as OrderStatusEnum;
-        if (graingerOrder.status === GraingerStatusEnum.Success) {
+        existOrder.status = (amazonOrderFromAI.status as number) as OrderStatusEnum;
+        if (amazonOrderFromAI.status === GraingerStatusEnum.Success) {
           existOrder.orderDate = new Date();
         }
 
-        graingerOrder.graingerOrders.forEach((graingerOrder) => {
-          graingerOrder.items.forEach((graingerItem) => {
+        amazonOrderFromAI.graingerOrders.forEach((graingerOrderFromAI) => {
+          graingerOrderFromAI.items.forEach((graingerItemFromAI) => {
             const existItem = existOrder.items.find(
               (item) =>
                 item.graingerItem?.graingerItemNumber ===
-                graingerItem.graingerItemNumber,
+                graingerItemFromAI.graingerItemNumber,
             );
             if (!existItem) {
               return;
             }
+            existItem.graingerPrice = graingerItemFromAI.graingerPrice;
             existItem.graingerTrackingNumber =
-              graingerOrder.graingerTrackingNumber;
-            existItem.graingerWebNumber = graingerOrder.g_web_number;
-            existItem.graingerOrderId = graingerOrder.graingerOrderId;
+              graingerOrderFromAI.graingerTrackingNumber;
+            existItem.graingerWebNumber = graingerOrderFromAI.g_web_number;
+            existItem.graingerOrderId = graingerOrderFromAI.graingerOrderId;
 
             existOrder.items = [...existOrder.items, existItem];
           });
@@ -524,16 +527,16 @@ export class OrdersService {
 
       await this.ordersRepository.save(orders);
 
-      const successOrdersCount = amazonOrders.filter(
+      const successOrdersCount = amazonOrdersFromAI.filter(
         (order) => order.status === GraingerStatusEnum.Success,
       ).length;
-      const waitCount = amazonOrders.filter((order) =>
+      const waitCount = amazonOrdersFromAI.filter((order) =>
         [GraingerStatusEnum.WaitForProceed].includes(order.status),
       ).length;
-      const pendingCount = amazonOrders.filter((order) =>
+      const pendingCount = amazonOrdersFromAI.filter((order) =>
         [GraingerStatusEnum.Proceed].includes(order.status),
       ).length;
-      const errorOrdersCount = amazonOrders.filter(
+      const errorOrdersCount = amazonOrdersFromAI.filter(
         (order) => order.status === GraingerStatusEnum.Error,
       ).length;
 

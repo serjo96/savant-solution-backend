@@ -14,7 +14,7 @@ export class GetGraingerOrder {
     graingerTrackingNumber: string;
     items: {
       graingerItemNumber: string;
-      graingerPrice: string;
+      graingerPrice: number;
     }[];
   }[];
 }

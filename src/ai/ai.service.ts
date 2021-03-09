@@ -88,7 +88,7 @@ export class AiService {
 
   getOrderStatusesFromAI(
     amazonOrders: string[],
-  ): Promise<{ amazonOrders: GetGraingerOrder[] } & ErrorResponse> {
+  ): Promise<{ amazonOrdersFromAI: GetGraingerOrder[] } & ErrorResponse> {
     return this.http
       .post<any>(`${this.configService.aiUrl}/get_orders`, { amazonOrders })
       .pipe(
