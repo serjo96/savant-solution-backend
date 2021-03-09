@@ -37,22 +37,26 @@ export class AppController {
     });
 
     try {
-      await this.ordersSearchService.delete(result.map((order) => order.id));
-
       const { error } = await this.aiService.deleteOrdersFromAI(
         result.map((order) => order.amazonOrderId),
       );
       if (error) {
         throw new Error(`[AI Service] ${error.message}`);
       }
+
       this.logger.debug(
-        `[Change Order Status] ${result.length} orders deleted successfully from AI`,
+        `[Delete Orders] ${result.length} orders deleted successfully from AI`,
+      );
+
+      await this.ordersSearchService.delete(result.map((order) => order.id));
+
+      this.logger.debug(
+        `[Delete Orders] ${result.length} orders deleted successfully from Elastic`,
       );
     } catch ({ message }) {
       this.logger.debug(message);
       throw new HttpException(message, HttpStatus.OK);
     }
-    await this.ordersService.delete({});
     return `Ордеры удалены`;
   }
 }

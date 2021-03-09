@@ -322,16 +322,21 @@ export class OrdersController {
     });
 
     try {
-      await this.ordersSearchService.delete(orderIds);
-
       const { error } = await this.aiService.deleteOrdersFromAI(
         result.map((order) => order.amazonOrderId),
       );
       if (error) {
         throw new Error(`[AI Service] ${error.message}`);
       }
+
       this.logger.debug(
-        `[Change Order Status] ${result.length} orders deleted successfully from AI`,
+        `[Delete Orders] ${result.length} orders deleted successfully from AI`,
+      );
+
+      await this.ordersSearchService.delete(orderIds);
+
+      this.logger.debug(
+        `[Delete Orders] ${result.length} orders deleted successfully from Elastic`,
       );
     } catch ({ message }) {
       this.logger.debug(message);
