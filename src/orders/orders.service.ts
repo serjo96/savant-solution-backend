@@ -62,12 +62,12 @@ export class OrdersService {
 
   async getAll(where?, query?: any): Promise<CollectionResponse<GetOrderDto>> {
     const clause: any = {
-      ...sort(query),
-      ...paginator(query),
+      ...sort(query), // поломано
+      ...paginator(query), // поломано
       ...filter(query),
     };
     clause.where = { ...clause.where, ...where };
-    clause.relations = ['items'];
+    // clause.relations = ['items'];
     // const [result, count] = await this.ordersRepository.findAndCount(clause);
 
     const orders = this.ordersRepository
@@ -89,11 +89,6 @@ export class OrdersService {
       orders.limit(clause.skip);
     }
 
-    if (query?.order) {
-      const { sortType, sortDir } = splitSortProps(query.order);
-      orders.orderBy(sortType, sortDir);
-    }
-
     if (clause.where.status || clause.where.status === 0) {
       const status = <any>{ status: clause.where.status };
       orders.andWhere(status);
@@ -109,6 +104,17 @@ export class OrdersService {
     //   });
     // }
 
+    // Для фронта, не трогай плз
+    if (query?.sort_by) {
+      const { sortType, sortDir } = splitSortProps(query.sort_by);
+      orders.orderBy(sortType, sortDir);
+    }
+
+    if (query?.order) {
+      const { sortType, sortDir } = splitSortProps(query.order);
+      orders.orderBy(sortType, sortDir);
+    }
+
     let result, count;
     try {
       [result, count] = await orders.getManyAndCount();
@@ -117,7 +123,10 @@ export class OrdersService {
     }
 
     if (!result) {
-      throw new NotFoundException();
+      return {
+        result: [],
+        count: 0,
+      };
     }
 
     return {
