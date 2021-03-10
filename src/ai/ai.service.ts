@@ -98,6 +98,24 @@ export class AiService {
       .toPromise();
   }
 
+  updateTrackingNumberFromAI(
+    graingerOrders: {
+      graingerOrderId: string;
+      account_id: string;
+      g_web_number: string;
+    }[],
+  ): Promise<{ amazonOrdersFromAI: GetGraingerOrder[] } & ErrorResponse> {
+    return this.http
+      .post<any>(`${this.configService.aiUrl}/tracking_number`, {
+        graingerOrders,
+      })
+      .pipe(
+        timeout(2500),
+        map((response) => response.data),
+      )
+      .toPromise();
+  }
+
   async startWorker(): Promise<string> {
     try {
       await this.http

@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToClass } from 'class-transformer';
-import { In, Repository } from 'typeorm';
+import { In, IsNull, Not, Repository } from 'typeorm';
 import { paginator } from '../common/paginator';
 import { sort, splitSortProps } from '../common/sort';
 import { EditOrderDto } from './dto/editOrder.dto';
@@ -477,16 +477,59 @@ export class OrdersService {
   }
 
   /**
+   * Просит AI начать отдавать graingerTrackingNumber
+   */
+  @Interval(1000 * 15)
+  async updateGraingerTrackingNumberFromAI() {
+    const orderItems = await this.orderItemsRepository
+      .createQueryBuilder('items')
+      .leftJoinAndSelect('items.graingerItem', 'graingerItem')
+      .leftJoinAndSelect('graingerItem.graingerAccount', 'graingerAccount')
+      .where(
+        `items.graingerWebNumber != '' AND (items.graingerTrackingNumber = '' OR items.graingerTrackingNumber isnull)`,
+      )
+      .getMany();
+
+    if (orderItems.length) {
+      const graingerOrdersToAI = orderItems.map((orderItem) => ({
+        graingerOrderId: orderItem.graingerOrderId,
+        account_id: orderItem.graingerItem?.graingerAccount?.id,
+        g_web_number: orderItem.graingerWebNumber,
+      }));
+
+      try {
+        await this.aiService.updateTrackingNumberFromAI(graingerOrdersToAI);
+        this.logger.debug(
+          `[Update GraingerTrackingNumber from AI] Sended: ${orderItems.length}`,
+        );
+      } catch (e) {
+        this.logger.error(
+          '[Update GraingerTrackingNumber from AI] AI Service Timeout',
+        );
+      }
+    }
+  }
+
+  /**
    * Получает все заказы со статусом Proceed, запрашивает у AI статус по ним
    */
   @Interval(10000)
   async updateOrderStatusesFromAI() {
-    const orders = await this.ordersRepository.find({
-      relations: ['items'],
-      where: {
+    const orders = await this.ordersRepository
+      .createQueryBuilder('orders')
+      .leftJoinAndSelect('orders.items', 'items')
+      .leftJoinAndSelect('items.graingerItem', 'graingerItem')
+      .where({
         status: In([OrderStatusEnum.WAITFORPROCEED, OrderStatusEnum.PROCEED]),
-      },
-    });
+      })
+      .orWhere(
+        `orders.status = :status AND items.graingerWebNumber != '' AND (items.graingerTrackingNumber = '' OR items.graingerTrackingNumber isnull)`,
+        {
+          status: OrderStatusEnum.SUCCESS,
+        },
+      )
+      .getMany();
+
     if (!orders.length) {
       return;
     }
@@ -510,7 +553,7 @@ export class OrdersService {
         }
         existOrder.status = (amazonOrderFromAI.status as number) as OrderStatusEnum;
         if (amazonOrderFromAI.status === GraingerStatusEnum.Success) {
-          existOrder.orderDate = new Date();
+          existOrder.orderDate = existOrder.orderDate ?? new Date();
         }
 
         amazonOrderFromAI.graingerOrders.forEach((graingerOrderFromAI) => {
@@ -553,7 +596,7 @@ export class OrdersService {
         `[Check Order AI Status] Success: ${successOrdersCount}, Wait: ${waitCount}, Pending: ${pendingCount}, Error: ${errorOrdersCount}`,
       );
     } catch (e) {
-      this.logger.error('AI Service Timeout');
+      this.logger.error('[Check Order AI Status] AI Service Timeout');
     }
   }
 
