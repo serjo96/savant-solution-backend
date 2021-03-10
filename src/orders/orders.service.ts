@@ -73,9 +73,10 @@ export class OrdersService {
     const orders = this.ordersRepository
       .createQueryBuilder('orders')
       .leftJoinAndSelect('orders.items', 'items')
+      .leftJoinAndSelect('orders.user', 'user')
       .leftJoinAndSelect('items.graingerItem', 'graingerItem')
       .leftJoinAndSelect('graingerItem.graingerAccount', 'grainger-account')
-      .leftJoinAndSelect('graingerItem.user', 'user');
+      .leftJoinAndSelect('graingerItem.user', 'graingerItemUser');
 
     if (clause.where.user && clause.where.user.name) {
       orders.where('user.name =:name', { name: clause.where.user.name });
