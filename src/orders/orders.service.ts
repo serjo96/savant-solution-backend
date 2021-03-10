@@ -479,7 +479,7 @@ export class OrdersService {
   /**
    * Просит AI начать отдавать graingerTrackingNumber
    */
-  @Interval(1000 * 15)
+  @Interval(1000 * 15 * 60)
   async updateGraingerTrackingNumberFromAI() {
     const orderItems = await this.orderItemsRepository
       .createQueryBuilder('items')
