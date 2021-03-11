@@ -83,7 +83,7 @@ export class AiService {
 
   getOrderStatusesFromAI(
     amazonOrders: string[],
-  ): Promise<{ amazonOrdersFromAI: GetGraingerOrder[] } & ErrorResponse> {
+  ): Promise<{ amazonOrders: GetGraingerOrder[] } & ErrorResponse> {
     return this.http
       .post<any>(`${this.configService.aiUrl}/get_orders`, { amazonOrders })
       .pipe(
@@ -99,7 +99,7 @@ export class AiService {
       account_id: string;
       g_web_number: string;
     }[],
-  ): Promise<{ amazonOrdersFromAI: GetGraingerOrder[] } & ErrorResponse> {
+  ): Promise<{ success: boolean } & ErrorResponse> {
     return this.http
       .post<any>(`${this.configService.aiUrl}/tracking_number`, {
         graingerOrders,
