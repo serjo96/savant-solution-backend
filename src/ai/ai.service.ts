@@ -48,6 +48,15 @@ export class AiService {
       .toPromise();
   }
 
+  deleteAccount({ id }: { id: string }): Promise<ErrorResponse> {
+    return this.http
+      .post(`${this.configService.aiUrl}/users`, {
+        users: [{ account_id: id }],
+      })
+      .pipe(map((response) => response.data))
+      .toPromise();
+  }
+
   addOrdersToAI(orders: Orders[]): Promise<ErrorResponse> {
     const aiOrders: SendAIOrder[] = orders.map(
       (order) =>

@@ -81,7 +81,21 @@ export class GraingerAccountsController {
 
   @Delete(':id')
   @UsePipes(new ValidationPipe())
-  delete(@Param() { id }: { id: string }): Promise<any> {
-    return this.service.deleteById(id);
+  async delete(@Param() { id }: { id: string }): Promise<any> {
+    const account = await this.service.deleteById(id);
+    try {
+      const { error } = await this.aiService.deleteAccount({ id });
+      if (error) {
+        throw new Error(`[AI Service] ${error.message}`);
+      }
+      this.logger.debug(
+        `[Delete Grainger Account] Account ${id} deleted successfully from AI`,
+      );
+    } catch ({ message }) {
+      const error = `[Delete Grainger Account] ${message}`;
+      this.logger.debug(error);
+      throw new HttpException(error, HttpStatus.OK);
+    }
+    return account;
   }
 }

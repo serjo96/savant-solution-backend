@@ -568,10 +568,11 @@ export class OrdersService {
             if (!existItem) {
               return;
             }
-            existItem.graingerPrice = graingerItemFromAI.graingerPrice;
+            existItem.graingerPrice = graingerItemFromAI.graingerPrice || null;
             existItem.graingerTrackingNumber =
-              graingerOrderFromAI.graingerTrackingNumber;
-            existItem.graingerWebNumber = graingerOrderFromAI.g_web_number;
+              graingerOrderFromAI.graingerTrackingNumber || null;
+            existItem.graingerWebNumber =
+              graingerOrderFromAI.g_web_number || null;
             existItem.graingerOrderId = graingerOrderFromAI.graingerOrderId;
 
             existOrder.items = [...existOrder.items, existItem];
