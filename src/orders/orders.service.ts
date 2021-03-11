@@ -498,7 +498,9 @@ export class OrdersService {
       }));
 
       try {
-        await this.aiService.updateTrackingNumberFromAI(graingerOrdersToAI);
+        const { success } = await this.aiService.updateTrackingNumberFromAI(
+          graingerOrdersToAI,
+        );
         this.logger.debug(
           `[Update GraingerTrackingNumber from AI] Sended: ${orderItems.length}`,
         );
@@ -535,7 +537,7 @@ export class OrdersService {
     }
     try {
       const {
-        amazonOrdersFromAI,
+        amazonOrders,
         error,
       } = await this.aiService.getOrderStatusesFromAI(
         orders.map((order) => order.amazonOrderId),
@@ -543,7 +545,7 @@ export class OrdersService {
       if (error) {
         throw new HttpException(error.message, HttpStatus.OK);
       }
-      amazonOrdersFromAI.forEach((amazonOrderFromAI) => {
+      amazonOrders.forEach((amazonOrderFromAI) => {
         const existOrder = orders.find(
           (order) => order.amazonOrderId === amazonOrderFromAI.amazonOrderId,
         );
@@ -579,16 +581,16 @@ export class OrdersService {
 
       await this.ordersRepository.save(orders);
 
-      const successOrdersCount = amazonOrdersFromAI.filter(
+      const successOrdersCount = amazonOrders.filter(
         (order) => order.status === GraingerStatusEnum.Success,
       ).length;
-      const waitCount = amazonOrdersFromAI.filter((order) =>
+      const waitCount = amazonOrders.filter((order) =>
         [GraingerStatusEnum.WaitForProceed].includes(order.status),
       ).length;
-      const pendingCount = amazonOrdersFromAI.filter((order) =>
+      const pendingCount = amazonOrders.filter((order) =>
         [GraingerStatusEnum.Proceed].includes(order.status),
       ).length;
-      const errorOrdersCount = amazonOrdersFromAI.filter(
+      const errorOrdersCount = amazonOrders.filter(
         (order) => order.status === GraingerStatusEnum.Error,
       ).length;
 
