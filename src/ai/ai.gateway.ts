@@ -32,6 +32,7 @@ export class AiGateway {
       this.logger.error(
         `Socket disconnected within handleConnection() in AppGateway: ${e}`,
       );
+      client.emit('authorization',{ type: 'unauthorized' });
       client.disconnect(true);
     }
   }
