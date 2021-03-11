@@ -165,7 +165,7 @@ export class AiService {
 
       this.publicSocketsGateway.handleStatusMessage(response);
     } catch (error) {
-      this.publicSocketsGateway.handleStatusMessage({ status: 'dead' });
+      this.publicSocketsGateway.handleStatusMessage({ status: 'error' });
       this.logger.error('AI Service Timeout');
       if (process.env.NODE_ENV === 'production') {
         this.logger.error(error);
