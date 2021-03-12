@@ -59,7 +59,7 @@ export class GraingerItemsSearchService {
           'id',
           'amazonSku',
           'graingerItemNumber',
-          'graingerAccount.email'
+          'graingerAccount.email',
         ],
       },
     };
@@ -88,7 +88,7 @@ export class GraingerItemsSearchService {
     return this.searchService.update<GraingerItem>(data, this.elasticIndex);
   }
 
-  delete(id: string) {
-    return this.searchService.remove(id, this.elasticIndex);
+  delete(ids: string | string[]) {
+    return this.searchService.remove(ids, this.elasticIndex);
   }
 }
