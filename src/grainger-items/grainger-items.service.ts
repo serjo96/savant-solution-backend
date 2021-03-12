@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToClass } from 'class-transformer';
-import { In, Repository } from 'typeorm';
+import { ILike, In, Repository } from 'typeorm';
 import { paginator } from '../common/paginator';
 import { SortWithPaginationQuery, sort, splitSortProps } from '../common/sort';
 import { filter } from '../common/filter';
@@ -61,7 +61,9 @@ export class GraingerItemsService {
     });
 
     const graingerAccounts = await this.graingerAccountService.getAll({
-      where: { email: In(this.getUniqFields(csvItems, 'graingerLogin', true)) },
+      where: {
+        email: ILike(In(this.getUniqFields(csvItems, 'graingerLogin', true))),
+      },
     });
 
     let items: GraingerItem[] = csvItems.map((item) =>
