@@ -46,9 +46,7 @@ export class AppController {
   private async deleteOrders(): Promise<any> {
     const { result } = await this.ordersService.getAll({});
 
-    await this.ordersService.delete({
-      id: In(result.map((order) => order.id)),
-    });
+    await this.ordersService.delete({});
 
     try {
       const { error } = await this.aiService.deleteOrdersFromAI(
@@ -76,9 +74,7 @@ export class AppController {
   private async deleteGraingerItems(): Promise<any> {
     const { result } = await this.graingerItemsService.getAll();
 
-    await this.graingerItemsService.delete({
-      id: In(result.map((order) => order.id)),
-    });
+    await this.graingerItemsService.delete({});
 
     try {
       await this.graingerItemsSearchService.delete(
