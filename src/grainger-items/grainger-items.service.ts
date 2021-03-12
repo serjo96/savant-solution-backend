@@ -274,11 +274,7 @@ export class GraingerItemsService {
   }
 
   async delete(where: any): Promise<any> {
-    const existItem = await this.repository.findOne(where);
-    if (!existItem) {
-      throw new HttpException(`Item doesn't exist`, HttpStatus.OK);
-    }
-    return await this.repository.softDelete(where);
+    return this.repository.delete(where);
   }
 
   async save(data: CreateItemDto): Promise<GraingerItem> {
