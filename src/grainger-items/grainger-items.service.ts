@@ -66,7 +66,7 @@ export class GraingerItemsService {
       },
     });
 
-    let items: GraingerItem[] = csvItems.map((item) =>
+    const items: GraingerItem[] = csvItems.map((item) =>
       GraingerItem.create({
         ...item,
         status: ItemStatusEnum[item.status.toUpperCase()],
@@ -80,26 +80,28 @@ export class GraingerItemsService {
     );
 
     // Перезаписываем если уже существуют
-    items = items.map((item) => {
-      const existItem = existGraingerItems.find(
-        (i) => i.amazonSku === item.amazonSku,
+    items.forEach((item) => {
+      let existItem = existGraingerItems.find(
+        (i) =>
+          i.amazonSku === item.amazonSku ||
+          i.graingerItemNumber === item.graingerItemNumber,
       );
       if (existItem) {
-        return { ...existItem, ...item } as GraingerItem;
+        existItem = { ...existItem, ...item } as GraingerItem;
       } else {
-        return item;
+        existGraingerItems.push(item);
       }
     });
 
     // Если Item имеет не все поля, ставим статус InActive
-    items.forEach((itemForCheck: GraingerItem) => {
+    existGraingerItems.forEach((itemForCheck: GraingerItem) => {
       const { errorMessage } = checkRequiredItemFieldsReducer(itemForCheck);
       if (errorMessage) {
         itemForCheck.status = ItemStatusEnum.INACTIVE;
       }
     });
 
-    return this.repository.save(items);
+    return this.repository.save(existGraingerItems);
   }
 
   private async convertCsvToDto(
