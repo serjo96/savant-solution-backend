@@ -318,7 +318,7 @@ export class OrdersService {
       }
       existOrderItem = OrderItem.create(dtoOrder) as any;
       existOrderItem.graingerItem = existActiveGraingerItems.find(
-        (item) => (item.amazonSku = existOrderItem.amazonSku),
+        (item) => item.amazonSku === existOrderItem.amazonSku,
       );
       const { errorMessage } = checkRequiredItemFieldsReducer(
         existOrderItem.graingerItem,
