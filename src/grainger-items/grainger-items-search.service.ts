@@ -45,13 +45,12 @@ export class GraingerItemsSearchService {
 
   async search(
     query: SortWithPaginationQuery | any,
-    userId?: string,
+    userName?: string,
   ): Promise<any> {
     const clause: any = {
       offset: query.offset,
       limit: query.count,
       ...paginator(query),
-      userId,
       index: this.elasticIndex,
       query: {
         bool: {
@@ -64,6 +63,17 @@ export class GraingerItemsSearchService {
                 'amazonSku',
                 'graingerItemNumber',
                 'graingerAccount.email',
+              ],
+            },
+          },
+          filter: {
+            bool: {
+              filter: [
+                {
+                  term: {
+                    'user.name.keyword': userName,
+                  },
+                },
               ],
             },
           },
