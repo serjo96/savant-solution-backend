@@ -53,14 +53,21 @@ export class GraingerItemsSearchService {
       ...paginator(query),
       userId,
       index: this.elasticIndex,
-      matchFields: {
-        query: query.search,
-        fields: [
-          'id',
-          'amazonSku',
-          'graingerItemNumber',
-          'graingerAccount.email',
-        ],
+      query: {
+        bool: {
+          must: {
+            multi_match: {
+              type: 'most_fields',
+              query: query.search,
+              fields: [
+                'id',
+                'amazonSku',
+                'graingerItemNumber',
+                'graingerAccount.email',
+              ],
+            },
+          },
+        },
       },
     };
     return this.searchService.search<GraingerItem>(clause);
