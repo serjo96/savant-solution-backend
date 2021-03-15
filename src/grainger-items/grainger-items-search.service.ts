@@ -22,6 +22,7 @@ export class GraingerItemsSearchService {
           status: { type: 'short' },
           graingerAccount: {
             type: 'nested',
+            include_in_root: true,
             properties: {
               email: { type: 'keyword' },
               name: { type: 'keyword' },
@@ -48,7 +49,6 @@ export class GraingerItemsSearchService {
     query: SortWithPaginationQuery | any,
     userName?: string,
   ): Promise<any> {
-    console.log(userName);
     const clause: any = {
       offset: query.offset,
       limit: query.count,
@@ -64,7 +64,7 @@ export class GraingerItemsSearchService {
                 'id',
                 'amazonSku',
                 'graingerItemNumber',
-                'graingerAccount.email',
+                'graingerAccount.name',
               ],
             },
           },
