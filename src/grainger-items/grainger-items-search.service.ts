@@ -32,6 +32,7 @@ export class GraingerItemsSearchService {
           },
           user: {
             type: 'nested',
+            include_in_root: true,
           },
         },
       },
@@ -47,6 +48,7 @@ export class GraingerItemsSearchService {
     query: SortWithPaginationQuery | any,
     userName?: string,
   ): Promise<any> {
+    console.log(userName);
     const clause: any = {
       offset: query.offset,
       limit: query.count,
