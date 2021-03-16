@@ -1,13 +1,7 @@
-import {
-  HttpException,
-  HttpStatus,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToClass } from 'class-transformer';
-import { In, IsNull, Not, Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { paginator } from '../common/paginator';
 import { sort, splitSortProps } from '../common/sort';
 import { EditOrderDto } from './dto/editOrder.dto';
@@ -90,8 +84,18 @@ export class OrdersService {
       orders.limit(clause.skip);
     }
 
-    if (clause.where.status || clause.where.status === 0) {
+    if (clause.where.status !== undefined) {
       const status = <any>{ status: clause.where.status };
+      if (
+        [OrderStatusEnum.PROCEED, OrderStatusEnum.WAITFORPROCEED].includes(
+          clause.where.status,
+        )
+      ) {
+        status.status = In([
+          OrderStatusEnum.WAITFORPROCEED,
+          OrderStatusEnum.PROCEED,
+        ]);
+      }
       orders.andWhere(status);
     }
 
