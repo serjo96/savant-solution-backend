@@ -285,7 +285,9 @@ export class GraingerItemsService {
       throw new HttpException(`Amazon SKU Item required`, HttpStatus.OK);
     }
     let existItem = await this.repository.findOne({
-      amazonSku: data.amazonSku,
+      where: {
+        amazonSku: data.amazonSku,
+      },
     });
     this.logger.debug(existItem);
     if (existItem) {
