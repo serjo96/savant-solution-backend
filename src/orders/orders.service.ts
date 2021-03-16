@@ -462,7 +462,11 @@ export class OrdersService {
     }
 
     // Если таки заказ не весь готов, сохраняем то что удалось изменить и кидаем ошибку
-    if (status === OrderStatusEnum.MANUAL) {
+    if (
+      [OrderStatusEnum.MANUAL, OrderStatusEnum.ERROR].includes(
+        existOrder.status,
+      )
+    ) {
       await this.ordersRepository.save(existOrder);
       const haveInactiveItem = existOrder.items.some(
         ({ graingerItem }) =>
