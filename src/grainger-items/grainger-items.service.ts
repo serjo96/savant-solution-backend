@@ -2,6 +2,7 @@ import {
   HttpException,
   HttpStatus,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -30,6 +31,8 @@ import { GraingerAccount } from '../grainger-accounts/grainger-account.entity';
 
 @Injectable()
 export class GraingerItemsService {
+  private readonly logger = new Logger(GraingerItemsService.name);
+
   constructor(
     private readonly graingerAccountService: GraingerAccountsService,
     private readonly csvService: CsvService,
@@ -284,6 +287,7 @@ export class GraingerItemsService {
     let existItem = await this.repository.findOne({
       amazonSku: data.amazonSku,
     });
+    this.logger.debug(existItem);
     if (existItem) {
       throw new HttpException(`Item already exist`, HttpStatus.OK);
     }
