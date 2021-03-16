@@ -16,10 +16,8 @@ interface ISearchResult<T> {
   };
 }
 
-interface ISearchParams {
-  matchFields: {
-    query: string;
-  };
+interface ISearchParams<T> {
+  query: T;
   index: string;
   offset?: number;
   count?: number;
@@ -150,25 +148,14 @@ export class SearchService {
     }
   }
 
-  async search<T>({
-    matchFields,
-    index,
-    offset,
-    count,
-    userId,
-  }: ISearchParams) {
+  async search<T>({ query, index, offset, count, userId }: ISearchParams<T>) {
     try {
       const { body } = await this.esService.search<ISearchResult<T>>({
         index,
         from: offset,
         size: count,
         body: {
-          query: {
-            multi_match: {
-              ...matchFields,
-              type: 'most_fields',
-            },
-          },
+          query,
         },
       });
       const hits = body.hits.hits;

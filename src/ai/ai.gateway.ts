@@ -32,13 +32,13 @@ export class AiGateway {
       this.logger.error(
         `Socket disconnected within handleConnection() in AppGateway: ${e}`,
       );
-      client.emit('authorization',{ type: 'unauthorized' });
+      client.emit('authorization', { type: 'unauthorized' });
       client.disconnect(true);
     }
   }
 
   @SubscribeMessage('aiStatus')
-  handleStatusMessage(payload: { status: string }): void {
+  handleStatusMessage(payload: { status: string; workerStatus: string }): void {
     this.server.emit('aiStatus', payload);
 
     this.logger.log(`Send to client aiStatus: ${JSON.stringify(payload)}`);

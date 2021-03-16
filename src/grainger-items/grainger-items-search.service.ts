@@ -22,6 +22,7 @@ export class GraingerItemsSearchService {
           status: { type: 'short' },
           graingerAccount: {
             type: 'nested',
+            include_in_root: true,
             properties: {
               email: { type: 'keyword' },
               name: { type: 'keyword' },
@@ -32,6 +33,7 @@ export class GraingerItemsSearchService {
           },
           user: {
             type: 'nested',
+            include_in_root: true,
           },
         },
       },
@@ -45,22 +47,39 @@ export class GraingerItemsSearchService {
 
   async search(
     query: SortWithPaginationQuery | any,
-    userId?: string,
+    userName?: string,
   ): Promise<any> {
     const clause: any = {
       offset: query.offset,
       limit: query.count,
       ...paginator(query),
-      userId,
       index: this.elasticIndex,
-      matchFields: {
-        query: query.search,
-        fields: [
-          'id',
-          'amazonSku',
-          'graingerItemNumber',
-          'graingerAccount.email',
-        ],
+      query: {
+        bool: {
+          must: {
+            multi_match: {
+              type: 'most_fields',
+              query: query.search,
+              fields: [
+                'id',
+                'amazonSku',
+                'graingerItemNumber',
+                'graingerAccount.name',
+              ],
+            },
+          },
+          filter: {
+            bool: {
+              filter: [
+                {
+                  term: {
+                    'user.name.keyword': userName,
+                  },
+                },
+              ],
+            },
+          },
+        },
       },
     };
     return this.searchService.search<GraingerItem>(clause);

@@ -161,23 +161,21 @@ export class AiService {
   @Interval('AiStatus', 1000 * 30) // every 30 seconds
   async aiStatus() {
     try {
-      const response = await this.checkAiStatus();
+      const [{ status }, { worker_status }] = await Promise.all([
+        this.checkAiStatus(),
+        this.workerStatus(),
+      ]);
 
-      this.publicSocketsGateway.handleStatusMessage(response);
+      this.publicSocketsGateway.handleStatusMessage({
+        status,
+        workerStatus: WorkerStatus[worker_status],
+      });
     } catch (error) {
-      this.publicSocketsGateway.handleStatusMessage({ status: 'error' });
+      this.publicSocketsGateway.handleStatusMessage({
+        status: 'error',
+        workerStatus: WorkerStatus[0],
+      });
       this.logger.error('AI Service Timeout');
-      if (process.env.NODE_ENV === 'production') {
-        this.logger.error(error);
-      }
-    }
-
-    try {
-      const { worker_status } = await this.workerStatus();
-      this.publicSocketsGateway.handleWorkerMessage(
-        WorkerStatus[worker_status],
-      );
-    } catch (error) {
       if (process.env.NODE_ENV === 'production') {
         this.logger.error(error);
       }

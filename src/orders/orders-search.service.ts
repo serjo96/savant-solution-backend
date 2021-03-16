@@ -29,6 +29,7 @@ export class OrdersSearchService {
           status: { type: 'short' },
           items: {
             type: 'nested',
+            include_in_root: true,
             properties: {
               ...this.searchService.baseEntityMapping,
               amazonItemId: { type: 'keyword' },
@@ -48,6 +49,7 @@ export class OrdersSearchService {
           },
           user: {
             type: 'nested',
+            include_in_root: true,
           },
         },
       },
@@ -59,24 +61,45 @@ export class OrdersSearchService {
     return await this.searchService.deleteIndex(this.elasticIndex);
   }
 
-  search(query: SortWithPaginationQuery | any, userId?: string): Promise<any> {
+  search(
+    query: SortWithPaginationQuery | any,
+    userName?: string,
+  ): Promise<any> {
     const clause: any = {
       offset: query.offset,
       limit: query.count,
       ...paginator(query),
       index: this.elasticIndex,
-      matchFields: {
-        query: query.search,
-        fields: [
-          'id',
-          'recipientName',
-          'amazonOrderId.keyword',
-          'items.amazonItemId',
-          'items.amazonSku.keyword',
-          'items.graingerTrackingNumber',
-          'items.graingerOrderId',
-          'items.graingerWebNumber',
-        ],
+      query: {
+        bool: {
+          must: {
+            multi_match: {
+              type: 'most_fields',
+              query: query.search,
+              fields: [
+                'id',
+                'recipientName',
+                'amazonOrderId',
+                'items.amazonItemId',
+                'items.amazonSku',
+                'items.graingerTrackingNumber',
+                'items.graingerOrderId',
+                'items.graingerWebNumber',
+              ],
+            },
+          },
+          filter: {
+            bool: {
+              filter: [
+                {
+                  term: {
+                    'user.name.keyword': userName,
+                  },
+                },
+              ],
+            },
+          },
+        },
       },
     };
     return this.searchService.search<Orders>(clause);

@@ -92,7 +92,7 @@ export class GraingerItemsController {
     @Query() query: SortWithPaginationQuery,
     @Req() { user }: Request,
   ): Promise<GetItemDto[]> {
-    return this.itemsSearchService.search(query, user.id);
+    return this.itemsSearchService.search(query, user.name);
   }
 
   @Get('/update-elastic')
@@ -121,7 +121,7 @@ export class GraingerItemsController {
     @Req() { user }: Request,
   ): Promise<CollectionResponse<GetItemDto>> {
     if (query.search) {
-      return this.itemsSearchService.search(query, user.id);
+      return this.itemsSearchService.search(query, user.name);
     } else {
       return this.itemsService.getAll(user, query);
     }

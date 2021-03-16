@@ -166,7 +166,7 @@ export class OrdersController {
       },
     };
     if (query.search) {
-      return this.ordersSearchService.search(query, user.id);
+      return this.ordersSearchService.search(query, user.name);
     } else {
       return this.ordersService.getAll(where, query);
     }
