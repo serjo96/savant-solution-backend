@@ -285,6 +285,8 @@ export class GraingerItemsService {
       },
     });
 
+    this.logger.debug(existItem);
+
     if (existItem) {
       throw new HttpException(`Item already exist`, HttpStatus.OK);
     }
