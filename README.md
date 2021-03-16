@@ -32,6 +32,9 @@ $ npm run start
 # elastic-search + kibana
 $ docker-compose -f docker-compose-dev.yml up -d
 ```
+Выключить "последствия эластика":
+`wsl --shutdown
+`
 
 ## Production manual start
 
