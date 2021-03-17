@@ -113,21 +113,13 @@ export class SearchService {
   }
 
   async update<T>(data: any, index: string): Promise<any> {
-    const script = Object.entries(data).reduce((result, [key, value]) => {
-      return `${result} ctx._source.${key}='${value}';`;
-    }, '');
-
     try {
-      return await this.esService.updateByQuery({
+      return await this.esService.update({
         index,
+        id: data.id,
         body: {
-          query: {
-            match: {
-              id: data.id,
-            },
-          },
-          script: {
-            inline: script,
+          doc: {
+            ...data,
           },
         },
       });
