@@ -23,6 +23,7 @@ export class ErrorFilter implements ExceptionFilter {
     // if (status === HttpStatus.NOT_FOUND)
     //   return response.status(status).render('views/404');
     this.logger.error(error);
+    console.error(error);
 
     if (status === HttpStatus.INTERNAL_SERVER_ERROR) {
       return response.status(status).json({
