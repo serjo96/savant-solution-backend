@@ -1,10 +1,4 @@
-import {
-  HttpException,
-  HttpStatus,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
 
 interface ISearchResult<T> {
@@ -50,10 +44,7 @@ export class SearchService {
       }
     } catch (error) {
       this.logger.debug(error);
-      throw new HttpException(
-        `[ELASTIC CREATEINDEX]: ${error}`,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new Error(`[ELASTIC CREATEINDEX]: ${error}`);
     }
   }
 
@@ -66,10 +57,7 @@ export class SearchService {
       return await this.esService.indices.delete({ index });
     } catch (error) {
       this.logger.debug(error);
-      throw new HttpException(
-        `[ELASTIC DELETEINDEX]: ${error}`,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new Error(`[ELASTIC DELETEINDEX]: ${error}`);
     }
   }
 
@@ -105,10 +93,7 @@ export class SearchService {
       return bulkResponse;
     } catch (error) {
       this.logger.debug(error);
-      throw new HttpException(
-        `[ELASTIC SAVE]: ${error}`,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new Error(`[ELASTIC SAVE]: ${error}`);
     }
   }
 
@@ -124,10 +109,7 @@ export class SearchService {
         },
       });
     } catch (error) {
-      throw new HttpException(
-        `[ELASTIC UPDATE]: ${error}`,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new Error(`[ELASTIC UPDATE]: ${error}`);
     }
   }
 
@@ -148,10 +130,7 @@ export class SearchService {
         },
       });
     } catch (error) {
-      throw new HttpException(
-        `[ELASTIC REMOVE]: ${error}`,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new Error(`[ELASTIC REMOVE]: ${error}`);
     }
   }
 
@@ -172,10 +151,7 @@ export class SearchService {
       };
     } catch (error) {
       this.logger.error(error);
-      throw new HttpException(
-        `[ELASTIC SEARCH]: ${error}`,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new Error(`[ELASTIC SEARCH]: ${error}`);
     }
   }
 
