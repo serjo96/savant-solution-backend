@@ -123,7 +123,10 @@ export class SearchService {
         },
       });
     } catch (error) {
-      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        `[ELASTIC ERROR]: ${error}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
