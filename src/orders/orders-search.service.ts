@@ -44,7 +44,15 @@ export class OrdersSearchService {
               graingerWebNumber: { type: 'keyword' },
               note: { type: 'text' },
               errors: { type: 'text' },
-              graingerItem: { type: 'nested' },
+              graingerItem: {
+                type: 'nested',
+                include_in_parent: true,
+                properties: {
+                  graingerItemNumber: {
+                    type: 'keyword',
+                  },
+                },
+              },
             },
           },
           user: {
@@ -85,6 +93,7 @@ export class OrdersSearchService {
                 'items.graingerTrackingNumber',
                 'items.graingerOrderId',
                 'items.graingerWebNumber',
+                'items.graingerItem.graingerItemNumber',
               ],
             },
           },
