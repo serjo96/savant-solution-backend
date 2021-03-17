@@ -50,7 +50,10 @@ export class SearchService {
       }
     } catch (error) {
       this.logger.debug(error);
-      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        `[ELASTIC CREATEINDEX]: ${error}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -63,7 +66,10 @@ export class SearchService {
       return await this.esService.indices.delete({ index });
     } catch (error) {
       this.logger.debug(error);
-      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        `[ELASTIC DELETEINDEX]: ${error}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -99,7 +105,10 @@ export class SearchService {
       return bulkResponse;
     } catch (error) {
       this.logger.debug(error);
-      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        `[ELASTIC SAVE]: ${error}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -124,7 +133,7 @@ export class SearchService {
       });
     } catch (error) {
       throw new HttpException(
-        `[ELASTIC ERROR]: ${error}`,
+        `[ELASTIC UPDATE]: ${error}`,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -147,7 +156,10 @@ export class SearchService {
         },
       });
     } catch (error) {
-      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        `[ELASTIC REMOVE]: ${error}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
@@ -168,7 +180,10 @@ export class SearchService {
       };
     } catch (error) {
       this.logger.error(error);
-      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        `[ELASTIC SEARCH]: ${error}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
