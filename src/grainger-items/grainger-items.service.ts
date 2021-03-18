@@ -245,9 +245,9 @@ export class GraingerItemsService {
       items.limit(clause.skip);
     }
 
-    if (query && query.order) {
-      const { sortType, sortDir } = splitSortProps(query.order);
-      items.orderBy(sortType, sortDir);
+    if (query?.sort_by) {
+      const { sortType, sortDir } = splitSortProps(query.sort_by);
+      items.orderBy(`grainger-items.${sortType}`, sortDir);
     }
 
     if (clause.where.status || clause.where.status === 0) {
