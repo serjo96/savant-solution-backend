@@ -1,15 +1,13 @@
-import {
-  HttpException,
-  HttpStatus,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
+import { CollectionResponse } from '../common/collection-response';
 
 interface ISearchResult<T> {
   hits: {
-    total: number;
+    total: {
+      value: number;
+      relation: string;
+    };
     hits: Array<{
       _source: T;
     }>;
@@ -21,7 +19,6 @@ interface ISearchParams<T> {
   index: string;
   offset?: number;
   count?: number;
-  userId?: string;
 }
 
 @Injectable()
@@ -50,7 +47,7 @@ export class SearchService {
       }
     } catch (error) {
       this.logger.debug(error);
-      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new Error(`[ELASTIC CREATEINDEX]: ${error}`);
     }
   }
 
@@ -63,7 +60,7 @@ export class SearchService {
       return await this.esService.indices.delete({ index });
     } catch (error) {
       this.logger.debug(error);
-      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new Error(`[ELASTIC DELETEINDEX]: ${error}`);
     }
   }
 
@@ -99,31 +96,23 @@ export class SearchService {
       return bulkResponse;
     } catch (error) {
       this.logger.debug(error);
-      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new Error(`[ELASTIC SAVE]: ${error}`);
     }
   }
 
   async update<T>(data: any, index: string): Promise<any> {
-    const script = Object.entries(data).reduce((result, [key, value]) => {
-      return `${result} ctx._source.${key}='${value}';`;
-    }, '');
-
     try {
-      return await this.esService.updateByQuery({
+      return await this.esService.update({
         index,
+        id: data.id,
         body: {
-          query: {
-            match: {
-              id: data.id,
-            },
-          },
-          script: {
-            inline: script,
+          doc: {
+            ...data,
           },
         },
       });
     } catch (error) {
-      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new Error(`[ELASTIC UPDATE]: ${error}`);
     }
   }
 
@@ -144,11 +133,16 @@ export class SearchService {
         },
       });
     } catch (error) {
-      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new Error(`[ELASTIC REMOVE]: ${error}`);
     }
   }
 
-  async search<T>({ query, index, offset, count, userId }: ISearchParams<T>) {
+  async search<T>({
+    query,
+    index,
+    offset,
+    count,
+  }: ISearchParams<T>): Promise<CollectionResponse<T>> {
     try {
       const { body } = await this.esService.search<ISearchResult<T>>({
         index,
@@ -161,11 +155,11 @@ export class SearchService {
       const hits = body.hits.hits;
       return {
         result: hits.map((item) => item._source),
-        total: body.hits.total,
+        count: body.hits.total.value,
       };
     } catch (error) {
       this.logger.error(error);
-      throw new HttpException(error, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new Error(`[ELASTIC SEARCH]: ${error}`);
     }
   }
 

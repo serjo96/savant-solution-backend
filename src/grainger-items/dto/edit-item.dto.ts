@@ -1,8 +1,11 @@
 import {
   IsEnum,
+  IsNotEmpty,
   IsNumber,
   IsOptional,
-  IsString, Max, Min,
+  IsString,
+  Max,
+  Min,
 } from 'class-validator';
 
 import { GraingerAccount } from '../../grainger-accounts/grainger-account.entity';
@@ -26,6 +29,7 @@ export class EditItemDto {
   graingerAccount?: GraingerAccount;
 
   @IsString()
+  @IsNotEmpty()
   amazonSku: string;
 
   @IsOptional()

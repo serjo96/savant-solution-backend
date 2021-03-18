@@ -44,7 +44,7 @@ export class AppController {
   }
 
   private async deleteOrders(): Promise<any> {
-    const { result } = await this.ordersService.getAll({});
+    const { result } = await this.ordersService.getAll();
 
     await this.ordersService.delete({});
 

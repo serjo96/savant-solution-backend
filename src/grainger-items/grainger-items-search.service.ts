@@ -62,7 +62,7 @@ export class GraingerItemsSearchService {
               query: query.search,
               fields: [
                 'id',
-                'amazonSku',
+                'amazonSku.keyword',
                 'graingerItemNumber',
                 'graingerAccount.name',
               ],

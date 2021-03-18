@@ -8,25 +8,23 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToClass } from 'class-transformer';
 import { ILike, In, Repository } from 'typeorm';
-import { paginator } from '../common/paginator';
-import { SortWithPaginationQuery, sort, splitSortProps } from '../common/sort';
-import { filter } from '../common/filter';
-import { CollectionResponse } from '../common/collection-response';
-import { checkRequiredItemFieldsReducer } from '../reducers/items.reducer';
-import { User } from '@user/users.entity';
+import { Column, Workbook } from 'exceljs';
 import { Readable } from 'stream';
-import * as CSVToJSON from 'csvtojson';
+
+import { paginator } from '../common/paginator';
+import { sort, splitSortProps } from '../common/sort';
+import { filter } from '../common/filter';
+import { checkRequiredItemFieldsReducer } from '../reducers/items.reducer';
+
+import { CsvService } from '@shared/csv/csv.service';
+import { CollectionResponse } from '../common/collection-response';
+import { User } from '@user/users.entity';
 import { GraingerItem, ItemStatusEnum } from './grainger-items.entity';
 import { GetItemDto } from './dto/get-item.dto';
 import { CreateItemDto } from './dto/create-item-dto';
 import { EditItemDto } from './dto/edit-item.dto';
-import { Column, Workbook } from 'exceljs';
-import { CsvService } from '@shared/csv/csv.service';
-import { CsvCreateOrderDto } from '../orders/dto/csv-create-order.dto';
 import { CsvCreateGraingerItem } from './dto/csv-create-grainger-item';
 import { GraingerAccountsService } from '../grainger-accounts/grainger-accounts.service';
-import csv = require('csvtojson/index');
-import { OrderItem } from '../orders/order-item.entity';
 import { GraingerAccount } from '../grainger-accounts/grainger-account.entity';
 
 @Injectable()
@@ -247,9 +245,9 @@ export class GraingerItemsService {
       items.limit(clause.skip);
     }
 
-    if (query && query.order) {
-      const { sortType, sortDir } = splitSortProps(query.order);
-      items.orderBy(sortType, sortDir);
+    if (query?.sort_by) {
+      const { sortType, sortDir } = splitSortProps(query.sort_by);
+      items.orderBy(`grainger-items.${sortType}`, sortDir);
     }
 
     if (clause.where.status || clause.where.status === 0) {
@@ -281,13 +279,14 @@ export class GraingerItemsService {
   }
 
   async save(data: CreateItemDto): Promise<GraingerItem> {
-    if (!data.amazonSku) {
-      throw new HttpException(`Amazon SKU Item required`, HttpStatus.OK);
-    }
     let existItem = await this.repository.findOne({
-      amazonSku: data.amazonSku,
+      where: {
+        amazonSku: data.amazonSku,
+      },
     });
+
     this.logger.debug(existItem);
+
     if (existItem) {
       throw new HttpException(`Item already exist`, HttpStatus.OK);
     }
