@@ -19,6 +19,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from '@nestjs/passport';
+import { plainToClass } from 'class-transformer';
 import { Request } from 'express';
 import { Readable } from 'stream';
 import { Buffer } from 'exceljs';
@@ -159,6 +160,7 @@ export class OrdersController {
     @Req() req: Request,
   ): Promise<CollectionResponse<GetOrderDto>> {
     const { user } = req;
+    let resultOrders;
 
     const where = {
       user: {
@@ -166,10 +168,17 @@ export class OrdersController {
       },
     };
     if (query.search) {
-      return this.ordersSearchService.search(query, user.name);
+      resultOrders = await this.ordersSearchService.search(query, user.name);
     } else {
-      return this.ordersService.getAll(where, query);
+      resultOrders = await this.ordersService.getAll(where, query);
     }
+
+    return {
+      ...resultOrders,
+      result: resultOrders.result.map((order: Orders) =>
+        plainToClass(GetOrderDto, order),
+      ),
+    };
   }
 
   @Post('/download')
@@ -187,12 +196,19 @@ export class OrdersController {
     @Body() { orderIds }: { orderIds: string[] },
     @Req() { user }: Request,
   ): Promise<CollectionResponse<GetOrderDto>> {
-    return this.ordersService.getAll({
+    const resultOrders = await this.ordersService.getAll({
       user: {
         name: user.name,
       },
       id: In(orderIds),
     });
+
+    return {
+      ...resultOrders,
+      result: resultOrders.result.map((order: Orders) =>
+        plainToClass(GetOrderDto, order),
+      ),
+    };
   }
 
   @Get('/states')

@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
+import { CollectionResponse } from '../common/collection-response';
 import { paginator } from '../common/paginator';
 import { SortWithPaginationQuery } from '../common/sort';
 import { SearchService } from '../search/search.service';
+import { GetOrderDto } from './dto/get-order.dto';
 import { Orders } from './orders.entity';
 
 @Injectable()
@@ -72,7 +74,7 @@ export class OrdersSearchService {
   search(
     query: SortWithPaginationQuery | any,
     userName?: string,
-  ): Promise<any> {
+  ): Promise<CollectionResponse<GetOrderDto>> {
     const clause: any = {
       offset: query.offset,
       limit: query.count,

@@ -1,36 +1,39 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { plainToClass } from 'class-transformer';
+import { Interval } from '@nestjs/schedule';
 import { In, Repository } from 'typeorm';
-import { paginator } from '../common/paginator';
-import { sort, splitSortProps } from '../common/sort';
-import { EditOrderDto } from './dto/editOrder.dto';
-
-import { CreateOrderDto } from './dto/createOrderDto';
-import { GetOrderDto } from './dto/get-order.dto';
-import { OrderStatusEnum, Orders } from './orders.entity';
-import { CollectionResponse } from '../common/collection-response';
-import { Readable } from 'stream';
 import { Column, Workbook } from 'exceljs';
-import { OrderItem } from './order-item.entity';
-import { checkRequiredItemFieldsReducer } from '../reducers/items.reducer';
+import { Readable } from 'stream';
+
 import {
   checkIncorrectOrderStateReducer,
   checkUpperCaseOrderStateReducer,
 } from '../reducers/orders.reducer';
-import { Interval } from '@nestjs/schedule';
-import { AiService } from '../ai/ai.service';
-import { GraingerStatusEnum } from '../ai/dto/get-grainger-order';
-import { User } from '@user/users.entity';
+import { checkRequiredItemFieldsReducer } from '../reducers/items.reducer';
+import { sort, splitSortProps } from '../common/sort';
+import { paginator } from '../common/paginator';
+import { filter } from '../common/filter';
+
 import {
   GraingerItem,
   ItemStatusEnum,
 } from '../grainger-items/grainger-items.entity';
-import { GraingerItemsService } from '../grainger-items/grainger-items.service';
-import { filter } from '../common/filter';
-import { CsvService } from '@shared/csv/csv.service';
-import { CsvCreateOrderDto } from './dto/csv-create-order.dto';
+import { OrderStatusEnum, Orders } from './orders.entity';
 import { GraingerAccount } from '../grainger-accounts/grainger-account.entity';
+import { OrderItem } from './order-item.entity';
+import { User } from '@user/users.entity';
+
+import { EditOrderDto } from './dto/editOrder.dto';
+import { CreateOrderDto } from './dto/createOrderDto';
+import { GetOrderDto } from './dto/get-order.dto';
+import { CsvCreateOrderDto } from './dto/csv-create-order.dto';
+
+import { CollectionResponse } from '../common/collection-response';
+import { AiService } from '../ai/ai.service';
+import { GraingerItemsService } from '../grainger-items/grainger-items.service';
+import { CsvService } from '@shared/csv/csv.service';
+
+import { GraingerStatusEnum } from '../ai/dto/get-grainger-order';
 
 @Injectable()
 export class OrdersService {
@@ -99,24 +102,8 @@ export class OrdersService {
       orders.andWhere(status);
     }
 
-    // if (clause.where.id) {
-    //   orders.andWhere(clause.where.id);
-    // }
-
-    // if (clause?.where.graingerItemNumber) {
-    //   orders.where({
-    //     graingerItemNumber: clause.where.graingerItemNumber,
-    //   });
-    // }
-
-    // Для фронта, не трогай плз
     if (query?.sort_by) {
       const { sortType, sortDir } = splitSortProps(query.sort_by);
-      orders.orderBy(`orders.${sortType}`, sortDir);
-    }
-
-    if (query?.order) {
-      const { sortType, sortDir } = splitSortProps(query.order);
       orders.orderBy(`orders.${sortType}`, sortDir);
     }
 
@@ -135,7 +122,7 @@ export class OrdersService {
     }
 
     return {
-      result: result.map((order: Orders) => plainToClass(GetOrderDto, order)),
+      result,
       count,
     };
   }
