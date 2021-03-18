@@ -46,7 +46,7 @@ export class OrdersSearchService {
               errors: { type: 'text' },
               graingerItem: {
                 type: 'nested',
-                include_in_parent: true,
+                include_in_root: true,
                 properties: {
                   graingerItemNumber: {
                     type: 'keyword',
@@ -89,7 +89,7 @@ export class OrdersSearchService {
                 'recipientName',
                 'amazonOrderId',
                 'items.amazonItemId',
-                'items.amazonSku',
+                'items.amazonSku.keyword',
                 'items.graingerTrackingNumber',
                 'items.graingerOrderId',
                 'items.graingerWebNumber',
