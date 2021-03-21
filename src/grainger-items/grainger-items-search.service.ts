@@ -14,9 +14,33 @@ export class GraingerItemsSearchService {
       mappings: {
         properties: {
           ...this.searchService.baseEntityMapping,
-          id: { type: 'keyword' },
-          amazonSku: { type: 'keyword' },
-          graingerItemNumber: { type: 'keyword' },
+          id: {
+            type: 'text',
+            fields: {
+              keyword: {
+                type: 'keyword',
+                ignore_above: 256,
+              },
+            },
+          },
+          amazonSku: {
+            type: 'text',
+            fields: {
+              keyword: {
+                type: 'keyword',
+                ignore_above: 256,
+              },
+            },
+          },
+          graingerItemNumber: {
+            type: 'text',
+            fields: {
+              keyword: {
+                type: 'keyword',
+                ignore_above: 256,
+              },
+            },
+          },
           graingerPackQuantity: { type: 'integer' },
           graingerThreshold: { type: 'integer' },
           status: { type: 'short' },
@@ -24,8 +48,24 @@ export class GraingerItemsSearchService {
             type: 'nested',
             include_in_root: true,
             properties: {
-              email: { type: 'keyword' },
-              name: { type: 'keyword' },
+              email: {
+                type: 'text',
+                fields: {
+                  keyword: {
+                    type: 'keyword',
+                    ignore_above: 256,
+                  },
+                },
+              },
+              name: {
+                type: 'text',
+                fields: {
+                  keyword: {
+                    type: 'keyword',
+                    ignore_above: 256,
+                  },
+                },
+              },
             },
           },
           orderItems: {

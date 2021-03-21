@@ -16,15 +16,47 @@ export class OrdersSearchService {
       mappings: {
         properties: {
           ...this.searchService.baseEntityMapping,
-          id: { type: 'keyword' },
-          recipientName: { type: 'keyword' },
+          id: {
+            type: 'text',
+            fields: {
+              keyword: {
+                type: 'keyword',
+                ignore_above: 256,
+              },
+            },
+          },
+          recipientName: {
+            type: 'text',
+            fields: {
+              keyword: {
+                type: 'keyword',
+                ignore_above: 256,
+              },
+            },
+          },
           note: { type: 'text' },
           orderDate: { type: 'date' },
           shipDate: { type: 'date' },
           carrierCode: { type: 'text' },
           carrierName: { type: 'text' },
-          amazonOrderId: { type: 'keyword' },
-          shipAddress: { type: 'keyword' },
+          amazonOrderId: {
+            type: 'text',
+            fields: {
+              keyword: {
+                type: 'keyword',
+                ignore_above: 256,
+              },
+            },
+          },
+          shipAddress: {
+            type: 'text',
+            fields: {
+              keyword: {
+                type: 'keyword',
+                ignore_above: 256,
+              },
+            },
+          },
           shipCity: { type: 'text' },
           shipState: { type: 'text' },
           shipPostalCode: { type: 'text' },
@@ -34,16 +66,56 @@ export class OrdersSearchService {
             include_in_root: true,
             properties: {
               ...this.searchService.baseEntityMapping,
-              amazonItemId: { type: 'keyword' },
-              amazonSku: { type: 'keyword' },
+              amazonItemId: {
+                type: 'text',
+                fields: {
+                  keyword: {
+                    type: 'keyword',
+                    ignore_above: 256,
+                  },
+                },
+              },
+              amazonSku: {
+                type: 'text',
+                fields: {
+                  keyword: {
+                    type: 'keyword',
+                    ignore_above: 256,
+                  },
+                },
+              },
               amazonQuantity: { type: 'integer' },
               amazonPrice: { type: 'integer' },
               graingerPrice: { type: 'integer' },
-              graingerTrackingNumber: { type: 'keyword' },
+              graingerTrackingNumber: {
+                type: 'text',
+                fields: {
+                  keyword: {
+                    type: 'keyword',
+                    ignore_above: 256,
+                  },
+                },
+              },
               graingerShipMethod: { type: 'short' },
-              graingerOrderId: { type: 'keyword' },
+              graingerOrderId: {
+                type: 'text',
+                fields: {
+                  keyword: {
+                    type: 'keyword',
+                    ignore_above: 256,
+                  },
+                },
+              },
               graingerShipDate: { type: 'date' },
-              graingerWebNumber: { type: 'keyword' },
+              graingerWebNumber: {
+                type: 'text',
+                fields: {
+                  keyword: {
+                    type: 'keyword',
+                    ignore_above: 256,
+                  },
+                },
+              },
               note: { type: 'text' },
               errors: { type: 'text' },
               graingerItem: {
@@ -51,7 +123,13 @@ export class OrdersSearchService {
                 include_in_root: true,
                 properties: {
                   graingerItemNumber: {
-                    type: 'keyword',
+                    type: 'text',
+                    fields: {
+                      keyword: {
+                        type: 'keyword',
+                        ignore_above: 256,
+                      },
+                    },
                   },
                 },
               },
@@ -89,7 +167,7 @@ export class OrdersSearchService {
               fields: [
                 'id',
                 'recipientName',
-                'amazonOrderId',
+                'amazonOrderId.keyword',
                 'items.amazonItemId',
                 'items.amazonSku.keyword',
                 'items.graingerTrackingNumber',
