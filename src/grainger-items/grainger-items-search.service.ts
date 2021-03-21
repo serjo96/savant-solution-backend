@@ -101,10 +101,10 @@ export class GraingerItemsSearchService {
               type: 'most_fields',
               query: query.search,
               fields: [
-                'id',
+                'id.keyword',
                 'amazonSku.keyword',
-                'graingerItemNumber',
-                'graingerAccount.name',
+                'graingerItemNumber.keyword',
+                'graingerAccount.name.keyword',
               ],
             },
           },
