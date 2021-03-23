@@ -316,7 +316,6 @@ export class OrdersService {
       );
       if (errorMessage) {
         existAmazonOrder.status = OrderStatusEnum.MANUAL;
-        existAmazonOrder.note = (existAmazonOrder.note ?? '') + errorMessage;
       }
       existAmazonOrder.items.push(existOrderItem);
     }
@@ -442,7 +441,6 @@ export class OrdersService {
       );
       if (errorMessage) {
         existOrder.status = OrderStatusEnum.MANUAL;
-        existOrder.note = (existOrder.note ?? '') + errorMessage;
       } else {
         orderItem.graingerItem.status = ItemStatusEnum.ACTIVE;
       }

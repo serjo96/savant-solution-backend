@@ -10,9 +10,6 @@ export const checkIncorrectOrderStateReducer = (order: Orders): Orders => {
     order.shipState = existState.name;
     // Если из CSV приходят некорректные штаты, пишем ошибку
   } else {
-    order.note =
-      (order.note ?? '') +
-      `Ship state ${upperCaseState} is invalid; \n`;
     order.shipState = '';
     order.status = OrderStatusEnum.MANUAL;
   }
