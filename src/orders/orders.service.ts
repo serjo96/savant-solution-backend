@@ -1,6 +1,7 @@
-import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Interval } from '@nestjs/schedule';
+import { SentryService } from '@ntegral/nestjs-sentry';
 import { In, Repository } from 'typeorm';
 import { Column, Workbook } from 'exceljs';
 import { Readable } from 'stream';
@@ -47,6 +48,7 @@ export class OrdersService {
     private readonly aiService: AiService,
     private readonly graingerItemsService: GraingerItemsService,
     private readonly csvService: CsvService,
+    private readonly sentryService: SentryService,
   ) {}
 
   async find(where: any): Promise<Orders[]> {
@@ -111,6 +113,7 @@ export class OrdersService {
     try {
       [result, count] = await orders.getManyAndCount();
     } catch (e) {
+      this.sentryService.error(e);
       this.logger.debug(e);
     }
 
@@ -498,6 +501,7 @@ export class OrdersService {
           `[Update GraingerTrackingNumber from AI] Sended: ${orderItems.length}`,
         );
       } catch (e) {
+        this.sentryService.error(e);
         this.logger.error(
           '[Update GraingerTrackingNumber from AI] AI Service Timeout',
         );
@@ -592,6 +596,7 @@ export class OrdersService {
         `[Check Order AI Status] Success: ${successOrdersCount}, Wait: ${waitCount}, Pending: ${pendingCount}, Error: ${errorOrdersCount}`,
       );
     } catch (e) {
+      this.sentryService.error(e);
       this.logger.error('[Check Order AI Status] AI Service Timeout');
     }
   }

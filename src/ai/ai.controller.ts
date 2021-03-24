@@ -1,10 +1,12 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, UseGuards, UseInterceptors } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { SentryInterceptor } from '@ntegral/nestjs-sentry';
 import { Roles } from '../common/decorators/roles';
 import { AiService } from './ai.service';
 
 @UseGuards(AuthGuard('jwt'))
 @Roles('user', 'admin')
+@UseInterceptors(new SentryInterceptor())
 @Controller('ai')
 export class AiController {
   constructor(private readonly aiService: AiService) {}

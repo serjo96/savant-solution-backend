@@ -15,6 +15,7 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { SentryInterceptor } from '@ntegral/nestjs-sentry';
 
 import { Roles } from '../common/decorators/roles';
 import { TransformInterceptor } from '../common/interceptors/TransformInterceptor';
@@ -35,6 +36,7 @@ import { ItemStatusEnum } from './grainger-items.entity';
 
 @UseGuards(AuthGuard('jwt'))
 @Roles('user', 'admin')
+@UseInterceptors(new SentryInterceptor())
 @Controller('grainger-items')
 export class GraingerItemsController {
   constructor(

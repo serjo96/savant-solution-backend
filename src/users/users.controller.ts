@@ -13,6 +13,7 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { SentryInterceptor } from '@ntegral/nestjs-sentry';
 import { EditUserDto } from '@user/dto/edit-user.dto';
 import { UserResponseDto } from '@user/dto/user-response.dto';
 import { Request } from 'express';
@@ -28,6 +29,7 @@ import { ValidationPipe } from '../common/Pipes/validation.pipe';
 import { UsersService } from './users.service';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
+@UseInterceptors(new SentryInterceptor())
 @Controller('/users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}

@@ -14,6 +14,7 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { SentryInterceptor } from '@ntegral/nestjs-sentry';
 import { GraingerAccountsService } from './grainger-accounts.service';
 import { ValidationPipe } from '../common/Pipes/validation.pipe';
 import { CreateGraingerAccountDto } from './dto/create-grainger-account.dto';
@@ -22,6 +23,7 @@ import { TransformInterceptor } from '../common/interceptors/TransformIntercepto
 import { AiService } from '../ai/ai.service';
 
 @UseGuards(AuthGuard('jwt'))
+@UseInterceptors(new SentryInterceptor())
 @Controller('grainger-accounts')
 export class GraingerAccountsController {
   private readonly logger = new Logger(GraingerAccountsController.name);
