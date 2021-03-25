@@ -207,15 +207,13 @@ export class GraingerItemsService {
     return workbook.xlsx.writeBuffer();
   }
 
-  async getAll(
-    user?: User,
-    query?: any,
-  ): Promise<CollectionResponse<GetItemDto>> {
+  async getAll(where?, query?: any): Promise<CollectionResponse<GetItemDto>> {
     const clause: any = {
       ...sort(query),
       ...paginator(query),
       ...filter(query),
     };
+    clause.where = { ...clause.where, ...where };
     // const [result, count] = await this.repository.findAndCount({
     //   relations: ["user",],
     //   ...clause,
@@ -233,8 +231,8 @@ export class GraingerItemsService {
       .leftJoinAndSelect('grainger-items.orderItems', 'orderItems')
       .leftJoinAndSelect('grainger-items.user', 'user');
 
-    if (user) {
-      items.where('user.name =:name', { name: user.name });
+    if (clause.where.user && clause.where.user.name) {
+      items.where('user.name =:name', { name: clause.where.user.name });
     }
 
     if (clause.take) {
