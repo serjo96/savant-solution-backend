@@ -1,10 +1,4 @@
-import {
-  HttpException,
-  HttpStatus,
-  Injectable,
-  InternalServerErrorException,
-  Logger,
-} from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Interval } from '@nestjs/schedule';
 import { SentryService } from '@ntegral/nestjs-sentry';
@@ -41,6 +35,7 @@ import { GraingerItemsService } from '../grainger-items/grainger-items.service';
 import { CsvService } from '@shared/csv/csv.service';
 
 import { GraingerStatusEnum } from '../ai/dto/get-grainger-order';
+import { INQUIRER } from '@nestjs/core';
 
 @Injectable()
 export class OrdersService {
@@ -255,6 +250,61 @@ export class OrdersService {
     return workbook.xlsx.writeBuffer();
   }
 
+  async uploadPricesFromCsv(
+    stream: Readable,
+    user,
+  ): Promise<{ orders: Orders[] }> {
+    const orderItemsDto = await this.convertPricesCsvToDto(stream);
+    const pricesMap: { [amazonItemId: string]: number } = {};
+    orderItemsDto.forEach(
+      (orderItem) =>
+        (pricesMap[orderItem.amazonItemId] = orderItem.amazonPrice),
+    );
+
+    const uniqAmazonItemIds = this.getUniqFields(orderItemsDto, 'amazonItemId');
+
+    // Находим уже существующие amazonItemId, чтобы их не трогать и в конце написать "Такие уже есть"
+    const existOrderItems: OrderItem[] = await this.orderItemsRepository.find({
+      where: { amazonItemId: In(uniqAmazonItemIds) },
+      relations: ['order'],
+    });
+
+    const orderIds = existOrderItems
+      .map((orderItem) => orderItem.order)
+      .map((orderItem) => orderItem.id);
+
+    const orders: Orders[] = await this.ordersRepository.find({
+      where: { id: In(orderIds) },
+      relations: ['items'],
+    });
+
+    for (const order of orders) {
+      for (const orderItem of order.items) {
+        if (pricesMap[orderItem.amazonItemId]) {
+          orderItem.amazonPrice = pricesMap[orderItem.amazonItemId];
+        }
+      }
+      if (
+        order.items.every(
+          (orderItem) =>
+            orderItem.amazonPrice &&
+            !checkRequiredItemFieldsReducer(orderItem.graingerItem)
+              .errorMessage,
+        )
+      ) {
+        order.status = OrderStatusEnum.INQUEUE;
+      }
+    }
+
+    await this.ordersRepository.save(orders);
+
+    return {
+      orders: orders.filter(
+        (order) => order.status === OrderStatusEnum.INQUEUE,
+      ),
+    };
+  }
+
   async uploadFromCsv(
     stream: Readable,
     user,
@@ -320,12 +370,13 @@ export class OrdersService {
       const { errorMessage } = checkRequiredItemFieldsReducer(
         existOrderItem.graingerItem,
       );
-      if (errorMessage) {
-        existAmazonOrder.status = OrderStatusEnum.MANUAL;
-      }
 
       if (!existOrderItem.amazonPrice) {
         existAmazonOrder.status = OrderStatusEnum.WITHOUTPRICE;
+      }
+
+      if (errorMessage) {
+        existAmazonOrder.status = OrderStatusEnum.MANUAL;
       }
 
       existAmazonOrder.items.push(existOrderItem);
@@ -352,6 +403,41 @@ export class OrdersService {
     });
 
     return { success, errors: existOrderItems, orders: savedOrders };
+  }
+
+  private async convertPricesCsvToDto(
+    stream: Readable,
+  ): Promise<CsvCreateOrderDto[]> {
+    const headers = [
+      'amazonOrderId',
+      'amazonItemId',
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      'amazonPrice',
+    ];
+
+    // Прочитаем CSV и проверим что в ней есть все необходимые поля
+    const orderItemsDto: CsvCreateOrderDto[] = await this.csvService.uploadFromCsv<CsvCreateOrderDto>(
+      stream,
+      headers,
+      // '\t', // TODO ВЕРНУТЬ
+    );
+    if (
+      orderItemsDto.some(
+        (orderItem) => !this.csvService.isValidCSVRow(orderItem, headers),
+      )
+    ) {
+      throw new HttpException(`Invalid CSV file`, HttpStatus.OK);
+    }
+
+    return orderItemsDto;
   }
 
   private async convertCsvToDto(
@@ -477,6 +563,15 @@ export class OrdersService {
       if (haveInactiveItem) {
         throw new HttpException(
           `All order items must have status ACTIVE`,
+          HttpStatus.OK,
+        );
+      }
+      const withoutPriceItem = existOrder.items.some(
+        ({ amazonPrice }) => !amazonPrice,
+      );
+      if (withoutPriceItem) {
+        throw new HttpException(
+          `All order items must have Amazon Item Price`,
           HttpStatus.OK,
         );
       }

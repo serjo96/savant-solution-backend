@@ -93,6 +93,24 @@ export class OrdersController {
     return this.ordersService.findByField(user, query);
   }
 
+  @Post('/upload-prices')
+  // @UsePipes(new ValidationPipe())
+  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(new TransformInterceptor(GetOrderDto))
+  async uploadPrices(
+    @Req() req: Request,
+    @UploadedFile() files,
+  ): Promise<void> {
+    const stream = Readable.from(files.buffer.toString());
+    const { user } = req;
+    const { orders } = await this.ordersService.uploadPricesFromCsv(
+      stream,
+      user,
+    );
+
+    this.sendOrdersToAI(orders);
+  }
+
   @Post('/upload')
   // @UsePipes(new ValidationPipe())
   @UseInterceptors(FileInterceptor('file'))
@@ -111,8 +129,6 @@ export class OrdersController {
     if (orders && orders.length) {
       await this.ordersSearchService.save(orders);
     }
-
-    this.sendOrdersToAI(orders);
 
     return { success, errors };
   }
