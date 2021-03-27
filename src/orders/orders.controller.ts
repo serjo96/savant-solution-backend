@@ -119,9 +119,7 @@ export class OrdersController {
 
   private async sendOrdersToAI(orders: Orders[]) {
     const readyToProceedOrders = orders.filter((order) =>
-      [OrderStatusEnum.WAITFORPROCEED, OrderStatusEnum.PROCEED].includes(
-        order.status,
-      ),
+      [OrderStatusEnum.INQUEUE, OrderStatusEnum.PROCEED].includes(order.status),
     );
     try {
       const { error } = await this.aiService.addOrdersToAI(
@@ -260,9 +258,7 @@ export class OrdersController {
     };
     const order = await this.ordersService.updateStatus(where, status);
     await this.ordersSearchService.update(order);
-    if (
-      [OrderStatusEnum.WAITFORPROCEED, OrderStatusEnum.PROCEED].includes(status)
-    ) {
+    if ([OrderStatusEnum.INQUEUE, OrderStatusEnum.PROCEED].includes(status)) {
       try {
         const { error } = await this.aiService.addOrdersToAI([order]);
         if (error) {

@@ -6,11 +6,12 @@ import { BaseEntity } from '../common/base-entity';
 import { OrderItem } from './order-item.entity';
 
 export enum OrderStatusEnum {
-  WAITFORPROCEED = 0,
+  INQUEUE = 0,
   PROCEED = 1,
   SUCCESS = 2,
   ERROR = 3,
   MANUAL = 4,
+  WITHOUTPRICE = 5,
 }
 
 @Entity('orders')
@@ -85,7 +86,7 @@ export class Orders extends BaseEntity {
   @Column({
     type: 'enum',
     enum: OrderStatusEnum,
-    default: OrderStatusEnum.WAITFORPROCEED,
+    default: OrderStatusEnum.INQUEUE,
   })
   public status: OrderStatusEnum;
 

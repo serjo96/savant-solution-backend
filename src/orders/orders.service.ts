@@ -1,4 +1,10 @@
-import { HttpException, HttpStatus, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Interval } from '@nestjs/schedule';
 import { SentryService } from '@ntegral/nestjs-sentry';
@@ -92,14 +98,11 @@ export class OrdersService {
     if (clause.where.status !== undefined) {
       const status = <any>{ status: clause.where.status };
       if (
-        [OrderStatusEnum.PROCEED, OrderStatusEnum.WAITFORPROCEED].includes(
+        [OrderStatusEnum.PROCEED, OrderStatusEnum.INQUEUE].includes(
           clause.where.status,
         )
       ) {
-        status.status = In([
-          OrderStatusEnum.WAITFORPROCEED,
-          OrderStatusEnum.PROCEED,
-        ]);
+        status.status = In([OrderStatusEnum.INQUEUE, OrderStatusEnum.PROCEED]);
       }
       orders.andWhere(status);
     }
@@ -320,6 +323,11 @@ export class OrdersService {
       if (errorMessage) {
         existAmazonOrder.status = OrderStatusEnum.MANUAL;
       }
+
+      if (!existOrderItem.amazonPrice) {
+        existAmazonOrder.status = OrderStatusEnum.WITHOUTPRICE;
+      }
+
       existAmazonOrder.items.push(existOrderItem);
     }
 
@@ -439,6 +447,10 @@ export class OrdersService {
       orderItem.graingerItem = await this.graingerItemsService.findOne({
         amazonSku: orderItem.amazonSku,
       });
+      if (!orderItem.amazonPrice) {
+        existOrder.status = OrderStatusEnum.WITHOUTPRICE;
+      }
+
       const { errorMessage } = checkRequiredItemFieldsReducer(
         orderItem.graingerItem,
       );
@@ -451,9 +463,11 @@ export class OrdersService {
 
     // Если таки заказ не весь готов, сохраняем то что удалось изменить и кидаем ошибку
     if (
-      [OrderStatusEnum.MANUAL, OrderStatusEnum.ERROR].includes(
-        existOrder.status,
-      )
+      [
+        OrderStatusEnum.MANUAL,
+        OrderStatusEnum.ERROR,
+        OrderStatusEnum.WITHOUTPRICE,
+      ].includes(existOrder.status)
     ) {
       await this.ordersRepository.save(existOrder);
       const haveInactiveItem = existOrder.items.some(
@@ -519,7 +533,7 @@ export class OrdersService {
       .leftJoinAndSelect('orders.items', 'items')
       .leftJoinAndSelect('items.graingerItem', 'graingerItem')
       .where({
-        status: In([OrderStatusEnum.WAITFORPROCEED, OrderStatusEnum.PROCEED]),
+        status: In([OrderStatusEnum.INQUEUE, OrderStatusEnum.PROCEED]),
       })
       .orWhere(
         `orders.status = :status AND items.graingerWebNumber != '' AND (items.graingerTrackingNumber = '' OR items.graingerTrackingNumber isnull)`,
@@ -583,7 +597,7 @@ export class OrdersService {
         (order) => order.status === GraingerStatusEnum.Success,
       ).length;
       const waitCount = amazonOrders.filter((order) =>
-        [GraingerStatusEnum.WaitForProceed].includes(order.status),
+        [GraingerStatusEnum.INQUEUE].includes(order.status),
       ).length;
       const pendingCount = amazonOrders.filter((order) =>
         [GraingerStatusEnum.Proceed].includes(order.status),

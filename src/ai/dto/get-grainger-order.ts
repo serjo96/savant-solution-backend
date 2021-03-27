@@ -1,5 +1,5 @@
 export enum GraingerStatusEnum {
-  WaitForProceed = 0,
+  INQUEUE = 0,
   Proceed = 1,
   Success = 2,
   Error = 3,
