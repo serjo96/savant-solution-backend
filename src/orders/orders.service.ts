@@ -427,7 +427,7 @@ export class OrdersService {
     const orderItemsDto: CsvCreateOrderDto[] = await this.csvService.uploadFromCsv<CsvCreateOrderDto>(
       stream,
       headers,
-      // '\t', // TODO ВЕРНУТЬ
+      '\t',
     );
     if (
       orderItemsDto.some(

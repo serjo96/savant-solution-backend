@@ -61,13 +61,13 @@ export class GraingerItemsService {
       where: { amazonSku: In(uniqAmazonSkus) },
     });
 
-    const graingerAccounts = await this.graingerAccountService.getAll({
+    const graingerAccounts: any[] = await this.graingerAccountService.getAll({
       where: {
         email: ILike(In(this.getUniqFields(csvItems, 'graingerLogin', true))),
       },
     });
 
-    const items: GraingerItem[] = csvItems.map((item) =>
+    let items: (GraingerItem & any)[] = csvItems.map((item) =>
       GraingerItem.create({
         ...item,
         status: ItemStatusEnum[item.status.toUpperCase()],
@@ -81,28 +81,24 @@ export class GraingerItemsService {
     );
 
     // Перезаписываем если уже существуют
-    items.forEach((item) => {
-      let existItem = existGraingerItems.find(
+    items = items.map((item) => ({
+      ...existGraingerItems.find(
         (i) =>
           i.amazonSku === item.amazonSku ||
           i.graingerItemNumber === item.graingerItemNumber,
-      );
-      if (existItem) {
-        existItem = { ...existItem, ...item } as GraingerItem;
-      } else {
-        existGraingerItems.push(item);
-      }
-    });
+      ),
+      ...item,
+    }));
 
     // Если Item имеет не все поля, ставим статус InActive
-    existGraingerItems.forEach((itemForCheck: GraingerItem) => {
+    items.forEach((itemForCheck: GraingerItem) => {
       const { errorMessage } = checkRequiredItemFieldsReducer(itemForCheck);
       if (errorMessage) {
         itemForCheck.status = ItemStatusEnum.INACTIVE;
       }
     });
 
-    return this.repository.save(existGraingerItems);
+    return this.repository.save(items);
   }
 
   private async convertCsvToDto(
