@@ -181,18 +181,22 @@ export class GraingerItemsController {
     @Body() { itemIds }: { itemIds: string[] },
     @Req() { user }: Request,
   ): Promise<any> {
-    const { result } = await this.itemsService.getAll({
-      user: {
-        name: user.name,
-      },
-      id: In(itemIds),
-    });
-
-    await this.itemsService.delete({
-      id: In(itemIds),
-    });
-
     try {
+      const { result } = await this.itemsService.getAll({
+        user: {
+          name: user.name,
+        },
+        id: In(itemIds),
+      });
+
+      if (!result.length) {
+        throw new Error(`Items doesn't exist`);
+      }
+
+      await this.itemsService.delete({
+        id: In(itemIds),
+      });
+
       await this.itemsSearchService.delete(itemIds);
 
       this.logger.debug(
