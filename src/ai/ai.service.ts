@@ -13,6 +13,7 @@ type SendAIOrder = {
     graingerItemNumber: string;
     graingerQuantity: string;
     account_id: string;
+    amazonPrice: number;
   }[];
   address: {
     contact_name: string;
@@ -73,6 +74,7 @@ export class AiService {
             graingerItemNumber: orderItem.graingerItem.graingerItemNumber,
             graingerQuantity: orderItem.amazonQuantity?.toString(),
             account_id: orderItem.graingerItem.graingerAccount.id,
+            amazonPrice: orderItem.amazonPrice,
           })),
         } as SendAIOrder),
     );

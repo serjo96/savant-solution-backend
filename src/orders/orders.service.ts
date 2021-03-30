@@ -600,6 +600,7 @@ export class OrdersService {
         graingerOrderId: orderItem.graingerOrderId,
         account_id: orderItem.graingerItem?.graingerAccount?.id,
         g_web_number: orderItem.graingerWebNumber,
+        amazonPrice: orderItem.amazonPrice,
       }));
 
       try {
