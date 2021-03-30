@@ -49,6 +49,19 @@ export class AiService {
       .toPromise();
   }
 
+  updateAccount({
+    email,
+    id,
+    password,
+  }: GraingerAccount): Promise<ErrorResponse> {
+    return this.http
+      .put(`${this.configService.aiUrl}/users`, {
+        user: { account_id: id, login: email, password },
+      })
+      .pipe(map((response) => response.data))
+      .toPromise();
+  }
+
   deleteAccount({ id }: { id: string }): Promise<ErrorResponse> {
     return this.http
       .post(`${this.configService.aiUrl}/users`, {
