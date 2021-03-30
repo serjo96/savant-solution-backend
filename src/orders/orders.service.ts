@@ -398,10 +398,6 @@ export class OrdersService {
       .reduce((acc, curr) => acc.concat(curr.items), [])
       .filter((orderItem) => !existOrderItems.includes(orderItem));
 
-    existOrderItems.forEach((orderItem) => {
-      orderItem.errors = `Order Items already exist`;
-    });
-
     return { success, errors: existOrderItems, orders: savedOrders };
   }
 
