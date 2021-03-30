@@ -678,6 +678,7 @@ export class OrdersService {
             existItem.graingerPrice = graingerItemFromAI.graingerPrice || null;
             existItem.graingerTrackingNumber =
               graingerOrderFromAI.graingerTrackingNumber || null;
+            existItem.error = graingerOrderFromAI.error || null;
             existItem.graingerWebNumber =
               graingerOrderFromAI.g_web_number || null;
             existItem.graingerOrderId = graingerOrderFromAI.graingerOrderId;
