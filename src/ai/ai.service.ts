@@ -1,12 +1,13 @@
 import { HttpService, Injectable, Logger } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
-import { map, timeout } from 'rxjs/operators';
+import { catchError, map, timeout } from 'rxjs/operators';
 import { ConfigService } from '../config/config.service';
 import { Orders } from '../orders/orders.entity';
 import { GraingerAccount } from '../grainger-accounts/grainger-account.entity';
 import { AiGateway } from './ai.gateway';
 import { GetGraingerOrder } from './dto/get-grainger-order';
 import { ErrorResponse } from '../common/error-response';
+import { of } from 'rxjs';
 
 type SendAIOrder = {
   items: {
@@ -45,7 +46,10 @@ export class AiService {
       .post(`${this.configService.aiUrl}/users`, {
         users: [{ account_id: id, login: email, password }],
       })
-      .pipe(map((response) => response.data))
+      .pipe(
+        map((response) => response.data),
+        catchError((error) => of({ error })),
+      )
       .toPromise();
   }
 
@@ -58,7 +62,10 @@ export class AiService {
       .put(`${this.configService.aiUrl}/users`, {
         user: { account_id: id, login: email, password },
       })
-      .pipe(map((response) => response.data))
+      .pipe(
+        map((response) => response.data),
+        catchError((error) => of({ error })),
+      )
       .toPromise();
   }
 
@@ -67,7 +74,10 @@ export class AiService {
       .post(`${this.configService.aiUrl}/users`, {
         users: [{ account_id: id }],
       })
-      .pipe(map((response) => response.data))
+      .pipe(
+        map((response) => response.data),
+        catchError((error) => of({ error })),
+      )
       .toPromise();
   }
 
@@ -94,14 +104,20 @@ export class AiService {
 
     return this.http
       .post(`${this.configService.aiUrl}/orders`, { orders: aiOrders })
-      .pipe(map((response) => response.data))
+      .pipe(
+        map((response) => response.data),
+        catchError((error) => of({ error })),
+      )
       .toPromise();
   }
 
   deleteOrdersFromAI(amazonOrders: string[]): Promise<ErrorResponse> {
     return this.http
       .delete(`${this.configService.aiUrl}/orders`, { data: { amazonOrders } })
-      .pipe(map((response) => response.data))
+      .pipe(
+        map((response) => response.data),
+        catchError((error) => of({ error })),
+      )
       .toPromise();
   }
 
@@ -113,6 +129,7 @@ export class AiService {
       .pipe(
         timeout(2500),
         map((response) => response.data),
+        catchError((error) => of({ error })),
       )
       .toPromise();
   }
@@ -131,6 +148,7 @@ export class AiService {
       .pipe(
         timeout(2500),
         map((response) => response.data),
+        catchError((error) => of({ error })),
       )
       .toPromise();
   }
@@ -162,14 +180,20 @@ export class AiService {
   async workerStatus(): Promise<{ worker_status: WorkerStatus }> {
     return await this.http
       .get(`${this.configService.aiUrl}/worker_status`)
-      .pipe(map((response) => response.data))
+      .pipe(
+        map((response) => response.data),
+        catchError((error) => of({ error })),
+      )
       .toPromise();
   }
 
   async checkAiStatus(): Promise<{ status: string }> {
     return await this.http
       .get(`${this.configService.aiUrl}/heart_beat`)
-      .pipe(map((response) => response.data))
+      .pipe(
+        map((response) => response.data),
+        catchError((error) => of({ error })),
+      )
       .toPromise();
   }
 
