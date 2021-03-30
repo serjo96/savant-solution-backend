@@ -1,6 +1,7 @@
 import { Column, Entity, ManyToOne } from 'typeorm';
 
 import { BaseEntity } from '../common/base-entity';
+import { ColumnNumericTransformer } from '../common/transforms/numeric';
 import { Orders } from './orders.entity';
 import { GraingerItem } from '../grainger-items/grainger-items.entity';
 
@@ -36,6 +37,7 @@ export class OrderItem extends BaseEntity {
     precision: 5,
     scale: 2,
     default: 0,
+    transformer: new ColumnNumericTransformer(),
   })
   amazonPrice: number;
 
