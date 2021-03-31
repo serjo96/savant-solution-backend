@@ -93,10 +93,10 @@ export class GraingerItemsService {
         amazonSkuMap[item.amazonSku] ||
         graingerItemNumberMap[item.graingerItemNumber];
 
-      const updatedItem = {
+      const updatedItem: any = GraingerItem.create({
         ...existItem,
         ...item,
-      } as GraingerItem;
+      });
 
       // Если Item имеет не все поля, ставим статус InActive
       const { errorMessage } = checkRequiredItemFieldsReducer(updatedItem);
