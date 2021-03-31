@@ -14,6 +14,7 @@ import { GraingerShipMethodEnum } from '../order-item.entity';
 import { GraingerAccount } from '../../grainger-accounts/grainger-account.entity';
 import { GetOrderDto } from './get-order.dto';
 import { GraingerItem } from '../../grainger-items/grainger-items.entity';
+import { AIGraingerOrderError } from '../../ai/dto/get-grainger-order';
 
 export class EditOrderItemDto {
   @IsOptional()
@@ -46,6 +47,9 @@ export class EditOrderItemDto {
   @IsOptional()
   @IsEnum(GraingerShipMethodEnum)
   graingerShipMethod?: GraingerShipMethodEnum;
+  @IsOptional()
+  @IsEnum(AIGraingerOrderError)
+  error?: AIGraingerOrderError;
   @IsOptional()
   @IsString()
   graingerOrderId?: string;
