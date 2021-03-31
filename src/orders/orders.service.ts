@@ -258,7 +258,7 @@ export class OrdersService {
     const pricesMap: { [amazonItemId: string]: number } = {};
     orderItemsDto.forEach(
       (orderItem) =>
-        (pricesMap[orderItem.amazonItemId] = orderItem.amazonPrice),
+        (pricesMap[orderItem.amazonItemId] = +orderItem.amazonPrice),
     );
 
     const uniqAmazonItemIds = this.getUniqFields(orderItemsDto, 'amazonItemId');

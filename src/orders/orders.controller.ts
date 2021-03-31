@@ -108,7 +108,7 @@ export class OrdersController {
       user,
     );
 
-    this.sendOrdersToAI(orders);
+    await this.sendOrdersToAI(orders);
   }
 
   @Post('/upload')
