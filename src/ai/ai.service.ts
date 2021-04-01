@@ -71,8 +71,10 @@ export class AiService {
 
   deleteAccount({ id }: { id: string }): Promise<ErrorResponse> {
     return this.http
-      .post(`${this.configService.aiUrl}/users`, {
-        users: [{ account_id: id }],
+      .delete(`${this.configService.aiUrl}/users`, {
+        data: {
+          users: [{ account_id: id }],
+        },
       })
       .pipe(
         map((response) => response.data),
