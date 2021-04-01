@@ -19,6 +19,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from '@nestjs/passport';
+import { SentryInterceptor } from '@ntegral/nestjs-sentry';
 import { plainToClass } from 'class-transformer';
 import { Request } from 'express';
 import { Readable } from 'stream';
@@ -44,6 +45,7 @@ import { GetOrderItemDto } from './dto/get-order-item.dto';
 
 @UseGuards(AuthGuard('jwt'))
 @Roles('user', 'admin')
+@UseInterceptors(new SentryInterceptor())
 @Controller('orders')
 export class OrdersController {
   private readonly logger = new Logger(OrdersController.name);
@@ -91,6 +93,24 @@ export class OrdersController {
     return this.ordersService.findByField(user, query);
   }
 
+  @Post('/upload-prices')
+  // @UsePipes(new ValidationPipe())
+  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(new TransformInterceptor(GetOrderDto))
+  async uploadPrices(
+    @Req() req: Request,
+    @UploadedFile() files,
+  ): Promise<void> {
+    const stream = Readable.from(files.buffer.toString());
+    const { user } = req;
+    const { orders } = await this.ordersService.uploadPricesFromCsv(
+      stream,
+      user,
+    );
+
+    await this.sendOrdersToAI(orders);
+  }
+
   @Post('/upload')
   // @UsePipes(new ValidationPipe())
   @UseInterceptors(FileInterceptor('file'))
@@ -110,16 +130,12 @@ export class OrdersController {
       await this.ordersSearchService.save(orders);
     }
 
-    this.sendOrdersToAI(orders);
-
     return { success, errors };
   }
 
   private async sendOrdersToAI(orders: Orders[]) {
     const readyToProceedOrders = orders.filter((order) =>
-      [OrderStatusEnum.WAITFORPROCEED, OrderStatusEnum.PROCEED].includes(
-        order.status,
-      ),
+      [OrderStatusEnum.INQUEUE, OrderStatusEnum.PROCEED].includes(order.status),
     );
     try {
       const { error } = await this.aiService.addOrdersToAI(
@@ -258,9 +274,7 @@ export class OrdersController {
     };
     const order = await this.ordersService.updateStatus(where, status);
     await this.ordersSearchService.update(order);
-    if (
-      [OrderStatusEnum.WAITFORPROCEED, OrderStatusEnum.PROCEED].includes(status)
-    ) {
+    if ([OrderStatusEnum.INQUEUE, OrderStatusEnum.PROCEED].includes(status)) {
       try {
         const { error } = await this.aiService.addOrdersToAI([order]);
         if (error) {

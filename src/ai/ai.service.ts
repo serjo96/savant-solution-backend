@@ -1,18 +1,20 @@
 import { HttpService, Injectable, Logger } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
-import { map, timeout } from 'rxjs/operators';
+import { catchError, map, timeout } from 'rxjs/operators';
 import { ConfigService } from '../config/config.service';
 import { Orders } from '../orders/orders.entity';
 import { GraingerAccount } from '../grainger-accounts/grainger-account.entity';
 import { AiGateway } from './ai.gateway';
 import { GetGraingerOrder } from './dto/get-grainger-order';
 import { ErrorResponse } from '../common/error-response';
+import { of } from 'rxjs';
 
 type SendAIOrder = {
   items: {
     graingerItemNumber: string;
     graingerQuantity: string;
     account_id: string;
+    amazonPrice: number;
   }[];
   address: {
     contact_name: string;
@@ -44,16 +46,40 @@ export class AiService {
       .post(`${this.configService.aiUrl}/users`, {
         users: [{ account_id: id, login: email, password }],
       })
-      .pipe(map((response) => response.data))
+      .pipe(
+        map((response) => response.data),
+        catchError((error) => of({ error })),
+      )
+      .toPromise();
+  }
+
+  updateAccount({
+    email,
+    id,
+    password,
+  }: GraingerAccount): Promise<ErrorResponse> {
+    return this.http
+      .put(`${this.configService.aiUrl}/users`, {
+        user: { account_id: id, login: email, password },
+      })
+      .pipe(
+        map((response) => response.data),
+        catchError((error) => of({ error })),
+      )
       .toPromise();
   }
 
   deleteAccount({ id }: { id: string }): Promise<ErrorResponse> {
     return this.http
-      .post(`${this.configService.aiUrl}/users`, {
-        users: [{ account_id: id }],
+      .delete(`${this.configService.aiUrl}/users`, {
+        data: {
+          users: [{ account_id: id }],
+        },
       })
-      .pipe(map((response) => response.data))
+      .pipe(
+        map((response) => response.data),
+        catchError((error) => of({ error })),
+      )
       .toPromise();
   }
 
@@ -73,20 +99,27 @@ export class AiService {
             graingerItemNumber: orderItem.graingerItem.graingerItemNumber,
             graingerQuantity: orderItem.amazonQuantity?.toString(),
             account_id: orderItem.graingerItem.graingerAccount.id,
+            amazonPrice: orderItem.amazonPrice,
           })),
         } as SendAIOrder),
     );
 
     return this.http
       .post(`${this.configService.aiUrl}/orders`, { orders: aiOrders })
-      .pipe(map((response) => response.data))
+      .pipe(
+        map((response) => response.data),
+        catchError((error) => of({ error })),
+      )
       .toPromise();
   }
 
   deleteOrdersFromAI(amazonOrders: string[]): Promise<ErrorResponse> {
     return this.http
       .delete(`${this.configService.aiUrl}/orders`, { data: { amazonOrders } })
-      .pipe(map((response) => response.data))
+      .pipe(
+        map((response) => response.data),
+        catchError((error) => of({ error })),
+      )
       .toPromise();
   }
 
@@ -98,6 +131,7 @@ export class AiService {
       .pipe(
         timeout(2500),
         map((response) => response.data),
+        catchError((error) => of({ error })),
       )
       .toPromise();
   }
@@ -116,6 +150,7 @@ export class AiService {
       .pipe(
         timeout(2500),
         map((response) => response.data),
+        catchError((error) => of({ error })),
       )
       .toPromise();
   }
@@ -147,14 +182,20 @@ export class AiService {
   async workerStatus(): Promise<{ worker_status: WorkerStatus }> {
     return await this.http
       .get(`${this.configService.aiUrl}/worker_status`)
-      .pipe(map((response) => response.data))
+      .pipe(
+        map((response) => response.data),
+        catchError((error) => of({ error })),
+      )
       .toPromise();
   }
 
   async checkAiStatus(): Promise<{ status: string }> {
     return await this.http
       .get(`${this.configService.aiUrl}/heart_beat`)
-      .pipe(map((response) => response.data))
+      .pipe(
+        map((response) => response.data),
+        catchError((error) => of({ error })),
+      )
       .toPromise();
   }
 

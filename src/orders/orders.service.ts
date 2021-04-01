@@ -1,6 +1,7 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Interval } from '@nestjs/schedule';
+import { SentryService } from '@ntegral/nestjs-sentry';
 import { In, Repository } from 'typeorm';
 import { Column, Workbook } from 'exceljs';
 import { Readable } from 'stream';
@@ -34,6 +35,7 @@ import { GraingerItemsService } from '../grainger-items/grainger-items.service';
 import { CsvService } from '@shared/csv/csv.service';
 
 import { GraingerStatusEnum } from '../ai/dto/get-grainger-order';
+import { INQUIRER } from '@nestjs/core';
 
 @Injectable()
 export class OrdersService {
@@ -47,6 +49,7 @@ export class OrdersService {
     private readonly aiService: AiService,
     private readonly graingerItemsService: GraingerItemsService,
     private readonly csvService: CsvService,
+    private readonly sentryService: SentryService,
   ) {}
 
   async find(where: any): Promise<Orders[]> {
@@ -90,14 +93,11 @@ export class OrdersService {
     if (clause.where.status !== undefined) {
       const status = <any>{ status: clause.where.status };
       if (
-        [OrderStatusEnum.PROCEED, OrderStatusEnum.WAITFORPROCEED].includes(
+        [OrderStatusEnum.PROCEED, OrderStatusEnum.INQUEUE].includes(
           clause.where.status,
         )
       ) {
-        status.status = In([
-          OrderStatusEnum.WAITFORPROCEED,
-          OrderStatusEnum.PROCEED,
-        ]);
+        status.status = In([OrderStatusEnum.INQUEUE, OrderStatusEnum.PROCEED]);
       }
       orders.andWhere(status);
     }
@@ -111,6 +111,7 @@ export class OrdersService {
     try {
       [result, count] = await orders.getManyAndCount();
     } catch (e) {
+      this.sentryService.error(e);
       this.logger.debug(e);
     }
 
@@ -249,6 +250,61 @@ export class OrdersService {
     return workbook.xlsx.writeBuffer();
   }
 
+  async uploadPricesFromCsv(
+    stream: Readable,
+    user,
+  ): Promise<{ orders: Orders[] }> {
+    const orderItemsDto = await this.convertPricesCsvToDto(stream);
+    const pricesMap: { [amazonItemId: string]: number } = {};
+    orderItemsDto.forEach(
+      (orderItem) =>
+        (pricesMap[orderItem.amazonItemId] = +orderItem.amazonPrice),
+    );
+
+    const uniqAmazonItemIds = this.getUniqFields(orderItemsDto, 'amazonItemId');
+
+    // Находим уже существующие amazonItemId, чтобы их не трогать и в конце написать "Такие уже есть"
+    const existOrderItems: OrderItem[] = await this.orderItemsRepository.find({
+      where: { amazonItemId: In(uniqAmazonItemIds) },
+      relations: ['order'],
+    });
+
+    const orderIds = existOrderItems
+      .map((orderItem) => orderItem.order)
+      .map((orderItem) => orderItem.id);
+
+    const orders: Orders[] = await this.ordersRepository.find({
+      where: { id: In(orderIds) },
+      relations: ['items'],
+    });
+
+    for (const order of orders) {
+      for (const orderItem of order.items) {
+        if (pricesMap[orderItem.amazonItemId]) {
+          orderItem.amazonPrice = pricesMap[orderItem.amazonItemId];
+        }
+      }
+      if (
+        order.items.every(
+          (orderItem) =>
+            orderItem.amazonPrice &&
+            !checkRequiredItemFieldsReducer(orderItem.graingerItem)
+              .errorMessage,
+        )
+      ) {
+        order.status = OrderStatusEnum.INQUEUE;
+      }
+    }
+
+    await this.ordersRepository.save(orders);
+
+    return {
+      orders: orders.filter(
+        (order) => order.status === OrderStatusEnum.INQUEUE,
+      ),
+    };
+  }
+
   async uploadFromCsv(
     stream: Readable,
     user,
@@ -314,9 +370,15 @@ export class OrdersService {
       const { errorMessage } = checkRequiredItemFieldsReducer(
         existOrderItem.graingerItem,
       );
+
+      if (!existOrderItem.amazonPrice) {
+        existAmazonOrder.status = OrderStatusEnum.WITHOUTPRICE;
+      }
+
       if (errorMessage) {
         existAmazonOrder.status = OrderStatusEnum.MANUAL;
       }
+
       existAmazonOrder.items.push(existOrderItem);
     }
 
@@ -336,11 +398,42 @@ export class OrdersService {
       .reduce((acc, curr) => acc.concat(curr.items), [])
       .filter((orderItem) => !existOrderItems.includes(orderItem));
 
-    existOrderItems.forEach((orderItem) => {
-      orderItem.errors = `Order Items already exist`;
-    });
-
     return { success, errors: existOrderItems, orders: savedOrders };
+  }
+
+  private async convertPricesCsvToDto(
+    stream: Readable,
+  ): Promise<CsvCreateOrderDto[]> {
+    const headers = [
+      'amazonOrderId',
+      'amazonItemId',
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      'amazonPrice',
+    ];
+
+    // Прочитаем CSV и проверим что в ней есть все необходимые поля
+    const orderItemsDto: CsvCreateOrderDto[] = await this.csvService.uploadFromCsv<CsvCreateOrderDto>(
+      stream,
+      headers,
+      '\t',
+    );
+    if (
+      orderItemsDto.some(
+        (orderItem) => !this.csvService.isValidCSVRow(orderItem, headers),
+      )
+    ) {
+      throw new HttpException(`Invalid CSV file`, HttpStatus.OK);
+    }
+
+    return orderItemsDto;
   }
 
   private async convertCsvToDto(
@@ -436,6 +529,10 @@ export class OrdersService {
       orderItem.graingerItem = await this.graingerItemsService.findOne({
         amazonSku: orderItem.amazonSku,
       });
+      if (!orderItem.amazonPrice) {
+        existOrder.status = OrderStatusEnum.WITHOUTPRICE;
+      }
+
       const { errorMessage } = checkRequiredItemFieldsReducer(
         orderItem.graingerItem,
       );
@@ -448,9 +545,11 @@ export class OrdersService {
 
     // Если таки заказ не весь готов, сохраняем то что удалось изменить и кидаем ошибку
     if (
-      [OrderStatusEnum.MANUAL, OrderStatusEnum.ERROR].includes(
-        existOrder.status,
-      )
+      [
+        OrderStatusEnum.MANUAL,
+        OrderStatusEnum.ERROR,
+        OrderStatusEnum.WITHOUTPRICE,
+      ].includes(existOrder.status)
     ) {
       await this.ordersRepository.save(existOrder);
       const haveInactiveItem = existOrder.items.some(
@@ -460,6 +559,15 @@ export class OrdersService {
       if (haveInactiveItem) {
         throw new HttpException(
           `All order items must have status ACTIVE`,
+          HttpStatus.OK,
+        );
+      }
+      const withoutPriceItem = existOrder.items.some(
+        ({ amazonPrice }) => !amazonPrice,
+      );
+      if (withoutPriceItem) {
+        throw new HttpException(
+          `All order items must have Amazon Item Price`,
           HttpStatus.OK,
         );
       }
@@ -488,6 +596,7 @@ export class OrdersService {
         graingerOrderId: orderItem.graingerOrderId,
         account_id: orderItem.graingerItem?.graingerAccount?.id,
         g_web_number: orderItem.graingerWebNumber,
+        amazonPrice: orderItem.amazonPrice,
       }));
 
       try {
@@ -498,6 +607,7 @@ export class OrdersService {
           `[Update GraingerTrackingNumber from AI] Sended: ${orderItems.length}`,
         );
       } catch (e) {
+        this.sentryService.error(e);
         this.logger.error(
           '[Update GraingerTrackingNumber from AI] AI Service Timeout',
         );
@@ -515,7 +625,7 @@ export class OrdersService {
       .leftJoinAndSelect('orders.items', 'items')
       .leftJoinAndSelect('items.graingerItem', 'graingerItem')
       .where({
-        status: In([OrderStatusEnum.WAITFORPROCEED, OrderStatusEnum.PROCEED]),
+        status: In([OrderStatusEnum.INQUEUE, OrderStatusEnum.PROCEED]),
       })
       .orWhere(
         `orders.status = :status AND items.graingerWebNumber != '' AND (items.graingerTrackingNumber = '' OR items.graingerTrackingNumber isnull)`,
@@ -564,6 +674,7 @@ export class OrdersService {
             existItem.graingerPrice = graingerItemFromAI.graingerPrice || null;
             existItem.graingerTrackingNumber =
               graingerOrderFromAI.graingerTrackingNumber || null;
+            existItem.error = graingerOrderFromAI.error || null;
             existItem.graingerWebNumber =
               graingerOrderFromAI.g_web_number || null;
             existItem.graingerOrderId = graingerOrderFromAI.graingerOrderId;
@@ -579,7 +690,7 @@ export class OrdersService {
         (order) => order.status === GraingerStatusEnum.Success,
       ).length;
       const waitCount = amazonOrders.filter((order) =>
-        [GraingerStatusEnum.WaitForProceed].includes(order.status),
+        [GraingerStatusEnum.INQUEUE].includes(order.status),
       ).length;
       const pendingCount = amazonOrders.filter((order) =>
         [GraingerStatusEnum.Proceed].includes(order.status),
@@ -592,6 +703,7 @@ export class OrdersService {
         `[Check Order AI Status] Success: ${successOrdersCount}, Wait: ${waitCount}, Pending: ${pendingCount}, Error: ${errorOrdersCount}`,
       );
     } catch (e) {
+      this.sentryService.error(e);
       this.logger.error('[Check Order AI Status] AI Service Timeout');
     }
   }

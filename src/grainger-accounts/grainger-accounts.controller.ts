@@ -14,6 +14,7 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { SentryInterceptor } from '@ntegral/nestjs-sentry';
 import { GraingerAccountsService } from './grainger-accounts.service';
 import { ValidationPipe } from '../common/Pipes/validation.pipe';
 import { CreateGraingerAccountDto } from './dto/create-grainger-account.dto';
@@ -22,6 +23,7 @@ import { TransformInterceptor } from '../common/interceptors/TransformIntercepto
 import { AiService } from '../ai/ai.service';
 
 @UseGuards(AuthGuard('jwt'))
+@UseInterceptors(new SentryInterceptor())
 @Controller('grainger-accounts')
 export class GraingerAccountsController {
   private readonly logger = new Logger(GraingerAccountsController.name);
@@ -72,11 +74,25 @@ export class GraingerAccountsController {
   @Put(':id')
   @UsePipes(new ValidationPipe())
   @UseInterceptors(new TransformInterceptor(GetGraingerAccountDto))
-  editById(
+  async editById(
     @Param() { id }: { id: string },
     @Body() item: CreateGraingerAccountDto,
   ): Promise<GetGraingerAccountDto> {
-    return this.service.editById(id, item);
+    const account = await this.service.editById(id, item);
+    try {
+      const { error } = await this.aiService.updateAccount(account);
+      if (error) {
+        throw new Error(`[AI Service] ${error.message}`);
+      }
+      this.logger.debug(
+        `[Update Grainger Account] Account ${account.id} updated successfully to AI`,
+      );
+    } catch ({ message }) {
+      const error = `[Update Grainger Account] ${message}`;
+      this.logger.debug(error);
+      throw new HttpException(error, HttpStatus.OK);
+    }
+    return account;
   }
 
   @Delete(':id')

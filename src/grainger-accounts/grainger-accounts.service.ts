@@ -3,14 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { GraingerAccount } from './grainger-account.entity';
 import { CreateGraingerAccountDto } from './dto/create-grainger-account.dto';
+import { GraingerItem } from '../grainger-items/grainger-items.entity';
 
 @Injectable()
 export class GraingerAccountsService {
   constructor(
     @InjectRepository(GraingerAccount)
     private readonly repository: Repository<GraingerAccount>,
-  ) {
-  }
+  ) {}
 
   getAll(where?: any): Promise<GraingerAccount[]> {
     return this.repository.find(where);
@@ -60,7 +60,10 @@ export class GraingerAccountsService {
       throw new HttpException(`Grainger Account doesn't exist`, HttpStatus.OK);
     }
     if (account.items?.length) {
-      throw new HttpException(`Grainger Account already have items`, HttpStatus.OK);
+      throw new HttpException(
+        `Grainger Account already have items`,
+        HttpStatus.OK,
+      );
     }
     return this.repository.delete(id);
   }

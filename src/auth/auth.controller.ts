@@ -1,5 +1,6 @@
-import { Body, Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, HttpCode, Post, UseGuards, UseInterceptors } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { SentryInterceptor } from '@ntegral/nestjs-sentry';
 
 import { CreateUserDto } from '@user/dto/create-user.dto';
 
@@ -11,6 +12,7 @@ import { AuthService } from './auth.service';
 import { LoginByEmail } from './dto/login.dto';
 import { UserWithToken } from './interfaces/user-with-token.interface';
 
+@UseInterceptors(new SentryInterceptor())
 @Controller('/auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}

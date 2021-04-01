@@ -57,52 +57,57 @@ export class GraingerItemsService {
     const uniqAmazonSkus = this.getUniqFields(csvItems, 'amazonSku');
 
     // Находим уже существующие amazonItemId, чтобы их не трогать и в конце написать "Такие уже есть"
-    const existGraingerItems: GraingerItem[] = await this.repository.find({
+    const existGraingerItems: (GraingerItem &
+      any)[] = await this.repository.find({
       where: { amazonSku: In(uniqAmazonSkus) },
     });
+    const amazonSkuMap = {};
+    const graingerItemNumberMap = {};
+    existGraingerItems.forEach((graingerItem) => {
+      amazonSkuMap[graingerItem.amazonSku] = graingerItem;
+      graingerItemNumberMap[graingerItem.graingerItemNumber] = graingerItem;
+    });
 
-    const graingerAccounts = await this.graingerAccountService.getAll({
+    const graingerAccounts: any[] = await this.graingerAccountService.getAll({
       where: {
         email: ILike(In(this.getUniqFields(csvItems, 'graingerLogin', true))),
       },
     });
-
-    const items: GraingerItem[] = csvItems.map((item) =>
-      GraingerItem.create({
-        ...item,
-        status: ItemStatusEnum[item.status.toUpperCase()],
-        graingerPackQuantity: +item.graingerPackQuantity,
-        graingerThreshold: +item.graingerThreshold,
-        graingerAccount: graingerAccounts.find(
-          (i) => i.email.toLowerCase() === item.graingerLogin.toLowerCase(),
-        ),
-        user,
-      }),
+    const graingerAccountsMap = {};
+    graingerAccounts.forEach(
+      (account) => (graingerAccountsMap[account.email.toLowerCase()] = account),
     );
+
+    const items = csvItems.map((item) => ({
+      ...item,
+      status: ItemStatusEnum[item.status.toUpperCase()],
+      graingerPackQuantity: +item.graingerPackQuantity,
+      graingerThreshold: +item.graingerThreshold,
+      graingerAccount: graingerAccountsMap[item.graingerLogin.toLowerCase()],
+      user,
+    }));
 
     // Перезаписываем если уже существуют
     items.forEach((item) => {
-      let existItem = existGraingerItems.find(
-        (i) =>
-          i.amazonSku === item.amazonSku ||
-          i.graingerItemNumber === item.graingerItemNumber,
-      );
-      if (existItem) {
-        existItem = { ...existItem, ...item } as GraingerItem;
-      } else {
-        existGraingerItems.push(item);
-      }
-    });
+      const existItem =
+        amazonSkuMap[item.amazonSku] ||
+        graingerItemNumberMap[item.graingerItemNumber];
 
-    // Если Item имеет не все поля, ставим статус InActive
-    existGraingerItems.forEach((itemForCheck: GraingerItem) => {
-      const { errorMessage } = checkRequiredItemFieldsReducer(itemForCheck);
+      const updatedItem: any = GraingerItem.create({
+        ...existItem,
+        ...item,
+      });
+
+      // Если Item имеет не все поля, ставим статус InActive
+      const { errorMessage } = checkRequiredItemFieldsReducer(updatedItem);
       if (errorMessage) {
-        itemForCheck.status = ItemStatusEnum.INACTIVE;
+        updatedItem.status = ItemStatusEnum.INACTIVE;
       }
+      amazonSkuMap[item.amazonSku] = updatedItem;
+      graingerItemNumberMap[item.graingerItemNumber] = updatedItem;
     });
 
-    return this.repository.save(existGraingerItems);
+    return this.repository.save(Object.values(amazonSkuMap));
   }
 
   private async convertCsvToDto(
@@ -207,15 +212,13 @@ export class GraingerItemsService {
     return workbook.xlsx.writeBuffer();
   }
 
-  async getAll(
-    user?: User,
-    query?: any,
-  ): Promise<CollectionResponse<GetItemDto>> {
+  async getAll(where?, query?: any): Promise<CollectionResponse<GetItemDto>> {
     const clause: any = {
       ...sort(query),
       ...paginator(query),
       ...filter(query),
     };
+    clause.where = { ...clause.where, ...where };
     // const [result, count] = await this.repository.findAndCount({
     //   relations: ["user",],
     //   ...clause,
@@ -233,8 +236,8 @@ export class GraingerItemsService {
       .leftJoinAndSelect('grainger-items.orderItems', 'orderItems')
       .leftJoinAndSelect('grainger-items.user', 'user');
 
-    if (user) {
-      items.where('user.name =:name', { name: user.name });
+    if (clause.where.user && clause.where.user.name) {
+      items.where('user.name =:name', { name: clause.where.user.name });
     }
 
     if (clause.take) {

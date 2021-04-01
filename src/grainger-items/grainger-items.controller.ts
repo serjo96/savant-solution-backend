@@ -3,6 +3,9 @@ import {
   Controller,
   Delete,
   Get,
+  HttpException,
+  HttpStatus,
+  Logger,
   Param,
   Post,
   Put,
@@ -15,6 +18,7 @@ import {
   UsePipes,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { SentryInterceptor } from '@ntegral/nestjs-sentry';
 
 import { Roles } from '../common/decorators/roles';
 import { TransformInterceptor } from '../common/interceptors/TransformInterceptor';
@@ -32,11 +36,14 @@ import { CreateItemDto } from './dto/create-item-dto';
 import { EditItemDto } from './dto/edit-item.dto';
 import { Buffer } from 'exceljs';
 import { ItemStatusEnum } from './grainger-items.entity';
+import { In } from 'typeorm';
 
 @UseGuards(AuthGuard('jwt'))
 @Roles('user', 'admin')
+@UseInterceptors(new SentryInterceptor())
 @Controller('grainger-items')
 export class GraingerItemsController {
+  private readonly logger = new Logger(GraingerItemsController.name);
   constructor(
     private readonly itemsService: GraingerItemsService,
     private readonly itemsSearchService: GraingerItemsSearchService,
@@ -167,5 +174,37 @@ export class GraingerItemsController {
     const result = await this.itemsService.updateStatus(where, status);
     this.itemsSearchService.update(result);
     return result;
+  }
+
+  @Post('/delete-items')
+  async removeItems(
+    @Body() { itemIds }: { itemIds: string[] },
+    @Req() { user }: Request,
+  ): Promise<any> {
+    try {
+      const { result } = await this.itemsService.getAll({
+        user: {
+          name: user.name,
+        },
+        id: In(itemIds),
+      });
+
+      if (!result.length) {
+        throw new Error(`Items doesn't exist`);
+      }
+
+      await this.itemsService.delete({
+        id: In(itemIds),
+      });
+
+      await this.itemsSearchService.delete(itemIds);
+
+      this.logger.debug(
+        `[Delete Items] ${result.length} items deleted successfully from Elastic`,
+      );
+    } catch ({ message }) {
+      this.logger.debug(message);
+      throw new HttpException(message, HttpStatus.OK);
+    }
   }
 }

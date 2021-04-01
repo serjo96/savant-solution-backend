@@ -3,8 +3,9 @@ import {
   Get,
   HttpException,
   HttpStatus,
-  Logger,
+  Logger, UseInterceptors
 } from '@nestjs/common';
+import { SentryInterceptor } from '@ntegral/nestjs-sentry';
 import { ConfigService } from './config/config.service';
 import { OrdersService } from './orders/orders.service';
 import { In } from 'typeorm';
@@ -13,6 +14,7 @@ import { OrdersSearchService } from './orders/orders-search.service';
 import { GraingerItemsService } from './grainger-items/grainger-items.service';
 import { GraingerItemsSearchService } from './grainger-items/grainger-items-search.service';
 
+@UseInterceptors(new SentryInterceptor())
 @Controller()
 export class AppController {
   private readonly logger = new Logger(AppController.name);

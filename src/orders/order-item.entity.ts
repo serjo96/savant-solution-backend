@@ -1,8 +1,10 @@
 import { Column, Entity, ManyToOne } from 'typeorm';
 
 import { BaseEntity } from '../common/base-entity';
+import { ColumnNumericTransformer } from '../common/transforms/numeric';
 import { Orders } from './orders.entity';
 import { GraingerItem } from '../grainger-items/grainger-items.entity';
+import { AIGraingerOrderError } from '../ai/dto/get-grainger-order';
 
 export enum GraingerShipMethodEnum {
   EXPRESS = 1,
@@ -36,6 +38,7 @@ export class OrderItem extends BaseEntity {
     precision: 5,
     scale: 2,
     default: 0,
+    transformer: new ColumnNumericTransformer(),
   })
   amazonPrice: number;
 
@@ -85,10 +88,11 @@ export class OrderItem extends BaseEntity {
   note?: string;
 
   @Column({
-    type: 'varchar',
+    type: 'enum',
+    enum: AIGraingerOrderError,
     nullable: true,
   })
-  errors?: string;
+  error?: AIGraingerOrderError;
 
   @ManyToOne(() => GraingerItem, (v) => v.orderItems, { eager: true })
   graingerItem: GraingerItem;

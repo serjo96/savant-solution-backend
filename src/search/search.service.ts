@@ -120,18 +120,15 @@ export class SearchService {
     try {
       return await this.esService.deleteByQuery({
         index,
+        refresh: true,
         body: {
           query: {
-            bool: {
-              filter: {
-                terms: {
-                  id: entityId,
-                },
-              },
+            terms: {
+              _id: entityId,
             },
           },
         },
-      });
+      });;
     } catch (error) {
       throw new Error(`[ELASTIC REMOVE]: ${error}`);
     }

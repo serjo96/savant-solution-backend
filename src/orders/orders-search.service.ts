@@ -214,7 +214,7 @@ export class OrdersSearchService {
     return this.searchService.update<Orders>(data, this.elasticIndex);
   }
 
-  delete(ids: string | string[]) {
-    return this.searchService.remove(ids, this.elasticIndex);
+  async delete(ids: string | string[]) {
+    return await this.searchService.remove(ids, this.elasticIndex);
   }
 }
