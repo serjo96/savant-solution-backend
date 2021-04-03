@@ -686,21 +686,33 @@ export class OrdersService {
 
       await this.ordersRepository.save(orders);
 
-      const successOrdersCount = amazonOrders.filter(
-        (order) => order.status === GraingerStatusEnum.Success,
-      ).length;
-      const waitCount = amazonOrders.filter((order) =>
-        [GraingerStatusEnum.INQUEUE].includes(order.status),
-      ).length;
-      const pendingCount = amazonOrders.filter((order) =>
-        [GraingerStatusEnum.Proceed].includes(order.status),
-      ).length;
-      const errorOrdersCount = amazonOrders.filter(
-        (order) => order.status === GraingerStatusEnum.Error,
-      ).length;
+      const amazonOrdersStatus = {
+        successOrdersCount: [],
+        waitCount: [],
+        pendingCount: [],
+        errorOrdersCount: [],
+      };
+
+      amazonOrders.forEach((order) => {
+        switch (order.status) {
+          case GraingerStatusEnum.INQUEUE:
+            amazonOrdersStatus.waitCount.push(order);
+            break;
+          case GraingerStatusEnum.Error:
+            amazonOrdersStatus.pendingCount.push(order);
+            break;
+          case GraingerStatusEnum.Proceed:
+            amazonOrdersStatus.pendingCount.push(order);
+            break;
+          case GraingerStatusEnum.Success:
+            amazonOrdersStatus.successOrdersCount.push(order);
+            break;
+        }
+      });
 
       this.logger.debug(
-        `[Check Order AI Status] Success: ${successOrdersCount}, Wait: ${waitCount}, Pending: ${pendingCount}, Error: ${errorOrdersCount}`,
+        // eslint-disable-next-line max-len
+        `[Check Order AI Status] Success: ${amazonOrdersStatus.successOrdersCount.length}, Wait: ${amazonOrdersStatus.waitCount.length}, Pending: ${amazonOrdersStatus.pendingCount.length}, Error: ${amazonOrdersStatus.errorOrdersCount.length}`,
       );
     } catch (e) {
       this.sentryService.error(e);
